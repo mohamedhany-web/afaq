@@ -3,194 +3,164 @@
 @section('page-title', 'الإشعارات')
 
 @section('content')
-<div class="w-full max-w-full">
-    <!-- Page Header -->
-    <div class="mb-6">
-        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 sm:p-8 border border-blue-100">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div class="flex items-center gap-3">
-                    <div class="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-                        <svg class="h-5 w-5 sm:h-6 sm:w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                        </svg>
-                    </div>
-                    <div class="min-w-0">
-                        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 truncate">الإشعارات</h1>
-                        <p class="text-gray-600 text-sm sm:text-base md:text-lg hidden sm:block">تتبع جميع إشعاراتك وتحديثات المشاريع</p>
-                    </div>
-                </div>
-                <div class="flex flex-wrap gap-3">
-                    @if($notifications->where('is_read', false)->count() > 0)
-                    <form action="{{ route('notifications.mark-all-read') }}" method="POST" id="markAllReadForm">
-                        @csrf
-                        <button type="submit" class="w-full sm:w-auto bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl">
-                            <svg class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            تحديد الكل كمقروء
-                        </button>
-                    </form>
-                    @endif
-                </div>
-            </div>
-        </div>
+@php
+    $themeColor = \App\Helpers\SettingsHelper::getThemeColor();
+    $buildQuery = fn (string $f, array $extra = []) => array_filter(array_merge(
+        ['filter' => $f],
+        $search ? ['search' => $search] : [],
+        ($extra['archive'] ?? false) ? ['archive' => 1] : ($archive ? ['archive' => 1] : []),
+        $extra
+    ));
+    $filterPill = fn (string $key) => $filter === $key
+        ? 'text-white shadow-md font-bold'
+        : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-2 border-gray-100';
+    $filterStyle = fn (string $key) => $filter === $key
+        ? "background: linear-gradient(135deg, {$themeColor} 0%, {$themeColor}dd 100%);"
+        : '';
+    $typeMeta = function (string $type) use ($themeColor) {
+        return match ($type) {
+            'task', 'crm_task' => ['accent' => '#16a34a', 'label' => 'مهمة'],
+            'project' => ['accent' => '#2563eb', 'label' => 'مشروع'],
+            'message' => ['accent' => '#9333ea', 'label' => 'رسالة'],
+            'crm_follow_up', 'crm_reminder' => ['accent' => '#d97706', 'label' => 'متابعة'],
+            'crm_daily_report' => ['accent' => $themeColor, 'label' => 'تقرير'],
+            default => ['accent' => '#6b7280', 'label' => 'عام'],
+        };
+    };
+    $maxDays = config('notifications.list_max_days', 90);
+@endphp
+
+@include('crm.partials.page-header', [
+    'title' => 'صندوق الإشعارات',
+    'subtitle' => 'عرض ما يحتاج انتباهك — وليس آلاف السجلات دفعة واحدة',
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>',
+])
+
+<div class="w-full space-y-6">
+    @if($highVolume ?? false)
+    <div class="rounded-2xl border-2 border-amber-200 bg-amber-50 px-4 py-3 text-sm font-tajawal text-amber-900">
+        حجم كبير من الإشعارات ({{ number_format($totalCount) }}). ننصح بفتح تبويب <strong>غير مقروءة</strong> أو <strong>اليوم</strong>، وتفعيل التنظيف التلقائي للمقروءة.
+    </div>
+    @endif
+
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        @include('crm.partials.stat-card', ['compact' => true, 'label' => 'غير مقروءة', 'value' => $unreadCount, 'accent' => 'red', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'])
+        @include('crm.partials.stat-card', ['compact' => true, 'label' => 'اليوم', 'value' => $todayCount, 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>'])
+        @include('crm.partials.stat-card', ['compact' => true, 'label' => 'آخر 7 أيام', 'value' => $weekCount ?? 0, 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>'])
+        @include('crm.partials.stat-card', ['compact' => true, 'label' => 'CRM', 'value' => $crmCount, 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>'])
+        @include('crm.partials.stat-card', ['compact' => true, 'label' => 'الإجمالي', 'value' => number_format($totalCount), 'accent' => 'purple', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>'])
     </div>
 
-    <!-- Filters and Search -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
-        <div class="flex flex-col sm:flex-row gap-4">
-            <!-- Filter Tabs -->
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-5 space-y-4">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div class="flex flex-wrap gap-2">
-                <a href="{{ route('notifications.index', ['filter' => 'all']) }}" 
-                   class="px-4 py-2 rounded-lg text-sm font-medium transition-colors {{ $filter === 'all' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100' }}">
-                    الكل ({{ $totalCount }})
-                </a>
-                <a href="{{ route('notifications.index', ['filter' => 'unread']) }}" 
-                   class="px-4 py-2 rounded-lg text-sm font-medium transition-colors {{ $filter === 'unread' ? 'bg-red-100 text-red-700' : 'text-gray-600 hover:bg-gray-100' }}">
-                    غير مقروءة ({{ $unreadCount }})
-                </a>
-                <a href="{{ route('notifications.index', ['filter' => 'today']) }}" 
-                   class="px-4 py-2 rounded-lg text-sm font-medium transition-colors {{ $filter === 'today' ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:bg-gray-100' }}">
-                    اليوم ({{ $todayCount }})
-                </a>
-                <a href="{{ route('notifications.index', ['filter' => 'task']) }}" 
-                   class="px-4 py-2 rounded-lg text-sm font-medium transition-colors {{ $filter === 'task' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100' }}">
-                    المهام
-                </a>
-                <a href="{{ route('notifications.index', ['filter' => 'project']) }}" 
-                   class="px-4 py-2 rounded-lg text-sm font-medium transition-colors {{ $filter === 'project' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100' }}">
-                    المشاريع
-                </a>
-                <a href="{{ route('notifications.index', ['filter' => 'message']) }}" 
-                   class="px-4 py-2 rounded-lg text-sm font-medium transition-colors {{ $filter === 'message' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100' }}">
-                    الرسائل
-                </a>
+                <span class="text-xs font-bold text-gray-400 font-tajawal w-full mb-0.5">العرض الرئيسي</span>
+                <a href="{{ route('notifications.index', $buildQuery('unread')) }}"
+                   class="px-3 py-2 rounded-xl text-xs sm:text-sm font-tajawal transition {{ $filterPill('unread') }}"
+                   @if($filter === 'unread') style="{{ $filterStyle('unread') }}" @endif>يحتاج انتباه ({{ $unreadCount }})</a>
+                <a href="{{ route('notifications.index', $buildQuery('today')) }}"
+                   class="px-3 py-2 rounded-xl text-xs sm:text-sm font-tajawal transition {{ $filterPill('today') }}"
+                   @if($filter === 'today') style="{{ $filterStyle('today') }}" @endif>اليوم ({{ $todayCount }})</a>
+                <a href="{{ route('notifications.index', $buildQuery('week')) }}"
+                   class="px-3 py-2 rounded-xl text-xs sm:text-sm font-tajawal transition {{ $filterPill('week') }}"
+                   @if($filter === 'week') style="{{ $filterStyle('week') }}" @endif>آخر 7 أيام ({{ $weekCount ?? 0 }})</a>
+                <a href="{{ route('notifications.index', $buildQuery('read')) }}"
+                   class="px-3 py-2 rounded-xl text-xs sm:text-sm font-tajawal transition {{ $filterPill('read') }}"
+                   @if($filter === 'read') style="{{ $filterStyle('read') }}" @endif>مقروءة ({{ $readCount ?? 0 }})</a>
             </div>
-
-            <!-- Search -->
-            <form method="GET" class="flex-1">
-                <div class="relative">
-                    <input type="text" name="search" value="{{ $search }}" 
-                           placeholder="البحث في الإشعارات..." 
-                           class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                </div>
-                @if($filter !== 'all')
+            <div class="flex flex-wrap gap-2">
+                @if($unreadCount > 0)
+                <form action="{{ route('notifications.mark-all-read') }}" method="POST" id="markAllReadForm" class="inline">
+                    @csrf
                     <input type="hidden" name="filter" value="{{ $filter }}">
+                    @if($search)<input type="hidden" name="search" value="{{ $search }}">@endif
+                    @if($archive)<input type="hidden" name="archive" value="1">@endif
+                    <button type="submit" class="px-4 py-2 rounded-xl text-white text-xs font-bold font-tajawal shadow-sm"
+                            style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">
+                        تحديد المعروض كمقروء
+                    </button>
+                </form>
                 @endif
-            </form>
+                @if(($readCount ?? 0) > 0)
+                <form action="{{ route('notifications.clear-read') }}" method="POST" class="inline"
+                      onsubmit="return confirm('حذف الإشعارات المقروءة الأقدم من {{ config('notifications.prune_read_after_days', 30) }} يوماً؟')">
+                    @csrf
+                    <button type="submit" class="px-4 py-2 rounded-xl border-2 border-gray-200 text-gray-600 text-xs font-bold font-tajawal hover:bg-gray-50">
+                        تنظيف المقروءة القديمة
+                    </button>
+                </form>
+                @endif
+            </div>
         </div>
+
+        <div class="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+            <span class="text-xs font-bold text-gray-400 font-tajawal w-full mb-0.5">تصفية حسب النوع</span>
+            <a href="{{ route('notifications.index', $buildQuery('crm')) }}" class="px-2.5 py-1.5 rounded-lg text-xs font-tajawal {{ $filter === 'crm' ? 'text-white font-bold' : 'bg-gray-50 text-gray-600' }}" @if($filter === 'crm') style="{{ $filterStyle('crm') }}" @endif>CRM ({{ $crmCount }})</a>
+            <a href="{{ route('notifications.index', $buildQuery('message')) }}" class="px-2.5 py-1.5 rounded-lg text-xs font-tajawal {{ $filter === 'message' ? 'text-white font-bold' : 'bg-gray-50 text-gray-600' }}" @if($filter === 'message') style="{{ $filterStyle('message') }}" @endif>رسائل ({{ $messageCount }})</a>
+            <a href="{{ route('notifications.index', $buildQuery('project')) }}" class="px-2.5 py-1.5 rounded-lg text-xs font-tajawal {{ $filter === 'project' ? 'text-white font-bold' : 'bg-gray-50 text-gray-600' }}" @if($filter === 'project') style="{{ $filterStyle('project') }}" @endif>مشاريع ({{ $projectCount }})</a>
+            <a href="{{ route('notifications.index', $buildQuery('all')) }}" class="px-2.5 py-1.5 rounded-lg text-xs font-tajawal {{ $filter === 'all' && !$archive ? 'text-white font-bold' : 'bg-gray-50 text-gray-600' }}" @if($filter === 'all' && !$archive) style="{{ $filterStyle('all') }}" @endif>آخر {{ $maxDays }} يوم</a>
+            @if($filter === 'all' || $archive)
+            <a href="{{ route('notifications.index', ['filter' => 'all', 'archive' => 1, 'search' => $search]) }}"
+               class="px-2.5 py-1.5 rounded-lg text-xs font-tajawal {{ $archive ? 'text-white font-bold' : 'bg-gray-50 text-gray-600' }}"
+               @if($archive) style="{{ $filterStyle('all') }}" @endif>الأرشيف الكامل</a>
+            @endif
+        </div>
+
+        @if($listCapped ?? false)
+        <p class="text-xs text-gray-500 font-tajawal">عرض «الكل» محدود بآخر {{ $maxDays }} يوماً. للأقدم استخدم <a href="{{ route('notifications.index', ['filter' => 'all', 'archive' => 1]) }}" class="font-bold underline" style="color: {{ $themeColor }};">الأرشيف</a>.</p>
+        @endif
+
+        <form method="GET" class="flex flex-col sm:flex-row gap-3 sm:items-center">
+            <input type="hidden" name="filter" value="{{ $filter }}">
+            @if($archive)<input type="hidden" name="archive" value="1">@endif
+            <div class="relative flex-1">
+                <input type="text" name="search" value="{{ $search }}" placeholder="بحث سريع في العنوان أو النص..."
+                       class="w-full border-2 border-gray-200 rounded-xl pl-11 pr-4 py-2.5 font-tajawal text-sm focus:outline-none focus:ring-2 focus:ring-offset-0">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+            <button type="submit" class="px-5 py-2.5 rounded-xl text-white text-sm font-semibold font-tajawal shrink-0"
+                    style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">بحث</button>
+            @if($search)
+            <a href="{{ route('notifications.index', array_filter(['filter' => $filter, 'archive' => $archive ? 1 : null])) }}"
+               class="px-5 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 text-sm font-semibold font-tajawal text-center shrink-0">مسح</a>
+            @endif
+        </form>
     </div>
 
-    <!-- Notifications List -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
         @if($notifications->count() > 0)
-            <div class="divide-y divide-gray-200">
-                @foreach($notifications as $notification)
-                <div class="p-3 sm:p-4 md:p-6 hover:bg-gray-50 transition-colors {{ !$notification->is_read ? 'bg-blue-50 border-r-4 border-r-blue-500' : '' }}">
-                    <div class="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
-                        <!-- Icon -->
-                        <div class="flex-shrink-0 relative">
-                            <div class="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br {{ $notification->type === 'task' ? 'from-green-500 to-emerald-600' : ($notification->type === 'project' ? 'from-blue-500 to-indigo-600' : ($notification->type === 'message' ? 'from-purple-500 to-pink-600' : 'from-gray-500 to-gray-600')) }} rounded-xl flex items-center justify-center shadow-lg">
-                                @if($notification->type === 'task')
-                                    <svg class="h-5 w-5 sm:h-6 sm:w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                    </svg>
-                                @elseif($notification->type === 'project')
-                                    <svg class="h-5 w-5 sm:h-6 sm:w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                    </svg>
-                                @elseif($notification->type === 'message')
-                                    <svg class="h-5 w-5 sm:h-6 sm:w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                                    </svg>
-                                @else
-                                    <svg class="h-5 w-5 sm:h-6 sm:w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                                    </svg>
-                                @endif
-                            </div>
-                            @if(!$notification->is_read)
-                                <div class="absolute -top-1 -right-1 h-3 w-3 sm:h-4 sm:w-4 bg-red-500 rounded-full border-2 border-white animate-pulse"></div>
-                            @endif
-                        </div>
-
-                        <!-- Notification Content -->
-                        <div class="flex-1 min-w-0 w-full sm:w-auto">
-                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <h3 class="text-xs sm:text-sm font-semibold text-gray-900 truncate">
-                                        {{ $notification->title }}
-                                    </h3>
-                                    @if(!$notification->is_read)
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                            جديد
-                                        </span>
-                                    @endif
-                                </div>
-                                <span class="text-xs text-gray-500 whitespace-nowrap">{{ $notification->created_at->diffForHumans() }}</span>
-                            </div>
-                            
-                            <p class="text-xs sm:text-sm text-gray-600 line-clamp-2 mb-3 sm:mb-0">
-                                {{ $notification->message }}
-                            </p>
-
-                            <!-- Actions - Mobile: Show at bottom, Desktop: Show on right -->
-                            <div class="flex items-center gap-2 mt-2 sm:hidden">
-                                @if(!$notification->is_read)
-                                    <button onclick="markAsRead({{ $notification->id }})" 
-                                            class="flex-1 px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 text-xs font-medium transition-colors text-center">
-                                        قراءة
-                                    </button>
-                                @endif
-                                <form method="POST" action="{{ route('notifications.destroy', $notification) }}" class="inline {{ !$notification->is_read ? 'flex-1' : '' }}" 
-                                      onsubmit="return confirm('هل أنت متأكد من حذف هذا الإشعار؟')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" 
-                                            class="w-full px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-xs font-medium transition-colors">
-                                        حذف
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-
-                        <!-- Actions - Desktop -->
-                        <div class="hidden sm:flex items-center gap-2 flex-shrink-0">
-                            @if(!$notification->is_read)
-                                <button onclick="markAsRead({{ $notification->id }})" 
-                                        class="px-3 py-1 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 text-xs font-medium transition-colors">
-                                    قراءة
-                                </button>
-                            @endif
-                            <form method="POST" action="{{ route('notifications.destroy', $notification) }}" class="inline" 
-                                  onsubmit="return confirm('هل أنت متأكد من حذف هذا الإشعار؟')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" 
-                                        class="px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-xs font-medium transition-colors">
-                                    حذف
-                                </button>
-                            </form>
-                        </div>
-                    </div>
+            @foreach($grouped as $group)
+            <div class="border-b border-gray-100 last:border-b-0">
+                <div class="px-4 sm:px-5 py-2.5 flex items-center justify-between sticky top-0 z-10 border-b border-gray-100"
+                     style="background: linear-gradient(135deg, {{ $themeColor }}10 0%, #fff 100%);">
+                    <h3 class="text-sm font-bold text-gray-800 font-tajawal">{{ $group['label'] }}</h3>
+                    <span class="text-xs text-gray-400 font-tajawal tabular-nums">{{ $group['items']->count() }} إشعار</span>
                 </div>
-                @endforeach
+                <div class="divide-y divide-gray-50">
+                    @foreach($group['items'] as $notification)
+                        @include('notifications.partials.inbox-item', compact('notification', 'themeColor', 'typeMeta'))
+                    @endforeach
+                </div>
             </div>
+            @endforeach
 
-            <!-- Pagination -->
-            <div class="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-t border-gray-200 overflow-x-auto">
-                {{ $notifications->appends(request()->query())->links() }}
+            <div class="px-4 sm:px-6 py-4 border-t border-gray-100 overflow-x-auto font-tajawal text-sm text-gray-500">
+                عرض {{ $notifications->firstItem() }}–{{ $notifications->lastItem() }} من {{ number_format($notifications->total()) }}
+                — {{ $notifications->appends(request()->query())->links() }}
             </div>
         @else
-            <div class="text-center py-12">
-                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                <h3 class="mt-2 text-sm font-medium text-gray-900">لا توجد إشعارات</h3>
-                <p class="mt-1 text-sm text-gray-500">سيتم إشعارك بأي تحديثات جديدة</p>
+            <div class="text-center py-16 px-6">
+                <h3 class="text-lg font-bold text-gray-900 font-tajawal">لا توجد إشعارات في هذا العرض</h3>
+                <p class="mt-2 text-sm text-gray-500 font-tajawal">
+                    @if($filter === 'unread')
+                        لا يوجد ما يحتاج انتباهك الآن.
+                    @else
+                        جرّب تبويب «غير مقروءة» أو «اليوم».
+                    @endif
+                </p>
+                <a href="{{ route('notifications.index', ['filter' => 'unread']) }}"
+                   class="inline-flex mt-5 px-5 py-2.5 rounded-xl text-white text-sm font-semibold font-tajawal"
+                   style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">غير مقروءة</a>
             </div>
         @endif
     </div>
@@ -204,55 +174,35 @@ function markAsRead(notificationId) {
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
             'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
         },
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
+    .then(r => r.json())
+    .then(data => { if (data.success) location.reload(); });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    const markAllReadForm = document.getElementById('markAllReadForm');
-    
-    if (markAllReadForm) {
-        markAllReadForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const button = this.querySelector('button[type="submit"]');
-            const originalText = button.innerHTML;
-            button.disabled = true;
-            button.innerHTML = '<span class="flex items-center justify-center"><svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></span>';
-            
-            fetch('{{ route("notifications.mark-all-read") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    button.disabled = false;
-                    button.innerHTML = originalText;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                button.disabled = false;
-                button.innerHTML = originalText;
-            });
-        });
-    }
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('markAllReadForm');
+    if (!form) return;
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const btn = this.querySelector('button[type="submit"]');
+        const orig = btn.innerHTML;
+        btn.disabled = true;
+        const body = new FormData(this);
+        fetch('{{ route('notifications.mark-all-read') }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            },
+            body: body,
+        })
+        .then(r => r.json())
+        .then(d => { if (d.success) location.reload(); else { btn.disabled = false; btn.innerHTML = orig; } })
+        .catch(() => { btn.disabled = false; btn.innerHTML = orig; });
+    });
 });
 </script>
 @endpush

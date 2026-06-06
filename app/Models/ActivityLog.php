@@ -79,8 +79,7 @@ class ActivityLog extends Model
     public function getModelNameAttribute(): string
     {
         return match($this->model_type) {
-            'App\Models\Project' => 'مشروع',
-            'App\Models\Task' => 'مهمة',
+            'App\Models\Project' => 'مشروع عقاري',
             'App\Models\Employee' => 'موظف',
             'App\Models\Client' => 'عميل',
             'App\Models\Department' => 'قسم',
@@ -88,7 +87,6 @@ class ActivityLog extends Model
             'App\Models\Invoice' => 'فاتورة',
             'App\Models\Contract' => 'عقد',
             'App\Models\Ticket' => 'تذكرة',
-            'App\Models\Bug' => 'خطأ',
             'App\Models\Sale' => 'بيع',
             'App\Models\Leave' => 'إجازة',
             'App\Models\Salary' => 'راتب',

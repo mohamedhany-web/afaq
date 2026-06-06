@@ -4,12 +4,23 @@
 
 @section('content')
 <div class="w-full">
+    @php $themeColor = \App\Helpers\SettingsHelper::getThemeColor(); @endphp
+    @can('view-reports')
+    <div class="mb-6 rounded-xl border p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4" style="background: {{ $themeColor }}10; border-color: {{ $themeColor }}30;">
+        <div>
+            <h2 class="text-lg font-bold text-gray-900">تقارير النظام الشاملة (CRM + Excel)</h2>
+            <p class="text-sm text-gray-600 mt-1">عملاء، مسار مبيعات، مهام، متابعات، مشاريع عقارية، تعويضات، ومستخدمون — مع تصدير Excel.</p>
+        </div>
+        <a href="{{ route('admin.system-reports.index') }}" class="inline-flex items-center justify-center px-5 py-2.5 rounded-lg text-white font-medium whitespace-nowrap" style="background-color: {{ $themeColor }}">فتح مركز التقارير</a>
+    </div>
+    @endcan
+
     <!-- Page Header -->
     <div class="mb-8">
         <div class="flex items-center justify-between mb-4">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900 mb-2">التقارير والتحليل</h1>
-                <p class="text-gray-600">تقارير شاملة عن جميع عمليات الشركة</p>
+                <p class="text-gray-600">تقارير الموارد البشرية والمالية التقليدية</p>
             </div>
         </div>
     </div>
@@ -102,32 +113,6 @@
             </div>
         </div>
 
-        <!-- Projects Report -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
-            <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 border-b border-gray-200">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="p-3 bg-white rounded-lg shadow-sm">
-                        <svg class="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                    </div>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        مشاريع
-                    </span>
-                </div>
-                <h3 class="text-xl font-bold text-gray-900">تقرير المشاريع</h3>
-                <p class="text-sm text-gray-600 mt-2">تقرير مفصل عن المشاريع والميزانيات والحالات</p>
-            </div>
-            <div class="p-6">
-                <a href="{{ route('reports.projects') }}" class="flex items-center justify-center w-full px-4 py-3 rounded-lg transition-colors duration-200 font-medium" style="background-color: #059669; color: white;" onmouseover="this.style.backgroundColor='#047857'" onmouseout="this.style.backgroundColor='#059669'">
-                    عرض التقرير
-                    <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                </a>
-            </div>
-        </div>
-
         <!-- Attendance Report -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
             <div class="bg-gradient-to-r from-purple-50 to-violet-50 p-6 border-b border-gray-200">
@@ -198,32 +183,6 @@
             </div>
             <div class="p-6">
                 <a href="{{ route('reports.salaries') }}" class="flex items-center justify-center w-full px-4 py-3 rounded-lg transition-colors duration-200 font-medium" style="background-color: #0d9488; color: white;" onmouseover="this.style.backgroundColor='#0f766e'" onmouseout="this.style.backgroundColor='#0d9488'">
-                    عرض التقرير
-                    <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                </a>
-            </div>
-        </div>
-
-        <!-- Tasks Report -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
-            <div class="bg-gradient-to-r from-pink-50 to-rose-50 p-6 border-b border-gray-200">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="p-3 bg-white rounded-lg shadow-sm">
-                        <svg class="w-8 h-8 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                        </svg>
-                    </div>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
-                        مهام
-                    </span>
-                </div>
-                <h3 class="text-xl font-bold text-gray-900">تقرير المهام</h3>
-                <p class="text-sm text-gray-600 mt-2">تقرير المهام والإنجازات والتأخيرات</p>
-            </div>
-            <div class="p-6">
-                <a href="{{ route('reports.tasks') }}" class="flex items-center justify-center w-full px-4 py-3 rounded-lg transition-colors duration-200 font-medium" style="background-color: #db2777; color: white;" onmouseover="this.style.backgroundColor='#be185d'" onmouseout="this.style.backgroundColor='#db2777'">
                     عرض التقرير
                     <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />

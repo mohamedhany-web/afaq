@@ -1,213 +1,200 @@
 @extends('layouts.app')
-
-@section('page-title', 'تعديل الموظف')
+@section('page-title', ($marketingOnly ?? false) ? 'تعديل موظف تسويق' : 'تعديل موظف مبيعات')
 
 @section('content')
-<!-- Header Section -->
-<div class="bg-gradient-to-r from-green-600 to-emerald-700 rounded-lg p-4 sm:p-5 lg:p-6 text-white mb-6 shadow-lg">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-        <div>
-            <h1 class="text-xl sm:text-2xl font-bold mb-2">تعديل الموظف</h1>
-            <p class="text-green-100 text-sm sm:text-base">تعديل بيانات الموظف: {{ $employee->name }}</p>
-        </div>
-        <a href="{{ route('employees.index') }}" class="w-full sm:w-auto bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg hover:bg-white/30 transition-all duration-200 flex items-center justify-center text-sm sm:text-base">
-            <svg class="h-4 w-4 sm:h-5 sm:w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            العودة
-        </a>
-    </div>
-</div>
+@php
+    $themeColor = \App\Helpers\SettingsHelper::getThemeColor();
+    $input = 'w-full border-2 border-gray-200 rounded-xl px-4 py-3 font-tajawal text-sm focus:outline-none focus:ring-2 focus:ring-offset-0';
+    $label = 'block text-xs font-bold text-gray-500 mb-1.5 font-tajawal';
+    $sectionHeader = 'px-5 sm:px-6 py-4 border-b border-gray-200 font-tajawal font-bold text-gray-900';
+    $fullName = trim($employee->first_name . ' ' . $employee->last_name);
+    $isSuperAdminUser = $employee->user?->hasRole('super_admin') ?? false;
+@endphp
 
-<div class="max-w-5xl mx-auto">
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-5 lg:p-6">
-        <form action="{{ route('employees.update', $employee) }}" method="POST" class="space-y-6">
-            @csrf
-            @method('PUT')
-            
-            <!-- User Information -->
-            @if($employee->user)
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <div class="flex items-center mb-2">
-                    <svg class="w-5 h-5 text-blue-600 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    <h4 class="text-sm font-semibold text-gray-700">المستخدم المرتبط</h4>
-                </div>
-                <p class="text-sm text-gray-600">
-                    <span class="font-medium">الاسم:</span> {{ $employee->user->name }} | 
-                    <span class="font-medium">البريد:</span> {{ $employee->user->email }}
-                </p>
-                <p class="text-xs text-gray-500 mt-1">سيتم تحديث بيانات المستخدم تلقائياً عند حفظ التغييرات</p>
-            </div>
+@include('crm.partials.page-header', [
+    'title' => ($marketingOnly ?? false) ? 'تعديل موظف تسويق' : 'تعديل موظف مبيعات',
+    'subtitle' => $fullName . ' — ' . ($employee->employee_id ?? ''),
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />',
+])
+
+@if($errors->any())
+<div class="mb-6 bg-red-50 border border-red-200 rounded-2xl p-4 sm:p-5">
+    <p class="font-bold text-red-800 font-tajawal mb-2">يرجى تصحيح الأخطاء التالية:</p>
+    <ul class="list-disc pr-5 text-sm text-red-700 space-y-1 font-tajawal">
+        @foreach($errors->all() as $error)
+            <li>{{ $error }}</li>
+        @endforeach
+    </ul>
+</div>
+@endif
+
+<form action="{{ route('employees.update', $employee) }}" method="POST" class="w-full space-y-6">
+    @csrf @method('PUT')
+    @if($salesOnly ?? false)<input type="hidden" name="sales_only" value="1">@endif
+    @if($marketingOnly ?? false)<input type="hidden" name="marketing_only" value="1">@endif
+
+    @if($employee->user)
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full">
+        <div class="{{ $sectionHeader }}" style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">حساب النظام</div>
+        <div class="p-5 sm:p-6 text-sm font-tajawal text-gray-600">
+            <span class="font-semibold text-gray-900">{{ $employee->user->name }}</span>
+            <span class="mx-2">·</span>
+            <span dir="ltr">{{ $employee->user->email }}</span>
+            @if($isSuperAdminUser)
+            <p class="text-xs text-amber-600 mt-2">مستخدم super admin — لا يُغيّر دوره من هنا.</p>
             @endif
-
-            <!-- Personal Information -->
-            <div class="bg-gray-50 rounded-lg p-4">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">المعلومات الشخصية</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Employee ID -->
-                    <div>
-                        <label for="employee_id" class="block text-sm font-medium text-gray-700 mb-2">رقم الموظف <span class="text-red-500">*</span></label>
-                        <input type="text" name="employee_id" id="employee_id" value="{{ old('employee_id', $employee->employee_id) }}" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 @error('employee_id') border-red-500 @enderror"
-                               placeholder="رقم الموظف" required>
-                        @error('employee_id')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- First Name -->
-                    <div>
-                        <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">الاسم الأول <span class="text-red-500">*</span></label>
-                        <input type="text" name="first_name" id="first_name" value="{{ old('first_name', $employee->first_name) }}" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 @error('first_name') border-red-500 @enderror"
-                               placeholder="أدخل الاسم الأول" required>
-                        @error('first_name')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Last Name -->
-                    <div>
-                        <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">اسم العائلة <span class="text-red-500">*</span></label>
-                        <input type="text" name="last_name" id="last_name" value="{{ old('last_name', $employee->last_name) }}" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 @error('last_name') border-red-500 @enderror"
-                               placeholder="أدخل اسم العائلة" required>
-                        @error('last_name')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Email -->
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">البريد الإلكتروني</label>
-                        <input type="email" name="email" id="email" value="{{ old('email', $employee->email) }}" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 @error('email') border-red-500 @enderror"
-                               placeholder="أدخل البريد الإلكتروني">
-                        @error('email')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Phone -->
-                    <div>
-                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">رقم الهاتف</label>
-                        <input type="text" name="phone" id="phone" value="{{ old('phone', $employee->phone) }}" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 @error('phone') border-red-500 @enderror"
-                               placeholder="أدخل رقم الهاتف">
-                        @error('phone')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Address -->
-                    <div>
-                        <label for="address" class="block text-sm font-medium text-gray-700 mb-2">العنوان</label>
-                        <input type="text" name="address" id="address" value="{{ old('address', $employee->address) }}" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 @error('address') border-red-500 @enderror"
-                               placeholder="أدخل العنوان">
-                        @error('address')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div>
-            </div>
-
-            <!-- Work Information -->
-            <div class="bg-gray-50 rounded-lg p-4">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">المعلومات الوظيفية</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Position -->
-                    <div>
-                        <label for="position" class="block text-sm font-medium text-gray-700 mb-2">المنصب</label>
-                        <input type="text" name="position" id="position" value="{{ old('position', $employee->position) }}" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 @error('position') border-red-500 @enderror"
-                               placeholder="أدخل المنصب">
-                        @error('position')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Department -->
-                    <div>
-                        <label for="department_id" class="block text-sm font-medium text-gray-700 mb-2">القسم</label>
-                        <select name="department_id" id="department_id" 
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 @error('department_id') border-red-500 @enderror">
-                            <option value="">اختر القسم</option>
-                            @foreach(\App\Models\Department::all() as $department)
-                                <option value="{{ $department->id }}" {{ old('department_id', $employee->department_id) == $department->id ? 'selected' : '' }}>
-                                    {{ $department->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('department_id')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Salary -->
-                    <div>
-                        <label for="salary" class="block text-sm font-medium text-gray-700 mb-2">الراتب الشهري (ج.م)</label>
-                        <input type="number" name="salary" id="salary" value="{{ old('salary', $employee->salary) }}" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 @error('salary') border-red-500 @enderror"
-                               placeholder="أدخل الراتب الشهري">
-                        @error('salary')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Daily Hours -->
-                    <div>
-                        <label for="daily_hours" class="block text-sm font-medium text-gray-700 mb-2">عدد الساعات اليومية</label>
-                        <input type="number" name="daily_hours" id="daily_hours" value="{{ old('daily_hours', $employee->daily_hours ?? 8) }}" min="1" max="12"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 @error('daily_hours') border-red-500 @enderror"
-                               placeholder="عدد الساعات المطلوبة يومياً">
-                        @error('daily_hours')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Hire Date -->
-                    <div>
-                        <label for="hire_date" class="block text-sm font-medium text-gray-700 mb-2">تاريخ التوظيف</label>
-                        <input type="date" name="hire_date" id="hire_date" value="{{ old('hire_date', $employee->hire_date) }}" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 @error('hire_date') border-red-500 @enderror">
-                        @error('hire_date')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div>
-            </div>
-
-            <!-- Status -->
-            <div class="bg-gray-50 rounded-lg p-4">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">حالة الموظف</h3>
-                <div>
-                    <label for="status" class="block text-sm font-medium text-gray-700 mb-2">الحالة <span class="text-red-500">*</span></label>
-                    <select name="status" id="status" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 @error('status') border-red-500 @enderror"
-                            required>
-                        <option value="active" {{ old('status', $employee->status) == 'active' ? 'selected' : '' }}>نشط</option>
-                        <option value="inactive" {{ old('status', $employee->status) == 'inactive' ? 'selected' : '' }}>غير نشط</option>
-                        <option value="terminated" {{ old('status', $employee->status) == 'terminated' ? 'selected' : '' }}>مفصول</option>
-                    </select>
-                    @error('status')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="flex items-center justify-end space-x-3 space-x-reverse pt-6 border-t border-gray-200">
-                <a href="{{ route('employees.index') }}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                    إلغاء
-                </a>
-                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                    حفظ التغييرات
-                </button>
-            </div>
-        </form>
+        </div>
     </div>
-</div>
+    @endif
+
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full">
+        <div class="{{ $sectionHeader }}" style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">البيانات الشخصية</div>
+        <div class="p-5 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div>
+                <label class="{{ $label }}">رقم الموظف *</label>
+                <input name="employee_id" value="{{ old('employee_id', $employee->employee_id) }}" required class="{{ $input }}">
+                @error('employee_id')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
+            </div>
+            <div>
+                <label class="{{ $label }}">الاسم الأول *</label>
+                <input name="first_name" value="{{ old('first_name', $employee->first_name) }}" required class="{{ $input }}">
+                @error('first_name')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
+            </div>
+            <div>
+                <label class="{{ $label }}">اسم العائلة *</label>
+                <input name="last_name" value="{{ old('last_name', $employee->last_name) }}" required class="{{ $input }}">
+                @error('last_name')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
+            </div>
+            <div>
+                <label class="{{ $label }}">الهاتف *</label>
+                <input name="phone" value="{{ old('phone', $employee->phone) }}" required class="{{ $input }}" dir="ltr">
+                @error('phone')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
+            </div>
+            <div class="sm:col-span-2">
+                <label class="{{ $label }}">البريد الإلكتروني *</label>
+                <input type="email" name="email" value="{{ old('email', $employee->email) }}" required class="{{ $input }}" dir="ltr">
+                @error('email')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
+            </div>
+            <div class="sm:col-span-2 lg:col-span-3">
+                <label class="{{ $label }}">العنوان</label>
+                <input name="address" value="{{ old('address', $employee->address) }}" class="{{ $input }}">
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full">
+        <div class="{{ $sectionHeader }}" style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">الدور والوظيفة — {{ ($marketingOnly ?? false) ? 'قسم التسويق' : 'قسم المبيعات' }}</div>
+        <div class="p-5 sm:p-6 space-y-5">
+            @unless($isSuperAdminUser)
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                @foreach($roleLabels as $val => $labelText)
+                <label class="relative cursor-pointer block">
+                    <input type="radio" name="crm_role" value="{{ $val }}" class="peer sr-only"
+                           @checked(old('crm_role', $currentRole) === $val)>
+                    <div class="role-card p-4 rounded-xl border-2 border-gray-200 transition-all text-center font-tajawal">
+                        <div class="font-bold text-gray-900">{{ $labelText }}</div>
+                        <div class="text-xs text-gray-500 mt-1">
+                            @if($marketingOnly ?? false)
+                                @if($val === 'marketing_manager') إدارة الحملات والفريق @else تنفيذ المهام وجمع Leads @endif
+                            @elseif($val === 'manager') لوحة الفريق + إدارة فرق المبيعات
+                            @else CRM — العملاء ومسار المبيعات @endif
+                        </div>
+                    </div>
+                </label>
+                @endforeach
+            </div>
+            @error('crm_role')<p class="text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
+            @endunless
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                <div>
+                    <label class="{{ $label }}">القسم</label>
+                    <input type="hidden" name="department_id" value="{{ $salesDepartment->id }}">
+                    <div class="px-4 py-3 rounded-xl bg-gray-50 border-2 border-gray-200 text-sm font-semibold font-tajawal">{{ $salesDepartment->name }}</div>
+                </div>
+                <div>
+                    <label class="{{ $label }}">المنصب</label>
+                    <input name="position" value="{{ old('position', $employee->position) }}" class="{{ $input }}" placeholder="يُملأ تلقائياً حسب الدور">
+                </div>
+                <div>
+                    <label class="{{ $label }}">حالة الموظف *</label>
+                    <select name="status" required class="{{ $input }}">
+                        <option value="active" @selected(old('status', $employee->status) === 'active')>نشط</option>
+                        <option value="inactive" @selected(old('status', $employee->status) === 'inactive')>غير نشط</option>
+                        <option value="terminated" @selected(old('status', $employee->status) === 'terminated')>منتهي الخدمة</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full">
+        <div class="{{ $sectionHeader }}" style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">بيانات التوظيف</div>
+        <div class="p-5 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div>
+                <label class="{{ $label }}">الراتب (ج.م) *</label>
+                <input type="number" name="salary" value="{{ old('salary', $employee->salary) }}" required min="0" step="0.01" class="{{ $input }}">
+                @error('salary')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
+            </div>
+            <div>
+                <label class="{{ $label }}">ساعات العمل *</label>
+                <input type="number" name="daily_hours" value="{{ old('daily_hours', $employee->daily_hours ?? 8) }}" required min="1" max="12" class="{{ $input }}">
+                @error('daily_hours')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
+            </div>
+            <div>
+                <label class="{{ $label }}">تاريخ التوظيف</label>
+                <input type="date" name="hire_date" value="{{ old('hire_date', $employee->hire_date?->format('Y-m-d')) }}" class="{{ $input }}">
+            </div>
+            <div>
+                <label class="{{ $label }}">نوع التوظيف</label>
+                <select name="employment_type" class="{{ $input }}">
+                    @foreach(['full_time' => 'دوام كامل', 'part_time' => 'دوام جزئي', 'contract' => 'عقد', 'intern' => 'متدرب'] as $val => $txt)
+                        <option value="{{ $val }}" @selected(old('employment_type', $employee->employment_type ?? 'full_time') === $val)>{{ $txt }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full">
+        <div class="{{ $sectionHeader }}" style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">جهة اتصال الطوارئ</div>
+        <div class="p-5 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <div>
+                <label class="{{ $label }}">الاسم</label>
+                <input name="emergency_contact" value="{{ old('emergency_contact', $employee->emergency_contact) }}" class="{{ $input }}">
+            </div>
+            <div>
+                <label class="{{ $label }}">الهاتف</label>
+                <input name="emergency_phone" value="{{ old('emergency_phone', $employee->emergency_phone) }}" class="{{ $input }}" dir="ltr">
+            </div>
+        </div>
+    </div>
+
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-6">
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('employees.show', array_merge(['employee' => $employee], array_filter(['sales_only' => ($salesOnly ?? false) ? 1 : null, 'marketing_only' => ($marketingOnly ?? false) ? 1 : null]))) }}" class="inline-flex items-center justify-center px-6 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 font-tajawal">إلغاء</a>
+            @if($canDelete ?? false)
+            <button type="button" onclick="if(confirm('حذف هذا الموظف؟')) document.getElementById('delete-employee-form').submit();"
+                    class="inline-flex items-center justify-center px-6 py-3 rounded-xl border-2 border-red-200 text-red-600 font-semibold text-sm hover:bg-red-50 font-tajawal">حذف الموظف</button>
+            @endif
+        </div>
+        <button type="submit" class="inline-flex items-center justify-center px-8 py-3 rounded-xl text-white font-semibold text-sm shadow-md font-tajawal"
+                style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">حفظ التعديلات</button>
+    </div>
+</form>
+
+@if($canDelete ?? false)
+<form id="delete-employee-form" action="{{ route('employees.destroy', $employee) }}" method="POST" class="hidden">
+    @csrf @method('DELETE')
+    @if($salesOnly ?? false)<input type="hidden" name="sales_only" value="1">@endif
+</form>
+@endif
+
+<style>
+    input[name="crm_role"]:checked + .role-card {
+        border-color: {{ $themeColor }};
+        background: {{ $themeColor }}14;
+        box-shadow: 0 4px 14px {{ $themeColor }}25;
+    }
+</style>
 @endsection

@@ -3,15 +3,15 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ClientSearchController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\ProjectController;
-use App\Http\Controllers\TaskController;
-use App\Http\Controllers\DepartmentManager\DepartmentManagerController;
-use App\Http\Controllers\DepartmentManager\DepartmentManagerTaskController;
-use App\Http\Controllers\DepartmentManager\DepartmentReportController as DepartmentManagerReportController;
+use App\Models\Project;
+use App\Http\Controllers\ProjectLocationController;
 use App\Http\Controllers\Admin\DepartmentReportController as AdminDepartmentReportController;
 use App\Http\Controllers\Admin\DepartmentOversightController;
+use App\Http\Controllers\Admin\AdminSystemReportController;
+use App\Http\Controllers\Admin\AutoPenaltyController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\SalaryController;
@@ -19,11 +19,7 @@ use App\Http\Controllers\SaleController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ContractController;
-use App\Http\Controllers\BugController;
 use App\Http\Controllers\ReportController;
-use App\Http\Controllers\QAController;
-use App\Http\Controllers\MarketingController;
-use App\Http\Controllers\DesignController;
 use App\Http\Controllers\AccountingController;
 use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\FinancialReportController;
@@ -142,17 +138,17 @@ Route::get('/storage/{path}', function ($path) {
     }
 })->where('path', '.*')->name('storage.file')->middleware('web');
 
-Route::get('/', [WebsiteController::class, 'home'])->name('website.home');
-Route::get('/about', [WebsiteController::class, 'about'])->name('website.about');
-Route::get('/services', [WebsiteController::class, 'services'])->name('website.services');
-Route::get('/pricing', [WebsiteController::class, 'pricing'])->name('website.pricing');
-Route::get('/academy', [WebsiteController::class, 'training'])->name('website.training');
-Route::get('/academy/{training}', [WebsiteController::class, 'trainingShow'])->name('website.training.show');
-Route::post('/academy/{training}/apply', [WebsiteController::class, 'trainingApply'])->name('website.training.apply');
-Route::get('/contact', [WebsiteController::class, 'contact'])->name('website.contact');
-Route::post('/contact', [WebsiteController::class, 'submitContact'])->name('website.contact.submit');
-Route::get('/case-studies', [WebsiteController::class, 'caseStudies'])->name('website.case-studies.index');
-Route::get('/case-studies/{slug}', [WebsiteController::class, 'caseStudyShow'])->name('website.case-studies.show');
+// مشاركة موقع المشروع — صفحة عامة بدون تسجيل دخول
+Route::get('/locate/project/{project}', [ProjectLocationController::class, 'show'])->name('public.project.locate');
+Route::get('/locate/project/{project}/viewer', [ProjectLocationController::class, 'viewer'])->name('public.project.locate.viewer');
+
+// الصفحة الرئيسية = تسجيل الدخول مباشرة (لا موقع خارجي)
+Route::get('/', function () {
+    if (auth()->check() && !session('verification_pending')) {
+        return redirect(auth()->user()->homeRoute());
+    }
+    return redirect()->route('login');
+})->name('home');
 
 // =========================
 // Client Auth (تسجيل دخول العملاء)
@@ -164,18 +160,23 @@ Route::prefix('client')->name('client.')->group(function () {
 });
 
 Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified', 'verified.code'])
+    ->middleware(['auth', 'verified', 'verified.code', 'redirect.crm'])
     ->name('dashboard');
+
+require __DIR__.'/crm.php';
+require __DIR__.'/marketing.php';
 
 // Profile routes
 Route::middleware(['auth', 'verified', 'verified.code'])->group(function () {
+    Route::get('api/clients/search', ClientSearchController::class)->name('clients.search');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile/picture', [ProfileController::class, 'deleteProfilePicture'])->name('profile.delete-picture');
 });
 
 // All authenticated routes
-Route::middleware(['auth', 'verified', 'verified.code'])->group(function () {
+Route::middleware(['auth', 'verified', 'verified.code', 'crm.only', 'marketing.only'])->group(function () {
     // =========================
     // Client Portal (بوابة العميل)
     // =========================
@@ -226,16 +227,12 @@ Route::middleware(['auth', 'verified', 'verified.code'])->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('index');
         Route::get('/employees', [ReportController::class, 'employees'])->name('employees')->middleware('permission:view-employees');
         Route::get('/employees/print', [ReportController::class, 'employeesPrint'])->name('employees.print')->middleware('permission:view-employees');
-        Route::get('/projects', [ReportController::class, 'projects'])->name('projects')->middleware('permission:view-own-projects|view-all-projects');
-        Route::get('/projects/print', [ReportController::class, 'projectsPrint'])->name('projects.print')->middleware('permission:view-own-projects|view-all-projects');
         Route::get('/attendance', [ReportController::class, 'attendance'])->name('attendance')->middleware('permission:view-attendance');
         Route::get('/attendance/print', [ReportController::class, 'attendancePrint'])->name('attendance.print')->middleware('permission:view-attendance');
         Route::get('/sales', [ReportController::class, 'sales'])->name('sales')->middleware('permission:view-sales');
         Route::get('/sales/print', [ReportController::class, 'salesPrint'])->name('sales.print')->middleware('permission:view-sales');
         Route::get('/salaries', [ReportController::class, 'salaries'])->name('salaries')->middleware('permission:view-salaries');
         Route::get('/salaries/print', [ReportController::class, 'salariesPrint'])->name('salaries.print')->middleware('permission:view-salaries');
-        Route::get('/tasks', [ReportController::class, 'tasks'])->name('tasks')->middleware('permission:view-own-tasks|view-all-tasks');
-        Route::get('/tasks/print', [ReportController::class, 'tasksPrint'])->name('tasks.print')->middleware('permission:view-own-tasks|view-all-tasks');
         Route::get('/departments', [ReportController::class, 'departments'])->name('departments')->middleware('permission:view-departments');
         Route::get('/departments/print', [ReportController::class, 'departmentsPrint'])->name('departments.print')->middleware('permission:view-departments');
         Route::get('/performance', [ReportController::class, 'performance'])->name('performance');
@@ -258,11 +255,12 @@ Route::middleware(['auth', 'verified', 'verified.code'])->group(function () {
     Route::get('attendances/{attendance}/edit', [AttendanceController::class, 'edit'])->name('attendances.edit')->middleware('permission:edit-attendance');
     Route::put('attendances/{attendance}', [AttendanceController::class, 'update'])->name('attendances.update')->middleware('permission:edit-attendance');
     Route::delete('attendances/{attendance}', [AttendanceController::class, 'destroy'])->name('attendances.destroy')->middleware('permission:delete-attendance');
-    Route::post('attendances/check-in', [AttendanceController::class, 'checkIn'])->name('attendances.check-in')->middleware('permission:view-attendance');
-    Route::post('attendances/check-out', [AttendanceController::class, 'checkOut'])->name('attendances.check-out')->middleware('permission:view-attendance');
-    Route::post('attendances/start-break', [AttendanceController::class, 'startBreak'])->name('attendances.start-break')->middleware('permission:view-attendance');
-    Route::post('attendances/end-break', [AttendanceController::class, 'endBreak'])->name('attendances.end-break')->middleware('permission:view-attendance');
-    Route::get('attendances/current-work-time', [AttendanceController::class, 'getCurrentWorkTime'])->name('attendances.current-work-time')->middleware('permission:view-attendance');
+    Route::post('attendances/check-in', [AttendanceController::class, 'checkIn'])->name('attendances.check-in');
+    Route::post('attendances/check-out', [AttendanceController::class, 'checkOut'])->name('attendances.check-out');
+    Route::post('attendances/start-break', [AttendanceController::class, 'startBreak'])->name('attendances.start-break');
+    Route::post('attendances/end-break', [AttendanceController::class, 'endBreak'])->name('attendances.end-break');
+    Route::get('attendances/current-work-time', [AttendanceController::class, 'getCurrentWorkTime'])->name('attendances.current-work-time');
+    Route::post('attendances/auto-check-out', [AttendanceController::class, 'autoCheckOut'])->name('attendances.auto-check-out');
     
     // Leave routes
     Route::get('leaves', [LeaveController::class, 'index'])->name('leaves.index')->middleware('permission:view-leaves');
@@ -287,36 +285,19 @@ Route::middleware(['auth', 'verified', 'verified.code'])->group(function () {
     Route::post('salaries/{salary}/approve', [SalaryController::class, 'approve'])->name('salaries.approve')->middleware('permission:approve-salaries');
     Route::post('salaries/{salary}/mark-paid', [SalaryController::class, 'markAsPaid'])->name('salaries.mark-paid')->middleware('permission:edit-salaries');
     
-    // Project Management
-    Route::get('projects', [ProjectController::class, 'index'])->name('projects.index')->middleware('permission:view-own-projects|view-all-projects');
-    Route::get('projects/create', [ProjectController::class, 'create'])->name('projects.create')->middleware('permission:create-projects');
-    Route::post('projects', [ProjectController::class, 'store'])->name('projects.store')->middleware('permission:create-projects');
-    Route::get('projects/{project}', [ProjectController::class, 'show'])->name('projects.show')->middleware('permission:view-own-projects|view-all-projects');
-    Route::get('projects/{project}/edit', [ProjectController::class, 'edit'])->name('projects.edit')->middleware('permission:edit-projects');
-    Route::put('projects/{project}', [ProjectController::class, 'update'])->name('projects.update')->middleware('permission:edit-projects');
-    Route::delete('projects/{project}', [ProjectController::class, 'destroy'])->name('projects.destroy')->middleware('permission:delete-projects');
+    // المشاريع العقارية — مسار موحّد عبر CRM (إعادة توجيه الروابط القديمة)
+    Route::middleware('permission:view-own-projects|view-all-projects')->group(function () {
+        Route::get('projects', fn () => redirect()->route('crm.projects.index'))->name('projects.index');
+        Route::get('projects/create', fn () => redirect()->route('crm.projects.create'))->name('projects.create')->middleware('permission:create-projects');
+        Route::get('projects/{project}', fn (Project $project) => redirect()->route('crm.projects.show', $project))->name('projects.show');
+        Route::get('projects/{project}/edit', fn (Project $project) => redirect()->route('crm.projects.edit', $project))->name('projects.edit')->middleware('permission:edit-projects');
+    });
     
-    // Tasks
-    Route::get('tasks', [TaskController::class, 'index'])->name('tasks.index')->middleware('permission:view-own-tasks|view-all-tasks');
-    Route::get('tasks/create', [TaskController::class, 'create'])->name('tasks.create')->middleware('permission:create-tasks');
-    Route::post('tasks', [TaskController::class, 'store'])->name('tasks.store')->middleware('permission:create-tasks');
-    Route::get('tasks/project-members', [TaskController::class, 'getProjectMembersAjax'])->name('tasks.project-members')->middleware('permission:create-tasks|edit-tasks');
-    Route::get('tasks/{task}', [TaskController::class, 'show'])->name('tasks.show')->middleware('permission:view-own-tasks|view-all-tasks');
-    Route::get('tasks/{task}/edit', [TaskController::class, 'edit'])->name('tasks.edit')->middleware('permission:edit-tasks');
-    Route::put('tasks/{task}', [TaskController::class, 'update'])->name('tasks.update')->middleware('permission:edit-tasks');
-    Route::delete('tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy')->middleware('permission:delete-tasks');
-    Route::post('tasks/{task}/updates', [TaskController::class, 'addUpdate'])->name('tasks.updates.store')->middleware('permission:view-own-tasks|view-all-tasks');
-
-    // Department manager workspace
-    Route::prefix('department-manager')->name('department-manager.')->middleware('department.manager')->group(function () {
-        Route::get('/', [DepartmentManagerController::class, 'dashboard'])->name('dashboard');
-        Route::get('/tasks/create', [DepartmentManagerTaskController::class, 'create'])->name('tasks.create');
-        Route::post('/tasks', [DepartmentManagerTaskController::class, 'store'])->name('tasks.store');
-
-        Route::get('/reports', [DepartmentManagerReportController::class, 'index'])->name('reports.index');
-        Route::get('/reports/create', [DepartmentManagerReportController::class, 'create'])->name('reports.create');
-        Route::post('/reports', [DepartmentManagerReportController::class, 'store'])->name('reports.store');
-        Route::get('/reports/{departmentReport}', [DepartmentManagerReportController::class, 'show'])->name('reports.show');
+    // Admin: System reports hub (CRM + HR + operations)
+    Route::prefix('admin/system-reports')->name('admin.system-reports.')->middleware('permission:view-reports')->group(function () {
+        Route::get('/', [AdminSystemReportController::class, 'index'])->name('index');
+        Route::get('/{report}/export', [AdminSystemReportController::class, 'export'])->name('export')->where('report', '[a-z_]+');
+        Route::get('/{report}', [AdminSystemReportController::class, 'show'])->name('show')->where('report', '[a-z_]+');
     });
 
     // Admin oversight: Department reports
@@ -330,25 +311,25 @@ Route::middleware(['auth', 'verified', 'verified.code'])->group(function () {
     Route::get('admin/department-oversight', [DepartmentOversightController::class, 'index'])
         ->name('admin.department-oversight.index')
         ->middleware('permission:view-reports|view-departments');
-    
-    // Development - Bugs
-    Route::get('bugs', [BugController::class, 'index'])->name('bugs.index')->middleware('permission:view-bugs');
-    Route::get('bugs/create', [BugController::class, 'create'])->name('bugs.create')->middleware('permission:create-bugs');
-    Route::post('bugs', [BugController::class, 'store'])->name('bugs.store')->middleware('permission:create-bugs');
-    Route::get('bugs/{bug}', [BugController::class, 'show'])->name('bugs.show')->middleware('permission:view-bugs');
-    Route::get('bugs/{bug}/edit', [BugController::class, 'edit'])->name('bugs.edit')->middleware('permission:edit-bugs');
-    Route::put('bugs/{bug}', [BugController::class, 'update'])->name('bugs.update')->middleware('permission:edit-bugs');
-    Route::delete('bugs/{bug}', [BugController::class, 'destroy'])->name('bugs.destroy')->middleware('permission:delete-bugs');
-    
-    // Development - QA
-    Route::get('qa', [QAController::class, 'index'])->name('qa.index')->middleware('permission:view-qa');
-    Route::get('qa/create', [QAController::class, 'create'])->name('qa.create')->middleware('permission:create-qa');
-    Route::post('qa', [QAController::class, 'store'])->name('qa.store')->middleware('permission:create-qa');
-    Route::get('qa/{qa}', [QAController::class, 'show'])->name('qa.show')->middleware('permission:view-qa');
-    Route::get('qa/{qa}/edit', [QAController::class, 'edit'])->name('qa.edit')->middleware('permission:edit-qa');
-    Route::put('qa/{qa}', [QAController::class, 'update'])->name('qa.update')->middleware('permission:edit-qa');
-    Route::delete('qa/{qa}', [QAController::class, 'destroy'])->name('qa.destroy')->middleware('permission:delete-qa');
-    Route::post('qa/{qa}/execute', [QAController::class, 'execute'])->name('qa.execute')->middleware('permission:edit-qa');
+
+    Route::prefix('admin/auto-penalties')->name('admin.auto-penalties.')->middleware('permission:view-reports')->group(function () {
+        Route::get('/', [AutoPenaltyController::class, 'index'])->name('index');
+        Route::post('/process', [AutoPenaltyController::class, 'processNow'])
+            ->name('process')
+            ->middleware('permission:edit-settings');
+        Route::post('/', [AutoPenaltyController::class, 'store'])
+            ->name('store')
+            ->middleware('permission:edit-settings');
+        Route::put('/{autoPenaltyRule}', [AutoPenaltyController::class, 'update'])
+            ->name('update')
+            ->middleware('permission:edit-settings');
+        Route::patch('/{autoPenaltyRule}/toggle', [AutoPenaltyController::class, 'toggle'])
+            ->name('toggle')
+            ->middleware('permission:edit-settings');
+        Route::delete('/{autoPenaltyRule}', [AutoPenaltyController::class, 'destroy'])
+            ->name('destroy')
+            ->middleware('permission:edit-settings');
+    });
     
     // Sales & Marketing - Clients
     Route::get('clients', [ClientController::class, 'index'])->name('clients.index')->middleware('permission:view-clients');
@@ -509,6 +490,7 @@ Route::middleware(['auth', 'verified', 'verified.code'])->group(function () {
     Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
     Route::post('notifications/{notification}/mark-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
     Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::post('notifications/clear-read', [NotificationController::class, 'clearRead'])->name('notifications.clear-read');
     Route::delete('notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
 
     // Messages routes
@@ -523,10 +505,6 @@ Route::middleware(['auth', 'verified', 'verified.code'])->group(function () {
     Route::get('messages/unread-count', [MessageController::class, 'unreadCount'])->name('messages.unread-count');
     Route::get('messages/recent', [MessageController::class, 'getRecentMessages'])->name('messages.recent');
     Route::delete('messages/{message}', [MessageController::class, 'destroy'])->name('messages.destroy');
-    
-    // Design & Marketing
-    Route::get('design', [DesignController::class, 'index'])->name('design.index')->middleware('permission:view-design');
-    Route::get('marketing', [MarketingController::class, 'index'])->name('marketing.index')->middleware('permission:view-marketing');
     
     // Training & Development
     Route::get('training', [TrainingController::class, 'index'])->name('training.index')->middleware('permission:view-training');

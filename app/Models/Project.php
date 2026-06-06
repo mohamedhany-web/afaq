@@ -12,6 +12,41 @@ class Project extends Model
 {
     use HasFactory;
 
+    public const PROPERTY_TYPES = [
+        'residential' => 'سكني',
+        'commercial' => 'تجاري',
+        'mixed' => 'مختلط',
+        'land' => 'أراضي',
+        'villa' => 'فلل',
+    ];
+
+    public const DEVELOPMENT_TYPES = [
+        'compound' => 'كمبوند',
+        'tower' => 'برج',
+        'villas' => 'مجمع فلل',
+        'land_plot' => 'أرض مخططة',
+        'commercial_center' => 'مركز تجاري',
+    ];
+
+    public const LISTING_STATUSES = [
+        'upcoming' => 'قريباً',
+        'active' => 'متاح للبيع',
+        'sold_out' => 'نفدت الوحدات',
+        'completed' => 'مكتمل',
+    ];
+
+    public const OWNERSHIP_TYPES = [
+        'owned' => 'مشروع خاص — ملك لنا',
+        'partnership' => 'مشاركة',
+        'developer_third_party' => 'مشروع مطور خارجي',
+    ];
+
+    public const OWNERSHIP_DETAIL_FIELDS = [
+        'owned' => ['internal_entity', 'acquisition_date', 'investment_amount', 'management_notes'],
+        'partnership' => ['partner_name', 'partner_phone', 'partner_contact', 'our_share_percent', 'partner_share_percent', 'contract_ref', 'partnership_start', 'partnership_notes'],
+        'developer_third_party' => ['commission_percent', 'exclusivity', 'exclusivity_until', 'contract_ref', 'contact_person', 'contact_phone', 'listing_terms', 'developer_notes'],
+    ];
+
     protected $fillable = [
         'name',
         'description',
@@ -25,16 +60,39 @@ class Project extends Model
         'priority',
         'progress_percentage',
         'team_members',
-        'technologies',
         'project_type',
+        'location',
+        'latitude',
+        'longitude',
+        'map_zoom',
+        'city',
+        'property_type',
+        'total_units',
+        'available_units',
+        'sold_units',
+        'price_from',
+        'price_to',
+        'developer_name',
+        'real_estate_developer_id',
+        'ownership_type',
+        'ownership_details',
+        'listing_status',
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
         'budget' => 'decimal:2',
+        'latitude' => 'float',
+        'longitude' => 'float',
+        'map_zoom' => 'integer',
+        'price_from' => 'decimal:2',
+        'price_to' => 'decimal:2',
         'team_members' => 'array',
-        'technologies' => 'array',
+        'total_units' => 'integer',
+        'available_units' => 'integer',
+        'sold_units' => 'integer',
+        'ownership_details' => 'array',
     ];
 
     /**
@@ -43,6 +101,11 @@ class Project extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class, 'client_id');
+    }
+
+    public function realEstateDeveloper(): BelongsTo
+    {
+        return $this->belongsTo(RealEstateDeveloper::class);
     }
 
     /**
@@ -70,14 +133,6 @@ class Project extends Model
     }
 
     /**
-     * Get the tasks for the project.
-     */
-    public function tasks(): HasMany
-    {
-        return $this->hasMany(Task::class);
-    }
-
-    /**
      * Get the invoices for the project.
      */
     public function invoices(): HasMany
@@ -91,14 +146,6 @@ class Project extends Model
     public function contracts(): HasMany
     {
         return $this->hasMany(Contract::class);
-    }
-
-    /**
-     * Get the bugs for the project.
-     */
-    public function bugs(): HasMany
-    {
-        return $this->hasMany(Bug::class);
     }
 
     /**
@@ -139,6 +186,100 @@ class Project extends Model
         };
     }
 
+    public function getPropertyTypeNameAttribute(): string
+    {
+        return self::PROPERTY_TYPES[$this->property_type] ?? ($this->property_type ?: '—');
+    }
+
+    public function getDevelopmentTypeNameAttribute(): string
+    {
+        return self::DEVELOPMENT_TYPES[$this->project_type] ?? ($this->project_type ?: '—');
+    }
+
+    public function getListingStatusNameAttribute(): string
+    {
+        return self::LISTING_STATUSES[$this->listing_status] ?? ($this->listing_status ?: '—');
+    }
+
+    public function getOwnershipTypeNameAttribute(): string
+    {
+        return self::OWNERSHIP_TYPES[$this->ownership_type] ?? ($this->ownership_type ?: '—');
+    }
+
+    public function ownershipDetail(string $key, mixed $default = null): mixed
+    {
+        return data_get($this->ownership_details ?? [], $key, $default);
+    }
+
+    public function displayDeveloperName(): string
+    {
+        return $this->realEstateDeveloper?->name
+            ?? $this->developer_name
+            ?? '—';
+    }
+
+    public function scopeOwnershipType($query, string $type)
+    {
+        return $query->where('ownership_type', $type);
+    }
+
+    public function getOccupancyPercentAttribute(): int
+    {
+        if (!$this->total_units || $this->total_units <= 0) {
+            return 0;
+        }
+
+        $sold = $this->sold_units ?? 0;
+
+        return (int) min(100, round(($sold / $this->total_units) * 100));
+    }
+
+    public function syncAvailableUnits(): void
+    {
+        $total = (int) ($this->total_units ?? 0);
+        $sold = (int) ($this->sold_units ?? 0);
+        $this->available_units = max(0, $total - $sold);
+    }
+
+    public function sales(): HasMany
+    {
+        return $this->hasMany(Sale::class);
+    }
+
+    public function mapPins(): HasMany
+    {
+        return $this->hasMany(ProjectMapPin::class)->orderBy('pin_type')->orderBy('title');
+    }
+
+    public function hasMapLocation(): bool
+    {
+        return $this->latitude !== null && $this->longitude !== null;
+    }
+
+    /**
+     * يُسمح بحذف المشروع فقط إذا لم تُربط به صفقات أو وحدات مباعة.
+     */
+    public function isDeletable(): bool
+    {
+        if ($this->relationLoaded('sales') && $this->sales->isNotEmpty()) {
+            return false;
+        }
+
+        if ($this->sales()->exists()) {
+            return false;
+        }
+
+        if ((int) ($this->sold_units ?? 0) > 0) {
+            return false;
+        }
+
+        if ($this->invoices()->exists() || $this->contracts()->exists()) {
+            return false;
+        }
+
+        return true;
+    }
+
     /**
      * Get priority badge color.
      */
@@ -154,16 +295,21 @@ class Project extends Model
     }
 
     /**
-     * Scope for active projects.
+     * مشاريع معروضة للبيع (حالة العرض).
+     */
+    public function scopeListed($query)
+    {
+        return $query->whereIn('listing_status', ['upcoming', 'active']);
+    }
+
+    /**
+     * Scope for active projects (legacy PM status).
      */
     public function scopeActive($query)
     {
         return $query->whereIn('status', ['planning', 'in_progress']);
     }
 
-    /**
-     * Scope for completed projects.
-     */
     public function scopeCompleted($query)
     {
         return $query->where('status', 'completed');

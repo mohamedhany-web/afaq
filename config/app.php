@@ -43,6 +43,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Skip Email Verification Code (2FA)
+    |--------------------------------------------------------------------------
+    |
+    | When true, users skip the email verification step after login.
+    | Defaults to true in local environment for easier development.
+    |
+    */
+
+    'skip_email_verification' => (bool) env('SKIP_EMAIL_VERIFICATION', env('APP_ENV') === 'local'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application URL
     |--------------------------------------------------------------------------
     |

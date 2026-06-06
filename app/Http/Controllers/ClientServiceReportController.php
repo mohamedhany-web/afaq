@@ -19,16 +19,13 @@ class ClientServiceReportController extends Controller
         }
 
         $reports = $query->paginate(20)->withQueryString();
-        $clients = Client::query()->orderBy('name')->get(['id', 'name', 'company_name', 'email']);
 
-        return view('client-service-reports.index', compact('reports', 'clients'));
+        return view('client-service-reports.index', compact('reports'));
     }
 
     public function create()
     {
-        $clients = Client::query()->orderBy('name')->get(['id', 'name', 'company_name', 'email']);
-
-        return view('client-service-reports.create', compact('clients'));
+        return view('client-service-reports.create');
     }
 
     /**

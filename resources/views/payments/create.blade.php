@@ -141,14 +141,8 @@
                 </div>
                 
                 <div id="client_field">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">العميل <span id="client_required" class="text-red-500" style="display: none;">*</span></label>
-                    <select name="client_id" id="client_id"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">اختر العميل</option>
-                        @foreach($clients as $client)
-                            <option value="{{ $client->id }}">{{ $client->name }} @if($client->company) - {{ $client->company }} @endif</option>
-                        @endforeach
-                    </select>
+                    <span id="client_required" class="text-red-500 text-sm hidden">*</span>
+                    @include('partials.client-search-select', ['required' => false, 'value' => old('client_id'), 'inputClass' => 'w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500', 'crmScope' => false])
                 </div>
                 
                 <div id="employee_field" style="display: none;">
@@ -212,7 +206,9 @@ function updatePaymentTypeUI(type) {
     // مسح القيم
     document.querySelector('select[name="employee_id"]').value = '';
     document.querySelector('select[name="invoice_id"]').value = '';
-    document.querySelector('select[name="client_id"]').value = '';
+    if (typeof clearClientSearchSelect === 'function') {
+        clearClientSearchSelect('client_field');
+    }
     
     if (type === 'invoice') {
         // للدفعات المرتبطة بفاتورة: إظهار العميل والفاتورة

@@ -25,12 +25,20 @@ class Attendance extends Model
         'notes',
         'check_in_location',
         'check_out_location',
+        'required_hours',
+        'scheduled_checkout_at',
+        'auto_checkout',
+        'work_day_locked',
     ];
 
     protected $casts = [
         'date' => 'date',
         'check_in' => 'datetime',
         'check_out' => 'datetime',
+        'scheduled_checkout_at' => 'datetime',
+        'auto_checkout' => 'boolean',
+        'work_day_locked' => 'boolean',
+        'required_hours' => 'decimal:1',
         'break_start' => 'datetime',
         'break_end' => 'datetime',
         'break_duration_minutes' => 'integer',

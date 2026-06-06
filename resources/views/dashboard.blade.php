@@ -60,39 +60,15 @@
             </div>
             
             <!-- Quick Stats Summary -->
-            <div class="flex flex-wrap gap-3 sm:gap-4 lg:gap-6 mt-4 sm:mt-0">
+            <div class="flex flex-wrap gap-3 sm:gap-4 mt-4 sm:mt-0">
                 @if(isset($performance_metrics))
-                    <div class="text-center p-3 sm:p-4 rounded-xl bg-white shadow-md hover:shadow-lg transition-all duration-300 border flex-1 sm:flex-none"
-                         style="border-color: {{ $themeColor }}30; min-width: 90px;">
-                        <div class="text-xl sm:text-2xl lg:text-3xl font-bold mb-1" style="color: {{ $themeColor }};">{{ $performance_metrics['project_efficiency'] }}%</div>
-                        <div class="text-xs text-gray-600 font-tajawal">كفاءة المشاريع</div>
-                    </div>
-                    <div class="text-center p-3 sm:p-4 rounded-xl bg-white shadow-md hover:shadow-lg transition-all duration-300 border flex-1 sm:flex-none"
-                         style="border-color: {{ $themeColor }}30; min-width: 90px;">
-                        <div class="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 text-green-600">{{ $performance_metrics['task_efficiency'] }}%</div>
-                        <div class="text-xs text-gray-600 font-tajawal">كفاءة المهام</div>
-                    </div>
-                    <div class="text-center p-3 sm:p-4 rounded-xl bg-white shadow-md hover:shadow-lg transition-all duration-300 border flex-1 sm:flex-none"
-                         style="border-color: {{ $themeColor }}30; min-width: 90px;">
-                        <div class="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 text-purple-600">{{ $performance_metrics['attendance_rate'] }}%</div>
-                        <div class="text-xs text-gray-600 font-tajawal">معدل الحضور</div>
-                    </div>
+                    @include('dashboard.partials.metric-pill', ['label' => 'كفاءة المشاريع', 'value' => ($performance_metrics['project_efficiency'] ?? 0) . '%', 'accent' => 'theme'])
+                    @include('dashboard.partials.metric-pill', ['label' => 'نمو الإيرادات', 'value' => ($performance_metrics['revenue_growth'] ?? 0) . '%', 'accent' => 'green'])
+                    @include('dashboard.partials.metric-pill', ['label' => 'معدل الحضور', 'value' => ($performance_metrics['attendance_rate'] ?? 0) . '%', 'accent' => 'purple'])
                 @elseif(isset($my_performance_metrics))
-                    <div class="text-center p-3 sm:p-4 rounded-xl bg-white shadow-md hover:shadow-lg transition-all duration-300 border flex-1 sm:flex-none"
-                         style="border-color: {{ $themeColor }}30; min-width: 90px;">
-                        <div class="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 text-green-600">{{ $my_performance_metrics['task_efficiency'] }}%</div>
-                        <div class="text-xs text-gray-600 font-tajawal">كفاءة المهام</div>
-                    </div>
-                    <div class="text-center p-3 sm:p-4 rounded-xl bg-white shadow-md hover:shadow-lg transition-all duration-300 border flex-1 sm:flex-none"
-                         style="border-color: {{ $themeColor }}30; min-width: 90px;">
-                        <div class="text-xl sm:text-2xl lg:text-3xl font-bold mb-1" style="color: {{ $themeColor }};">{{ $my_performance_metrics['attendance_rate'] }}%</div>
-                        <div class="text-xs text-gray-600 font-tajawal">معدل الحضور</div>
-                    </div>
-                    <div class="text-center p-3 sm:p-4 rounded-xl bg-white shadow-md hover:shadow-lg transition-all duration-300 border border-red-200 flex-1 sm:flex-none"
-                         style="min-width: 90px;">
-                        <div class="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 text-red-600">{{ $my_performance_metrics['overdue_tasks'] }}</div>
-                        <div class="text-xs text-gray-600 font-tajawal">مهام متأخرة</div>
-                    </div>
+                    @include('dashboard.partials.metric-pill', ['label' => 'كفاءة المبيعات', 'value' => ($my_performance_metrics['sales_efficiency'] ?? 0) . '%', 'accent' => 'green'])
+                    @include('dashboard.partials.metric-pill', ['label' => 'معدل الحضور', 'value' => ($my_performance_metrics['attendance_rate'] ?? 0) . '%', 'accent' => 'theme'])
+                    @include('dashboard.partials.metric-pill', ['label' => 'صفقات مفتوحة', 'value' => $my_performance_metrics['open_sales'] ?? 0, 'accent' => 'red'])
                 @endif
             </div>
         </div>
@@ -100,342 +76,155 @@
 </div>
 
 <!-- Quick Stats Cards -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 mb-6 sm:mb-8 px-2 sm:px-0">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 items-stretch">
     @php
         $themeColor = \App\Helpers\SettingsHelper::getThemeColor();
+        $iconProjects = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />';
+        $iconActive = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />';
+        $iconEmployees = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />';
+        $iconClients = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />';
+        $iconSales = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />';
+        $iconClock = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />';
+        $iconMoney = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />';
+        $iconTicket = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />';
+        $iconCheck = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />';
+        $iconUsers = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />';
     @endphp
     {{-- للمديرين: عرض جميع الإحصائيات --}}
     @if(auth()->user()->hasAnyRole(['super_admin', 'admin', 'project_manager']))
         @if(isset($total_projects))
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-5 sm:p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 transform group mb-4 sm:mb-0">
-            <div class="flex items-center justify-between mb-4 gap-3 sm:gap-4">
-                <div class="text-right flex-1">
-                    <div class="text-xs sm:text-sm text-gray-500 mb-1 font-tajawal">إجمالي المشاريع</div>
-                    <div class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 font-tajawal">{{ $total_projects }}</div>
-                </div>
-                <div class="p-3 sm:p-4 rounded-2xl shadow-lg flex-shrink-0 group-hover:scale-110 transition-transform duration-300"
-                     style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">
-                    <svg class="w-6 h-6 sm:w-7 sm:h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                </div>
-            </div>
-            <div class="flex items-center justify-between text-xs sm:text-sm pt-3 border-t border-gray-100">
-                <div class="flex items-center gap-1 text-green-600 font-tajawal">
-                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                    </svg>
-                    <span class="font-semibold">{{ $active_projects ?? 0 }}</span>
-                    <span class="hidden sm:inline">نشط</span>
-                </div>
-                <div class="text-gray-600 font-tajawal">
-                    <span class="font-bold" style="color: {{ $themeColor }};">{{ $project_completion_rate ?? 0 }}%</span>
-                    <span class="hidden sm:inline"> مكتمل</span>
-                </div>
-            </div>
-        </div>
+        @include('dashboard.partials.stat-card', [
+            'label' => 'إجمالي المشاريع',
+            'value' => $total_projects,
+            'accent' => 'theme',
+            'icon' => $iconProjects,
+            'footer' => '<div class="flex items-center justify-between"><div class="flex items-center gap-1 text-green-600"><svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg><span class="font-semibold">' . ($active_projects ?? 0) . '</span><span class="hidden sm:inline">نشط</span></div><div class="text-gray-600"><span class="font-bold" style="color: ' . e($themeColor) . ';">' . ($project_completion_rate ?? 0) . '%</span><span class="hidden sm:inline"> مكتمل</span></div></div>',
+        ])
         @endif
 
         @if(isset($active_projects))
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-5 sm:p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 transform group mb-4 sm:mb-0">
-            <div class="flex items-center justify-between mb-4 gap-3 sm:gap-4">
-                <div class="text-right flex-1">
-                    <div class="text-xs sm:text-sm text-gray-500 mb-1 font-tajawal">المشاريع النشطة</div>
-                    <div class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 font-tajawal">{{ $active_projects }}</div>
-                </div>
-                <div class="p-3 sm:p-4 rounded-2xl shadow-lg flex-shrink-0 group-hover:scale-110 transition-transform duration-300 bg-gradient-to-r from-green-500 to-emerald-600">
-                    <svg class="w-6 h-6 sm:w-7 sm:h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                </div>
-            </div>
-            <div class="pt-3 border-t border-gray-100">
-                <div class="flex items-center gap-1 text-green-600 text-xs sm:text-sm font-tajawal">
-                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    <span class="font-semibold">قيد التنفيذ</span>
-                </div>
-            </div>
-        </div>
+        @include('dashboard.partials.stat-card', [
+            'label' => 'المشاريع النشطة',
+            'value' => $active_projects,
+            'accent' => 'green',
+            'icon' => $iconActive,
+            'footer' => '<div class="flex items-center gap-1 text-green-600"><svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">' . $iconActive . '</svg><span class="font-semibold">قيد التنفيذ</span></div>',
+        ])
         @endif
 
         @if(isset($total_employees))
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-5 sm:p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 transform group mb-4 sm:mb-0">
-            <div class="flex items-center justify-between mb-4 gap-3 sm:gap-4">
-                <div class="text-right flex-1">
-                    <div class="text-xs sm:text-sm text-gray-500 mb-1 font-tajawal">إجمالي الموظفين</div>
-                    <div class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 font-tajawal">{{ $total_employees }}</div>
-                </div>
-                <div class="p-3 sm:p-4 rounded-2xl shadow-lg flex-shrink-0 group-hover:scale-110 transition-transform duration-300 bg-gradient-to-r from-purple-500 to-indigo-600">
-                    <svg class="w-6 h-6 sm:w-7 sm:h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                </div>
-            </div>
-            <div class="pt-3 border-t border-gray-100">
-                <div class="flex items-center gap-1 text-purple-600 text-xs sm:text-sm font-tajawal">
-                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span class="font-semibold">{{ $active_employees ?? 0 }}</span>
-                    <span class="hidden sm:inline">نشطون</span>
-                </div>
-            </div>
-        </div>
+        @include('dashboard.partials.stat-card', [
+            'label' => 'إجمالي الموظفين',
+            'value' => $total_employees,
+            'accent' => 'purple',
+            'icon' => $iconEmployees,
+            'footer' => '<div class="flex items-center gap-1 text-purple-600"><svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">' . $iconCheck . '</svg><span class="font-semibold">' . ($active_employees ?? 0) . '</span><span class="hidden sm:inline">نشطون</span></div>',
+        ])
         @endif
 
         @if(isset($total_clients))
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-5 sm:p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 transform group mb-4 sm:mb-0">
-            <div class="flex items-center justify-between mb-4 gap-3 sm:gap-4">
-                <div class="text-right flex-1">
-                    <div class="text-xs sm:text-sm text-gray-500 mb-1 font-tajawal">إجمالي العملاء</div>
-                    <div class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 font-tajawal">{{ $total_clients }}</div>
-                </div>
-                <div class="p-3 sm:p-4 rounded-2xl shadow-lg flex-shrink-0 group-hover:scale-110 transition-transform duration-300 bg-gradient-to-r from-orange-500 to-amber-600">
-                    <svg class="w-6 h-6 sm:w-7 sm:h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                </div>
-            </div>
-            <div class="pt-3 border-t border-gray-100">
-                <div class="flex items-center gap-1 text-orange-600 text-xs sm:text-sm font-tajawal">
-                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    <span class="font-semibold">قاعدة العملاء</span>
-                </div>
-            </div>
-        </div>
+        @include('dashboard.partials.stat-card', [
+            'label' => 'إجمالي العملاء',
+            'value' => $total_clients,
+            'accent' => 'orange',
+            'icon' => $iconClients,
+            'footer' => '<div class="flex items-center gap-1 text-orange-600"><svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">' . $iconEmployees . '</svg><span class="font-semibold">قاعدة العملاء</span></div>',
+        ])
         @endif
 
     {{-- للموظفين: عرض بياناتهم الخاصة فقط --}}
     @elseif(auth()->user()->hasAnyRole(['employee', 'developer', 'designer']))
         @if(isset($my_projects))
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-xs sm:text-sm font-medium text-gray-600 mb-2">مشاريعي</p>
-                    <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ $my_projects }}</p>
-                    <p class="text-xs text-blue-600 mt-1">المشاريع المكلف بها</p>
-                </div>
-                <div class="p-3 bg-blue-50 rounded-lg flex-shrink-0">
-                    <svg class="w-6 h-6 sm:w-7 sm:h-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                </div>
-            </div>
-        </div>
+        @include('dashboard.partials.stat-card', [
+            'label' => 'مشاريعي',
+            'value' => $my_projects,
+            'accent' => 'blue',
+            'icon' => $iconProjects,
+            'footer' => '<span class="text-blue-600 font-semibold">المشاريع المكلف بها</span>',
+        ])
         @endif
 
         @if(isset($my_active_projects))
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-xs sm:text-sm font-medium text-gray-600 mb-2">المشاريع النشطة</p>
-                    <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ $my_active_projects }}</p>
-                    <p class="text-xs text-green-600 mt-1">قيد التنفيذ</p>
-                </div>
-                <div class="p-3 bg-green-50 rounded-lg flex-shrink-0">
-                    <svg class="w-6 h-6 sm:w-7 sm:h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
+        @include('dashboard.partials.stat-card', [
+            'label' => 'المشاريع النشطة',
+            'value' => $my_active_projects,
+            'accent' => 'green',
+            'icon' => $iconActive,
+            'footer' => '<span class="text-green-600 font-semibold">قيد التنفيذ</span>',
+        ])
         @endif
 
-        @if(isset($my_tasks))
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-xs sm:text-sm font-medium text-gray-600 mb-2">مهامي</p>
-                    <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ $my_tasks }}</p>
-                    <p class="text-xs text-purple-600 mt-1">جميع مهامي</p>
-                </div>
-                <div class="p-3 bg-purple-50 rounded-lg flex-shrink-0">
-                    <svg class="w-6 h-6 sm:w-7 sm:h-7 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                </div>
-            </div>
-        </div>
+        @if(isset($my_sales))
+        @include('dashboard.partials.stat-card', [
+            'label' => 'صفقاتي',
+            'value' => $my_sales,
+            'accent' => 'purple',
+            'icon' => $iconSales,
+            'footer' => '<span class="text-purple-600 font-semibold">إجمالي الصفقات</span>',
+        ])
         @endif
 
-        @if(isset($my_pending_tasks))
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-xs sm:text-sm font-medium text-gray-600 mb-2">المهام المعلقة</p>
-                    <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ $my_pending_tasks }}</p>
-                    <p class="text-xs text-red-600 mt-1">يحتاج للإنجاز</p>
-                </div>
-                <div class="p-3 bg-red-50 rounded-lg flex-shrink-0">
-                    <svg class="w-6 h-6 sm:w-7 sm:h-7 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
+        @if(isset($my_open_sales))
+        @include('dashboard.partials.stat-card', [
+            'label' => 'صفقات مفتوحة',
+            'value' => $my_open_sales,
+            'accent' => 'red',
+            'icon' => $iconClock,
+            'footer' => '<span class="text-red-600 font-semibold">قيد المتابعة</span>',
+        ])
         @endif
 
     {{-- للموارد البشرية --}}
     @elseif(auth()->user()->hasRole('hr'))
         @if(isset($total_employees))
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-xs sm:text-sm font-medium text-gray-600 mb-2">إجمالي الموظفين</p>
-                    <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ $total_employees }}</p>
-                </div>
-                <div class="p-3 bg-blue-50 rounded-lg flex-shrink-0">
-                    <svg class="w-6 h-6 sm:w-7 sm:h-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
+        @include('dashboard.partials.stat-card', [
+            'label' => 'إجمالي الموظفين',
+            'value' => $total_employees,
+            'accent' => 'blue',
+            'icon' => $iconEmployees,
+        ])
         @endif
 
         @if(isset($pending_leaves))
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-xs sm:text-sm font-medium text-gray-600 mb-2">إجازات معلقة</p>
-                    <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ $pending_leaves }}</p>
-                </div>
-                <div class="p-3 bg-yellow-50 rounded-lg flex-shrink-0">
-                    <svg class="w-6 h-6 sm:w-7 sm:h-7 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
+        @include('dashboard.partials.stat-card', [
+            'label' => 'إجازات معلقة',
+            'value' => $pending_leaves,
+            'accent' => 'yellow',
+            'icon' => $iconClock,
+        ])
         @endif
 
     {{-- للمحاسب --}}
     @elseif(auth()->user()->hasRole('accountant'))
         @if(isset($total_amount))
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-xs sm:text-sm font-medium text-gray-600 mb-2">إجمالي المصروفات</p>
-                    <p class="text-xl sm:text-2xl font-bold text-gray-900">{{ number_format($total_amount, 2) }} ج.م</p>
-                </div>
-                <div class="p-3 bg-green-50 rounded-lg flex-shrink-0">
-                    <svg class="w-6 h-6 sm:w-7 sm:h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
+        @include('dashboard.partials.stat-card', [
+            'label' => 'إجمالي المصروفات',
+            'value' => number_format($total_amount, 2) . ' ج.م',
+            'accent' => 'green',
+            'icon' => $iconMoney,
+        ])
         @endif
 
     {{-- للمبيعات --}}
     @elseif(auth()->user()->hasRole('sales_rep'))
         @if(isset($total_clients))
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-xs sm:text-sm font-medium text-gray-600 mb-2">إجمالي العملاء</p>
-                    <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ $total_clients }}</p>
-                </div>
-                <div class="p-3 bg-blue-50 rounded-lg flex-shrink-0">
-                    <svg class="w-6 h-6 sm:w-7 sm:h-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
+        @include('dashboard.partials.stat-card', [
+            'label' => 'إجمالي العملاء',
+            'value' => $total_clients,
+            'accent' => 'blue',
+            'icon' => $iconClients,
+        ])
         @endif
 
     {{-- للدعم الفني --}}
     @elseif(auth()->user()->hasRole('support'))
         @if(isset($my_tickets))
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-xs sm:text-sm font-medium text-gray-600 mb-2">تذاكري</p>
-                    <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ $my_tickets }}</p>
-                </div>
-                <div class="p-3 bg-blue-50 rounded-lg flex-shrink-0">
-                    <svg class="w-6 h-6 sm:w-7 sm:h-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
-        @endif
-        
-        <!-- Additional Stats for Admins -->
-        @if(auth()->user()->hasAnyRole(['super_admin', 'admin', 'project_manager']))
-            @if(isset($total_tasks))
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200">
-                <div class="flex items-center justify-between">
-                    <div class="flex-1">
-                        <p class="text-xs sm:text-sm font-medium text-gray-600 mb-2">إجمالي المهام</p>
-                        <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ $total_tasks }}</p>
-                        <p class="text-xs text-gray-600 mt-1">{{ $completed_tasks ?? 0 }} مكتملة</p>
-                    </div>
-                    <div class="p-3 bg-indigo-50 rounded-lg flex-shrink-0">
-                        <svg class="w-6 h-6 sm:w-7 sm:h-7 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                        </svg>
-                    </div>
-                </div>
-            </div>
-            @endif
-            
-            @if(isset($total_departments))
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200">
-                <div class="flex items-center justify-between">
-                    <div class="flex-1">
-                        <p class="text-xs sm:text-sm font-medium text-gray-600 mb-2">الأقسام النشطة</p>
-                        <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ $total_departments }}</p>
-                        <p class="text-xs text-gray-600 mt-1">جميع الأقسام</p>
-                    </div>
-                    <div class="p-3 bg-cyan-50 rounded-lg flex-shrink-0">
-                        <svg class="w-6 h-6 sm:w-7 sm:h-7 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                    </div>
-                </div>
-            </div>
-            @endif
-            
-            @if(isset($completed_projects))
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200">
-                <div class="flex items-center justify-between">
-                    <div class="flex-1">
-                        <p class="text-xs sm:text-sm font-medium text-gray-600 mb-2">مشاريع مكتملة</p>
-                        <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ $completed_projects }}</p>
-                        <p class="text-xs text-green-600 mt-1">تم الانتهاء منها</p>
-                    </div>
-                    <div class="p-3 bg-green-50 rounded-lg flex-shrink-0">
-                        <svg class="w-6 h-6 sm:w-7 sm:h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                </div>
-            </div>
-            @endif
-            
-            @if(isset($active_employees))
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200">
-                <div class="flex items-center justify-between">
-                    <div class="flex-1">
-                        <p class="text-xs sm:text-sm font-medium text-gray-600 mb-2">موظفين نشطين</p>
-                        <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ $active_employees }}</p>
-                        <p class="text-xs text-gray-600 mt-1">من {{ $total_employees ?? 0 }}</p>
-                    </div>
-                    <div class="p-3 bg-teal-50 rounded-lg flex-shrink-0">
-                        <svg class="w-6 h-6 sm:w-7 sm:h-7 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
-                    </div>
-                </div>
-            </div>
-            @endif
+        @include('dashboard.partials.stat-card', [
+            'label' => 'تذاكري',
+            'value' => $my_tickets,
+            'accent' => 'blue',
+            'icon' => $iconTicket,
+        ])
         @endif
     @endif
 </div>
@@ -453,7 +242,7 @@
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         @can('create-projects')
-        <a href="{{ route('projects.create') }}" 
+        <a href="{{ route('crm.projects.create') }}" 
            class="group flex items-center p-3 sm:p-4 lg:p-5 rounded-2xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1 transform border-2 mb-3 sm:mb-0"
            style="background: linear-gradient(135deg, {{ $themeColor }}10 0%, {{ $themeColor }}05 100%); border-color: {{ $themeColor }}30;">
             <div class="p-2.5 sm:p-3 rounded-xl shadow-lg ml-3 sm:ml-4 flex-shrink-0 group-hover:scale-110 transition-transform duration-300"
@@ -507,24 +296,6 @@
             </svg>
         </a>
         @endcan
-
-        @can('create-bugs')
-        <a href="{{ route('bugs.create') }}" 
-           class="group flex items-center p-3 sm:p-4 lg:p-5 rounded-2xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1 transform border-2 bg-gradient-to-r from-red-50 to-rose-50 border-red-200 mb-3 sm:mb-0">
-            <div class="p-2.5 sm:p-3 rounded-xl shadow-lg ml-3 sm:ml-4 flex-shrink-0 group-hover:scale-110 transition-transform duration-300 bg-gradient-to-r from-red-600 to-rose-600">
-                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-            </div>
-            <div class="flex-1 mr-2 sm:mr-0">
-                <p class="text-sm sm:text-base lg:text-lg font-bold text-gray-900 font-tajawal">تقرير خطأ</p>
-                <p class="text-xs text-gray-600 font-tajawal hidden sm:block">إبلاغ عن خطأ</p>
-            </div>
-            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-gray-600 transition-colors hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-        </a>
-        @endcan
     </div>
 </div>
 
@@ -533,8 +304,8 @@
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
     
     <!-- Today's Attendance -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6">
-        <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">حضور اليوم</h3>
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-5 sm:p-6">
+        <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-4 font-tajawal">حضور اليوم</h3>
         <div class="space-y-3">
             <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100">
                 <div class="flex items-center gap-3">
@@ -573,16 +344,12 @@
     </div>
     
     <!-- Monthly Statistics -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6">
-        <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">إحصائيات هذا الشهر</h3>
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-5 sm:p-6">
+        <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-4 font-tajawal">إحصائيات هذا الشهر</h3>
         <div class="space-y-3">
             <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
                 <span class="text-sm font-medium text-gray-700">مشاريع جديدة</span>
                 <span class="text-lg font-bold text-blue-700">{{ $this_month_projects ?? 0 }}</span>
-            </div>
-            <div class="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-100">
-                <span class="text-sm font-medium text-gray-700">مهام جديدة</span>
-                <span class="text-lg font-bold text-purple-700">{{ $this_month_tasks ?? 0 }}</span>
             </div>
             <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100">
                 <span class="text-sm font-medium text-gray-700">موظفين جدد</span>
@@ -592,90 +359,34 @@
     </div>
     
 </div>
-
-<!-- Tasks Progress Overview -->
-@if(isset($total_tasks) && $total_tasks > 0)
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 mb-6 sm:mb-8">
-    <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">نظرة عامة على المهام</h3>
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="text-center p-4 bg-gray-50 rounded-lg">
-            <p class="text-sm text-gray-600 mb-2">إجمالي المهام</p>
-            <p class="text-3xl font-bold text-gray-900">{{ $total_tasks }}</p>
-        </div>
-        <div class="text-center p-4 bg-green-50 rounded-lg border border-green-100">
-            <p class="text-sm text-gray-600 mb-2">المهام المكتملة</p>
-            <p class="text-3xl font-bold text-green-700">{{ $completed_tasks }}</p>
-            <p class="text-xs text-green-600 mt-1">{{ $total_tasks > 0 ? round(($completed_tasks / $total_tasks) * 100) : 0 }}%</p>
-        </div>
-        <div class="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-100">
-            <p class="text-sm text-gray-600 mb-2">المهام المعلقة</p>
-            <p class="text-3xl font-bold text-yellow-700">{{ $pending_tasks }}</p>
-            <p class="text-xs text-yellow-600 mt-1">{{ $total_tasks > 0 ? round(($pending_tasks / $total_tasks) * 100) : 0 }}%</p>
-        </div>
-    </div>
-    
-    <!-- Progress Bar -->
-    <div class="mt-4">
-        <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-medium text-gray-700">نسبة الإنجاز الكلية</span>
-            <span class="text-sm font-bold text-gray-900">{{ $total_tasks > 0 ? round(($completed_tasks / $total_tasks) * 100) : 0 }}%</span>
-        </div>
-        <div class="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-            <div class="h-full bg-gradient-to-r from-green-500 to-green-600 transition-all duration-500" 
-                 style="width: {{ $total_tasks > 0 ? round(($completed_tasks / $total_tasks) * 100) : 0 }}%"></div>
-        </div>
-    </div>
-</div>
 @endif
 
-<!-- Recent Tasks -->
-@if(isset($recent_tasks) && $recent_tasks->count() > 0)
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 mb-6 sm:mb-8">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-2">
-        <h3 class="text-base sm:text-lg font-semibold text-gray-900">أحدث المهام</h3>
-        <a href="{{ route('tasks.index') }}" class="text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center">
-            عرض الكل
-            <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-        </a>
+@if(isset($project_portfolio) && count($project_portfolio))
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+        <h3 class="text-base sm:text-lg font-semibold text-gray-900 font-tajawal">محفظة المشاريع حسب الملكية</h3>
+        <a href="{{ route('crm.projects.index') }}" class="text-sm font-medium font-tajawal" style="color: {{ $themeColor }};">كل المشاريع</a>
     </div>
-    <div class="space-y-2 sm:space-y-3">
-        @foreach($recent_tasks as $task)
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-            <div class="flex items-center flex-1 min-w-0">
-                <div class="h-8 w-8 sm:h-10 sm:w-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center ml-3 flex-shrink-0">
-                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                </div>
-                <div class="min-w-0 flex-1">
-                    <p class="text-sm font-semibold text-gray-900 truncate">{{ $task->title }}</p>
-                    <p class="text-xs text-gray-600 truncate">{{ $task->project->name ?? 'لا يوجد مشروع' }}</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2 flex-shrink-0">
-                <span class="px-2 py-1 text-xs font-medium rounded-lg
-                    @if($task->status === 'pending') bg-yellow-100 text-yellow-800
-                    @elseif($task->status === 'in_progress') bg-blue-100 text-blue-800
-                    @elseif($task->status === 'completed') bg-green-100 text-green-800
-                    @else bg-gray-100 text-gray-800
-                    @endif">
-                    @if($task->status === 'pending') معلقة
-                    @elseif($task->status === 'in_progress') قيد التنفيذ
-                    @elseif($task->status === 'completed') مكتملة
-                    @else {{ $task->status }}
-                    @endif
-                </span>
-                <a href="{{ route('tasks.show', $task) }}" class="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-xs transition-colors whitespace-nowrap">
-                    عرض
-                </a>
-            </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+        @foreach($project_portfolio as $row)
+        <div class="p-4 rounded-lg bg-gray-50 border border-gray-100 font-tajawal">
+            <p class="text-xs text-gray-500 mb-1">{{ $row['label'] }}</p>
+            <p class="text-2xl font-bold text-gray-900">{{ $row['count'] }}</p>
+            <p class="text-xs text-gray-400 mt-1">{{ number_format($row['units']) }} وحدة متاحة</p>
         </div>
         @endforeach
     </div>
+    @if(isset($top_developers) && $top_developers->isNotEmpty())
+    <h4 class="text-sm font-bold text-gray-700 mb-2 font-tajawal">أبرز المطورين العقاريين</h4>
+    <div class="flex flex-wrap gap-2">
+        @foreach($top_developers as $dev)
+        <span class="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-semibold font-tajawal border border-emerald-100">
+            {{ $dev->name }} · {{ $dev->projects_count }} مشروع
+        </span>
+        @endforeach
+    </div>
+    @endif
 </div>
-@endif
 @endif
 
 <!-- Recent Projects -->
@@ -689,7 +400,7 @@
                 أحدث المشاريع
             @endif
         </h3>
-        <a href="{{ route('projects.index') }}" class="text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center">
+        <a href="{{ route('crm.projects.index') }}" class="text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center">
             عرض الكل
             <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -723,7 +434,7 @@
                     @else {{ $project->status }}
                     @endif
                 </span>
-                <a href="{{ route('projects.show', $project) }}" class="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs sm:text-sm transition-colors whitespace-nowrap">
+                <a href="{{ route('crm.projects.show', $project) }}" class="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs sm:text-sm transition-colors whitespace-nowrap">
                     عرض
                 </a>
             </div>
@@ -747,30 +458,6 @@
         </div>
         <div class="h-64">
             <canvas id="projectTimelineChart"></canvas>
-        </div>
-    </div>
-
-    <!-- Task Distribution Chart -->
-    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-        <div class="flex items-center justify-between mb-6">
-            <h3 class="text-lg font-semibold text-gray-900">توزيع المهام</h3>
-            <div class="flex items-center gap-4 text-sm">
-                <div class="flex items-center text-green-600">
-                    <div class="w-3 h-3 bg-green-500 rounded-full ml-2"></div>
-                    مكتملة
-                </div>
-                <div class="flex items-center text-yellow-600">
-                    <div class="w-3 h-3 bg-yellow-500 rounded-full ml-2"></div>
-                    قيد التنفيذ
-                </div>
-                <div class="flex items-center text-red-600">
-                    <div class="w-3 h-3 bg-red-500 rounded-full ml-2"></div>
-                    متأخرة
-                </div>
-            </div>
-        </div>
-        <div class="h-64">
-            <canvas id="taskDistributionChart"></canvas>
         </div>
     </div>
 </div>
@@ -840,45 +527,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     @endif
-
-    // Task Distribution Chart
-    @if(isset($total_tasks))
-    const taskCtx = document.getElementById('taskDistributionChart').getContext('2d');
-    new Chart(taskCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['مكتملة', 'قيد التنفيذ', 'متأخرة', 'معلقة'],
-            datasets: [{
-                data: [
-                    {{ $completed_tasks ?? 0 }},
-                    {{ $in_progress_tasks ?? 0 }},
-                    {{ $overdue_tasks ?? 0 }},
-                    {{ $pending_tasks ?? 0 }}
-                ],
-                backgroundColor: [
-                    'rgb(34, 197, 94)',
-                    'rgb(251, 191, 36)',
-                    'rgb(239, 68, 68)',
-                    'rgb(156, 163, 175)'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        usePointStyle: true,
-                        padding: 20
-                    }
-                }
-            }
-        }
-    });
-    @endif
-    
     // Update dashboard time every second
     function updateDashboardTime() {
         const now = new Date();

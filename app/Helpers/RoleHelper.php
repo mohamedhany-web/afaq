@@ -9,18 +9,18 @@ class RoleHelper
      */
     public static function getRoleNames(): array
     {
-        return [
-            'super_admin' => 'مدير النظام',
-            'admin' => 'مدير',
-            'project_manager' => 'مدير مشاريع',
-            'employee' => 'موظف',
-            'hr' => 'موارد بشرية',
-            'accountant' => 'محاسب',
-            'sales_rep' => 'موظف مبيعات',
-            'support' => 'دعم فني',
-            'developer' => 'مطور',
-            'designer' => 'مصمم',
-        ];
+        $fromConfig = collect(config('crm_roles.roles', []))
+            ->mapWithKeys(fn ($meta, $key) => [$key => $meta['label']])
+            ->all();
+
+        return array_merge($fromConfig, [
+            'manager' => 'مدير مبيعات',
+            'sales_agent' => 'موظف مبيعات',
+            'employee' => 'موظف مبيعات',
+            'marketing_manager' => 'مدير تسويق',
+            'marketing_rep' => 'موظف تسويق',
+            'client' => 'عميل',
+        ]);
     }
 
     /**
@@ -36,18 +36,9 @@ class RoleHelper
      */
     public static function getRoleDescriptions(): array
     {
-        return [
-            'super_admin' => 'صلاحيات كاملة على جميع أجزاء النظام',
-            'admin' => 'صلاحيات إدارية شاملة على معظم الأقسام',
-            'project_manager' => 'إدارة المشاريع والفرق والمهام',
-            'employee' => 'صلاحيات أساسية للموظفين - عرض المشاريع والمهام الخاصة',
-            'hr' => 'إدارة الموظفين والموارد البشرية والإجازات',
-            'accountant' => 'إدارة الحسابات والمالية والمصروفات',
-            'sales_rep' => 'إدارة المبيعات والعملاء والفواتير',
-            'support' => 'إدارة تذاكر الدعم الفني',
-            'developer' => 'المشاريع والمهام والأخطاء البرمجية',
-            'designer' => 'مشاريع التصميم والمهام الخاصة',
-        ];
+        return collect(config('crm_roles.roles', []))
+            ->mapWithKeys(fn ($meta, $key) => [$key => $meta['description']])
+            ->all();
     }
 
     /**

@@ -109,33 +109,29 @@ class RolePermissionSeeder extends Seeder
         $superAdmin = Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
         $superAdmin->syncPermissions(Permission::all());
 
-        // 2. مدير (Admin)
+        // 2. مدير عام (Admin) — CRM عقاري
         $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         $admin->syncPermissions([
             'view-users', 'create-users', 'edit-users',
             'view-employees', 'create-employees', 'edit-employees',
-            'view-all-projects', 'create-projects', 'edit-projects', 'delete-projects',
-            'view-all-tasks', 'create-tasks', 'edit-tasks', 'delete-tasks',
+            'view-all-projects', 'create-projects', 'edit-projects',
             'view-clients', 'create-clients', 'edit-clients', 'delete-clients',
             'view-sales', 'create-sales', 'edit-sales', 'delete-sales',
-            'view-design', 'create-design', 'edit-design', 'delete-design', 'manage-design',
-            'view-marketing', 'create-marketing', 'edit-marketing', 'delete-marketing', 'manage-marketing',
             'view-finance', 'create-finance', 'edit-finance',
             'view-attendance', 'create-attendance', 'edit-attendance',
             'view-leaves', 'create-leaves', 'edit-leaves', 'approve-leaves',
             'view-salaries', 'create-salaries', 'edit-salaries', 'approve-salaries',
-            'view-training', 'create-training', 'edit-training', 'delete-training',
-            'view-meetings', 'create-meetings', 'edit-meetings', 'delete-meetings',
+            'view-training', 'create-training', 'edit-training',
+            'view-meetings', 'create-meetings', 'edit-meetings',
             'view-assets',
             'view-invoices', 'create-invoices', 'edit-invoices',
             'view-contracts', 'create-contracts', 'edit-contracts',
-            'view-bugs', 'create-bugs', 'edit-bugs',
-            'view-qa', 'create-qa', 'edit-qa',
             'view-tickets', 'create-tickets', 'edit-tickets',
             'view-departments', 'create-departments', 'edit-departments',
             'view-reports', 'generate-reports', 'export-reports',
             'view-dashboard', 'view-analytics',
-            'view-settings'
+            'view-settings', 'manage-roles',
+            'view-marketing', 'create-marketing', 'edit-marketing', 'delete-marketing', 'manage-marketing',
         ]);
 
         // 3. مدير مشاريع (Project Manager)
@@ -189,16 +185,60 @@ class RolePermissionSeeder extends Seeder
             'view-dashboard', 'view-analytics'
         ]);
 
-        // 7. موظف مبيعات (Sales Representative)
+        // 7. مدير مبيعات (CRM)
+        $salesManager = Role::firstOrCreate(['name' => 'sales_manager', 'guard_name' => 'web']);
+        $salesManagerPerms = [
+            'view-clients', 'create-clients', 'edit-clients',
+            'view-sales', 'create-sales', 'edit-sales',
+            'view-all-projects', 'create-projects', 'edit-projects',
+            'view-employees',
+            'view-attendance', 'create-attendance',
+            'view-reports', 'generate-reports', 'export-reports',
+            'view-dashboard', 'view-analytics',
+            'view-training', 'view-meetings',
+        ];
+        $salesManager->syncPermissions($salesManagerPerms);
+
+        Role::firstOrCreate(['name' => 'manager', 'guard_name' => 'web'])
+            ->syncPermissions($salesManagerPerms);
+
+        // 8. موظف مبيعات (CRM)
         $salesRep = Role::firstOrCreate(['name' => 'sales_rep', 'guard_name' => 'web']);
         $salesRep->syncPermissions([
             'view-clients', 'create-clients', 'edit-clients',
             'view-sales', 'create-sales', 'edit-sales',
-            'view-marketing', 'create-marketing', 'edit-marketing',
-            'view-invoices', 'create-invoices',
-            'view-contracts', 'create-contracts',
-            'view-dashboard'
+            'view-all-projects', 'create-projects', 'edit-projects',
+            'view-attendance', 'create-attendance',
+            'view-dashboard',
+            'view-training', 'view-meetings',
         ]);
+
+        Role::firstOrCreate(['name' => 'sales_agent', 'guard_name' => 'web'])
+            ->syncPermissions($salesRep->permissions->pluck('name')->all());
+
+        $marketingManagerPerms = [
+            'view-marketing', 'create-marketing', 'edit-marketing', 'delete-marketing', 'manage-marketing',
+            'view-clients', 'create-clients', 'edit-clients',
+            'view-all-projects',
+            'view-employees',
+            'view-reports', 'generate-reports', 'export-reports',
+            'view-dashboard', 'view-analytics',
+            'view-attendance', 'create-attendance',
+            'view-training', 'view-meetings',
+        ];
+
+        Role::firstOrCreate(['name' => 'marketing_manager', 'guard_name' => 'web'])
+            ->syncPermissions($marketingManagerPerms);
+
+        Role::firstOrCreate(['name' => 'marketing_rep', 'guard_name' => 'web'])
+            ->syncPermissions([
+                'view-marketing', 'create-marketing', 'edit-marketing',
+                'view-clients', 'create-clients',
+                'view-all-projects',
+                'view-dashboard',
+                'view-attendance', 'create-attendance',
+                'view-training', 'view-meetings',
+            ]);
 
         // 8. دعم فني (Support)
         $support = Role::firstOrCreate(['name' => 'support', 'guard_name' => 'web']);

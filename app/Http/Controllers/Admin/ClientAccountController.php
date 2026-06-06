@@ -30,8 +30,7 @@ class ClientAccountController extends Controller
 
     public function create()
     {
-        $clients = Client::orderBy('name')->get();
-        return view('client-accounts.create', compact('clients'));
+        return view('client-accounts.create');
     }
 
     public function store(Request $request)
@@ -59,8 +58,9 @@ class ClientAccountController extends Controller
 
     public function edit(ClientAccount $clientAccount)
     {
-        $clients = Client::orderBy('name')->get();
-        return view('client-accounts.edit', compact('clientAccount', 'clients'));
+        $clientAccount->load('client:id,name,phone,company_name,email');
+
+        return view('client-accounts.edit', compact('clientAccount'));
     }
 
     public function update(Request $request, ClientAccount $clientAccount)

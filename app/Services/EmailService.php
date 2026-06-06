@@ -22,14 +22,16 @@ class EmailService
     private function configureSMTP(): void
     {
         try {
-            // إعدادات Gmail
             $this->mail->isSMTP();
-            $this->mail->Host       = 'smtp.gmail.com';
+            $this->mail->Host       = env('MAIL_HOST', 'smtp.gmail.com');
             $this->mail->SMTPAuth   = true;
-            $this->mail->Username   = 'loransmogay@gmail.com';
-            $this->mail->Password   = 'yjxqfpvydykommds'; // كلمة سر التطبيق - Solvesta
-            $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-            $this->mail->Port       = 587;
+            $this->mail->Username   = env('MAIL_USERNAME', '');
+            $this->mail->Password   = env('MAIL_PASSWORD', '');
+            $encryption             = env('MAIL_ENCRYPTION', 'tls');
+            $this->mail->SMTPSecure = $encryption === 'ssl'
+                ? PHPMailer::ENCRYPTION_SMTPS
+                : PHPMailer::ENCRYPTION_STARTTLS;
+            $this->mail->Port       = (int) env('MAIL_PORT', 587);
             $this->mail->CharSet    = 'UTF-8';
             $this->mail->Encoding   = '8bit';
             
@@ -83,7 +85,10 @@ class EmailService
             $this->mail->clearReplyTos();
             
             // المرسل والمستقبل
-            $this->mail->setFrom('loransmogay@gmail.com', 'Solvesta');
+            $this->mail->setFrom(
+                env('MAIL_FROM_ADDRESS', env('MAIL_USERNAME')),
+                env('MAIL_FROM_NAME', 'Solvesta'),
+            );
             $this->mail->addAddress($email);
             
             // محتوى البريد
@@ -153,7 +158,10 @@ class EmailService
             $this->mail->clearAddresses();
             $this->mail->clearAttachments();
             
-            $this->mail->setFrom('loransmogay@gmail.com', $fromName ?: 'Solvesta');
+            $this->mail->setFrom(
+                env('MAIL_FROM_ADDRESS', env('MAIL_USERNAME')),
+                $fromName ?: env('MAIL_FROM_NAME', 'Solvesta'),
+            );
             $this->mail->addAddress($to);
             
             $this->mail->isHTML(true);

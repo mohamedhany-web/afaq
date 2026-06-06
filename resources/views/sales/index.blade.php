@@ -120,15 +120,7 @@
 
             <!-- Client Filter -->
             <div>
-                <label for="client_id" class="block text-sm font-medium text-gray-700 mb-2">العميل</label>
-                <select name="client_id" id="client_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    <option value="">جميع العملاء</option>
-                    @foreach($clients as $client)
-                        <option value="{{ $client->id }}" {{ request('client_id') == $client->id ? 'selected' : '' }}>
-                            {{ $client->name }}
-                        </option>
-                    @endforeach
-                </select>
+                @include('partials.client-search-select', ['required' => false, 'value' => request('client_id'), 'inputClass' => 'w-full px-3 py-2 border border-gray-300 rounded-lg', 'crmScope' => false, 'placeholder' => 'ابحث لتصفية حسب عميل...'])
             </div>
 
             <!-- Sales Rep Filter -->

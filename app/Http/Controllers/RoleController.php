@@ -2,122 +2,99 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 use App\Models\User;
+use App\Services\CrmRoleCatalogService;
+use Illuminate\Http\Request;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
     public function index()
     {
-        $roles = Role::with('permissions')->get();
-        $permissions = Permission::all();
-        
+        $roles = CrmRoleCatalogService::activeRoles();
+        $users = User::with('roles')->orderBy('name')->get();
+
         $stats = [
-            'total_roles' => Role::count(),
-            'total_permissions' => Permission::count(),
-            'total_users' => User::count(),
+            'total_roles' => $roles->count(),
+            'total_permissions' => CrmRoleCatalogService::activePermissions()->count(),
+            'total_users' => $users->count(),
+            'crm_users' => $users->filter(fn (User $u) => in_array(
+                CrmRoleCatalogService::resolveUserDisplayRole($u),
+                ['sales_manager', 'sales_rep', 'admin', 'super_admin'],
+                true
+            ))->count(),
         ];
 
-        return view('roles.index', compact('roles', 'permissions', 'stats'));
+        return view('roles.index', compact('roles', 'users', 'stats'));
     }
 
     public function assignRole(Request $request, User $user)
     {
+        $allowed = CrmRoleCatalogService::assignableRoleNames();
+
         $request->validate([
-            'role' => 'required|exists:roles,name'
+            'role' => 'required|in:' . implode(',', $allowed),
         ]);
 
-        // حذف جميع الصلاحيات المخصصة عند تغيير الدور
-        // لأن الصلاحيات الجديدة ستأتي من الدور الجديد
-        \App\Models\UserPermission::where('user_id', $user->id)->delete();
+        if ($user->hasRole('super_admin') && $request->role !== 'super_admin' && !auth()->user()->hasRole('super_admin')) {
+            return redirect()->back()->with('error', 'لا يمكن تغيير دور مدير النظام');
+        }
 
-        $user->syncRoles([$request->role]);
-        
-        // مسح الكاش للتأكد من تطبيق التغييرات
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        CrmRoleCatalogService::assignRoleToUser($user, $request->role);
 
-        return redirect()->back()->with('success', 'تم تعيين الدور الوظيفي بنجاح');
+        return redirect()->back()->with('success', 'تم تعيين الدور: ' . CrmRoleCatalogService::roleLabel($request->role));
     }
 
     public function assignCustomPermissions(Request $request, User $user)
     {
+        $activeKeys = CrmRoleCatalogService::activePermissions()->pluck('name')->all();
+
         $request->validate([
             'permissions' => 'array',
-            'permissions.*' => 'exists:permissions,name'
+            'permissions.*' => 'in:' . implode(',', $activeKeys),
         ]);
 
-        // الحصول على جميع الصلاحيات المتاحة
-        $allPermissions = Permission::pluck('name')->toArray();
+        $allPermissions = $activeKeys;
         $selectedPermissions = $request->permissions ?? [];
-        
-        // الحصول على صلاحيات الدور الافتراضية
+
         $rolePermissions = [];
         if ($user->roles->first()) {
             $rolePermissions = $user->roles->first()->permissions->pluck('name')->toArray();
         }
-        
-        // حذف جميع الصلاحيات المخصصة القديمة من user_permissions
+
         \App\Models\UserPermission::where('user_id', $user->id)->delete();
-        
-        // معالجة كل صلاحية
+
         foreach ($allPermissions as $permission) {
             $isSelected = in_array($permission, $selectedPermissions);
             $isFromRole = in_array($permission, $rolePermissions);
-            
+
             if ($isSelected) {
-                // الصلاحية مُحددة (مفعلة)
-                if ($isFromRole) {
-                    // الصلاحية من الدور وتم تحديدها
-                    // لا نحتاج لحفظها في user_permissions لأنها تأتي تلقائياً من الدور
-                    // لكن إذا كانت معطلة سابقاً، نحذف السجل المعطل
-                    \App\Models\UserPermission::where('user_id', $user->id)
-                                             ->where('permission_key', $permission)
-                                             ->delete();
-                    
-                    // نضمن أنها موجودة في Spatie (يجب أن تكون موجودة من الدور)
-                    if (!$user->hasPermissionTo($permission)) {
-                        $user->givePermissionTo($permission);
-                    }
-                } else {
-                    // الصلاحية ليست من الدور ولكن تم تحديدها
-                    // نضيفها مباشرة إلى Spatie
+                if (!$isFromRole) {
                     $user->givePermissionTo($permission);
-                    
-                    // نحفظها في user_permissions كمفعلة (للتحكم الإضافي)
                     \App\Models\UserPermission::create([
                         'user_id' => $user->id,
                         'permission_key' => $permission,
                         'is_enabled' => true,
                     ]);
+                } else {
+                    \App\Models\UserPermission::where('user_id', $user->id)
+                        ->where('permission_key', $permission)
+                        ->delete();
                 }
             } else {
-                // الصلاحية غير مُحددة (معطلة)
                 if ($isFromRole) {
-                    // الصلاحية من الدور ولكن تم إلغاء تحديدها
-                    // نحفظها كمعطلة في user_permissions لتجاوز صلاحيات الدور
                     \App\Models\UserPermission::create([
                         'user_id' => $user->id,
                         'permission_key' => $permission,
                         'is_enabled' => false,
                     ]);
-                } else {
-                    // الصلاحية ليست من الدور وتم إلغاء تحديدها
-                    // نزيلها من Spatie إذا كانت موجودة
-                    if ($user->hasPermissionTo($permission)) {
-                        $user->revokePermissionTo($permission);
-                    }
-                    
-                    // نحذفها من user_permissions إذا كانت موجودة
-                    \App\Models\UserPermission::where('user_id', $user->id)
-                                             ->where('permission_key', $permission)
-                                             ->delete();
+                } elseif ($user->hasPermissionTo($permission)) {
+                    $user->revokePermissionTo($permission);
                 }
             }
         }
-        
-        // مسح الكاش للتأكد من تطبيق التغييرات
+
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         return redirect()->back()->with('success', 'تم تحديث الصلاحيات بنجاح');
@@ -125,129 +102,59 @@ class RoleController extends Controller
 
     public function updateRolePermissions(Request $request, Role $role)
     {
+        if (!in_array($role->name, array_keys(config('crm_roles.roles', [])), true)) {
+            abort(403, 'لا يمكن تعديل هذا الدور القديم من الواجهة.');
+        }
+
+        $activeKeys = CrmRoleCatalogService::activePermissions()->pluck('name')->all();
+
         $request->validate([
             'permissions' => 'array',
-            'permissions.*' => 'exists:permissions,name'
+            'permissions.*' => 'in:' . implode(',', $activeKeys),
         ]);
 
-        if ($request->has('permissions')) {
-            $role->syncPermissions($request->permissions);
-        } else {
-            $role->syncPermissions([]);
-        }
+        $role->syncPermissions($request->permissions ?? []);
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         return redirect()->back()->with('success', 'تم تحديث صلاحيات الدور بنجاح');
     }
 
     public function userPermissions(User $user)
     {
-        $roles = Role::all();
-        $permissions = Permission::all();
-        $userRole = $user->roles->first();
-        
-        // الحصول على صلاحيات الدور الافتراضية
+        $roles = CrmRoleCatalogService::assignableRoles();
+        $permissions = CrmRoleCatalogService::activePermissions();
+        $permissionGroups = CrmRoleCatalogService::permissionGroups();
+        $displayRole = CrmRoleCatalogService::resolveUserDisplayRole($user);
+        $userRole = $roles->firstWhere('name', $displayRole) ?? $user->roles->first();
+
         $rolePermissions = $userRole ? $userRole->permissions->pluck('name')->toArray() : [];
-        
-        // الحصول على جميع الصلاحيات الفعلية للمستخدم (من Spatie مباشرة)
         $userDirectPermissions = $user->getAllPermissions()->pluck('name')->toArray();
-        
-        // الحصول على الصلاحيات المخصصة من جدول user_permissions (للتحكم في إلغاء التفعيل)
+
         $allCustomPermissions = \App\Models\UserPermission::where('user_id', $user->id)->get();
         $customPermissionsMap = [];
-        
+
         foreach ($allCustomPermissions as $cp) {
-            // التحقق من أن الصلاحية موجودة في جدول permissions (Spatie permissions)
-            $isSpatiePermission = Permission::where('name', $cp->permission_key)->exists();
-            
-            if ($isSpatiePermission) {
-                // إذا كانت الصلاحية من صلاحيات Spatie
+            if (Permission::where('name', $cp->permission_key)->exists()) {
                 $customPermissionsMap[$cp->permission_key] = $cp->is_enabled;
             }
         }
-        
-        // دمج الصلاحيات: نستخدم الصلاحيات الفعلية من Spatie
-        // الصلاحيات المخصصة (user_permissions) تتجاوز الصلاحيات الفعلية
+
         $userPermissions = [];
         foreach ($permissions as $permission) {
             $permName = $permission->name;
-            
-            // إذا كانت هناك صلاحية مخصصة (user_permissions)، نستخدمها
             if (isset($customPermissionsMap[$permName])) {
                 if ($customPermissionsMap[$permName]) {
                     $userPermissions[] = $permName;
                 }
-                // إذا كانت معطلة في user_permissions، لا نضيفها
-            } 
-            // إذا لم توجد صلاحية مخصصة، نستخدم الصلاحية الفعلية من Spatie
-            elseif (in_array($permName, $userDirectPermissions)) {
+            } elseif (in_array($permName, $userDirectPermissions)) {
                 $userPermissions[] = $permName;
             }
         }
 
-        return view('roles.user-permissions', compact('user', 'roles', 'permissions', 'userRole', 'userPermissions', 'rolePermissions', 'customPermissionsMap'));
-    }
-
-    private function getDefaultPermissionForRole($user, $permissionKey)
-    {
-        $userRoles = $user->roles->pluck('name')->toArray();
-        
-        // Super Admin - جميع الصلاحيات
-        if (in_array('super_admin', $userRoles)) {
-            return true;
-        }
-        
-        // Admin - معظم الصلاحيات
-        if (in_array('admin', $userRoles)) {
-            return true;
-        }
-        
-        // Manager - صلاحيات إدارية محدودة
-        if (in_array('manager', $userRoles)) {
-            $managerPermissions = [
-                'sidebar_dashboard',
-                'sidebar_projects',
-                'sidebar_operations',
-                'sidebar_tasks',
-                'sidebar_clients',
-                'sidebar_sales',
-                'sidebar_reports',
-                'sidebar_training',
-                'sidebar_meetings',
-            ];
-            return in_array($permissionKey, $managerPermissions);
-        }
-        
-        // HR - صلاحيات موارد بشرية
-        if (in_array('hr', $userRoles)) {
-            $hrPermissions = [
-                'sidebar_dashboard',
-                'sidebar_hr',
-                'sidebar_users',
-                'sidebar_employees',
-                'sidebar_attendances',
-                'sidebar_leaves',
-                'sidebar_salaries',
-                'sidebar_reports',
-                'sidebar_training',
-                'sidebar_meetings',
-            ];
-            return in_array($permissionKey, $hrPermissions);
-        }
-        
-        // Employee - صلاحيات أساسية
-        if (in_array('employee', $userRoles)) {
-            $employeePermissions = [
-                'sidebar_dashboard',
-                'sidebar_tasks',
-                'sidebar_projects_list',
-                'sidebar_clients',
-                'sidebar_training',
-                'sidebar_meetings',
-            ];
-            return in_array($permissionKey, $employeePermissions);
-        }
-        
-        // افتراضياً - لا توجد صلاحيات
-        return false;
+        return view('roles.user-permissions', compact(
+            'user', 'roles', 'permissions', 'permissionGroups',
+            'userRole', 'userPermissions', 'rolePermissions',
+            'customPermissionsMap', 'displayRole'
+        ));
     }
 }

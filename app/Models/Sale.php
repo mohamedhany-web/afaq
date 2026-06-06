@@ -18,6 +18,9 @@ class Sale extends Model
         'estimated_value',
         'actual_value',
         'stage',
+        'lost_reason',
+        'lost_reason_notes',
+        'lost_at',
         'probability_percentage',
         'expected_close_date',
         'actual_close_date',
@@ -25,6 +28,11 @@ class Sale extends Model
         'competitors',
         'decision_makers',
         'project_id',
+        'sales_team_id',
+        'unit_type',
+        'interest_type',
+        'viewing_date',
+        'viewing_notes',
     ];
 
     protected $casts = [
@@ -32,6 +40,8 @@ class Sale extends Model
         'actual_value' => 'decimal:2',
         'expected_close_date' => 'date',
         'actual_close_date' => 'date',
+        'lost_at' => 'datetime',
+        'viewing_date' => 'date',
         'competitors' => 'array',
         'decision_makers' => 'array',
         'created_at' => 'datetime',
@@ -77,5 +87,10 @@ class Sale extends Model
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
+    }
+
+    public function salesTeam(): BelongsTo
+    {
+        return $this->belongsTo(SalesTeam::class);
     }
 }

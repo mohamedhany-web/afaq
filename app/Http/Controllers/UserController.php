@@ -90,6 +90,7 @@ class UserController extends Controller
                 'hire_date' => $request->hire_date,
                 'employment_type' => $request->employment_type,
                 'status' => 'active',
+                'daily_hours' => $request->input('daily_hours', config('work_day.default_daily_hours', 8)),
             ]);
 
             // Set custom permissions

@@ -44,16 +44,7 @@
 
                 <!-- Client -->
                 <div>
-                    <label for="client_id" class="block text-sm font-medium text-gray-700 mb-2">العميل <span class="text-red-500">*</span></label>
-                    <select name="client_id" id="client_id" required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 @error('client_id') border-red-500 @enderror">
-                        <option value="">اختر العميل</option>
-                        @foreach($clients as $client)
-                            <option value="{{ $client->id }}" {{ old('client_id') == $client->id ? 'selected' : '' }}>
-                                {{ $client->name }} - {{ $client->company_name ?? 'غير محدد' }}
-                            </option>
-                        @endforeach
-                    </select>
+                    @include('partials.client-search-select', ['required' => true, 'value' => old('client_id'), 'inputClass' => 'w-full px-4 py-3 border border-gray-300 rounded-xl', 'crmScope' => false])
                     @error('client_id')
                         <p class="mt-1 text-sm text-red-600 flex items-center">
                             <svg class="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">

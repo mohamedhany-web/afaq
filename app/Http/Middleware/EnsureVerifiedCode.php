@@ -16,6 +16,10 @@ class EnsureVerifiedCode
      */
     public function handle(Request $request, Closure $next): Response
     {
+        if (config('app.skip_email_verification')) {
+            return $next($request);
+        }
+
         // التحقق من أن المستخدم مسجل الدخول
         if (!Auth::check()) {
             return redirect()->route('login');

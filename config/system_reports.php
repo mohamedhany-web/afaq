@@ -1,0 +1,130 @@
+<?php
+
+return [
+    'categories' => [
+        'overview' => ['label' => 'نظرة عامة', 'order' => 1],
+        'crm' => ['label' => 'المبيعات والـ CRM', 'order' => 2],
+        'hr' => ['label' => 'الموارد البشرية', 'order' => 3],
+        'operations' => ['label' => 'المشاريع والتشغيل', 'order' => 4],
+        'system' => ['label' => 'النظام والمستخدمون', 'order' => 5],
+    ],
+
+    'reports' => [
+        'executive_summary' => [
+            'title' => 'الملخص التنفيذي',
+            'description' => 'مؤشرات شاملة عن العملاء والمبيعات والمشاريع والموظفين والمهام.',
+            'category' => 'overview',
+            'icon' => 'chart-bar',
+            'supports_date_filter' => false,
+        ],
+        'crm_clients' => [
+            'title' => 'تقرير العملاء',
+            'description' => 'قائمة العملاء مع المرحلة والحالة والمسؤول عن المتابعة.',
+            'category' => 'crm',
+            'icon' => 'users',
+            'supports_date_filter' => true,
+        ],
+        'sales_pipeline' => [
+            'title' => 'مسار المبيعات',
+            'description' => 'صفقات المبيعات والقيم المتوقعة والمراحل.',
+            'category' => 'crm',
+            'icon' => 'funnel',
+            'supports_date_filter' => true,
+        ],
+        'crm_tasks' => [
+            'title' => 'مهام CRM',
+            'description' => 'المهام المسندة والحالات والأولويات ودرجات الأداء.',
+            'category' => 'crm',
+            'icon' => 'clipboard',
+            'supports_date_filter' => true,
+        ],
+        'daily_sales_reports' => [
+            'title' => 'التقارير اليومية للمبيعات',
+            'description' => 'تقارير المندوبين اليومية وحالة الإرسال.',
+            'category' => 'crm',
+            'icon' => 'document',
+            'supports_date_filter' => true,
+        ],
+        'follow_ups' => [
+            'title' => 'جدول المتابعات',
+            'description' => 'المكالمات والاجتماعات والمعاينات المجدولة والمنجزة.',
+            'category' => 'crm',
+            'icon' => 'calendar',
+            'supports_date_filter' => true,
+        ],
+        'sales_teams' => [
+            'title' => 'فرق المبيعات',
+            'description' => 'الفرق والمديرون وعدد الأعضاء والصفقات.',
+            'category' => 'crm',
+            'icon' => 'user-group',
+            'supports_date_filter' => false,
+        ],
+        'compensation' => [
+            'title' => 'التعويضات والرواتب',
+            'description' => 'دورات الرواتب وخطوط المسير إن وُجدت.',
+            'category' => 'crm',
+            'icon' => 'currency',
+            'supports_date_filter' => true,
+        ],
+        'real_estate_projects' => [
+            'title' => 'المشاريع العقارية',
+            'description' => 'المشاريع والوحدات والأسعار وحالة العرض.',
+            'category' => 'operations',
+            'icon' => 'building',
+            'supports_date_filter' => false,
+        ],
+        'employees' => [
+            'title' => 'الموظفون',
+            'description' => 'بيانات الموظفين والأقسام والرواتب الأساسية.',
+            'category' => 'hr',
+            'icon' => 'badge',
+            'supports_date_filter' => false,
+        ],
+        'attendance' => [
+            'title' => 'الحضور والانصراف',
+            'description' => 'سجلات الحضور خلال فترة محددة.',
+            'category' => 'hr',
+            'icon' => 'clock',
+            'supports_date_filter' => true,
+        ],
+        'salaries' => [
+            'title' => 'الرواتب',
+            'description' => 'مسيرات الرواتب والبدلات والخصومات.',
+            'category' => 'hr',
+            'icon' => 'banknotes',
+            'supports_date_filter' => true,
+        ],
+        'departments' => [
+            'title' => 'الأقسام',
+            'description' => 'الأقسام وعدد الموظفين والمشاريع.',
+            'category' => 'hr',
+            'icon' => 'office',
+            'supports_date_filter' => false,
+        ],
+        'users' => [
+            'title' => 'المستخدمون والأدوار',
+            'description' => 'حسابات النظام والأدوار وحالة النشاط.',
+            'category' => 'system',
+            'icon' => 'shield',
+            'supports_date_filter' => false,
+        ],
+    ],
+
+    'lead_stage_labels' => [
+        'lead' => 'عميل جديد',
+        'prospect' => 'تم التواصل',
+        'proposal' => 'معاينة',
+        'negotiation' => 'تفاوض',
+        'closed_won' => 'تم البيع',
+        'closed_lost' => 'خسارة',
+    ],
+
+    'sale_stage_labels' => [
+        'lead' => 'عميل جديد',
+        'prospect' => 'تم التواصل',
+        'proposal' => 'معاينة',
+        'negotiation' => 'تفاوض',
+        'closed_won' => 'تم البيع',
+        'closed_lost' => 'خسارة',
+    ],
+];

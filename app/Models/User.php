@@ -9,6 +9,10 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Services\CrmEmployeeService;
+use App\Services\MarketingEmployeeService;
+use Illuminate\Contracts\Auth\Access\Gate;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -93,25 +97,41 @@ class User extends Authenticatable
     }
 
     /**
-     * Override the can() method to check UserPermission first, then fall back to Spatie permissions
-     * This ensures that custom permission overrides take precedence
+     * صلاحيات Spatie / user_permissions للمفاتيح النصية.
+     * فحوص السياسات (مثل can('update', $model)) تمر عبر Gate.
      */
-    public function can($permission, $guard = null)
+    public function can($abilities, $arguments = [])
     {
-        // أولاً: التحقق من الصلاحيات المخصصة في جدول user_permissions
-        $customPermission = $this->customPermissions()
-                                  ->where('permission_key', $permission)
-                                  ->first();
-        
-        // إذا كانت هناك صلاحية مخصصة محفوظة، نستخدمها مباشرة
-        // إذا كانت معطلة (is_enabled = false)، نمنع الوصول حتى لو كان لديه صلاحية من Spatie
-        if ($customPermission) {
-            return $customPermission->is_enabled;
+        if (! is_array($arguments)) {
+            $arguments = $arguments === null || $arguments === [] ? [] : [$arguments];
         }
-        
-        // إذا لم تكن هناك صلاحية مخصصة، نستخدم طريقة Spatie الافتراضية
-        // نستخدم hasPermissionTo من Spatie مباشرة لضمان التحقق الصحيح
-        return $this->hasPermissionTo($permission, $guard);
+
+        if (is_array($abilities)) {
+            return app(Gate::class)->forUser($this)->check($abilities, $arguments);
+        }
+
+        if ($arguments !== []) {
+            if (count($arguments) === 1 && is_string($arguments[0])) {
+                return $this->checkNamedPermission($abilities, $arguments[0]);
+            }
+
+            return app(Gate::class)->forUser($this)->check($abilities, $arguments);
+        }
+
+        return $this->checkNamedPermission($abilities);
+    }
+
+    protected function checkNamedPermission(string $permissionKey, ?string $guard = null): bool
+    {
+        $customPermission = $this->customPermissions()
+            ->where('permission_key', $permissionKey)
+            ->first();
+
+        if ($customPermission) {
+            return (bool) $customPermission->is_enabled;
+        }
+
+        return $this->hasPermissionTo($permissionKey, $guard);
     }
 
     /**
@@ -214,5 +234,124 @@ class User extends Authenticatable
     public function trainingParticipants(): HasMany
     {
         return $this->hasMany(TrainingParticipant::class, 'user_id');
+    }
+
+    public function managedSalesTeams(): HasMany
+    {
+        return $this->hasMany(SalesTeam::class, 'manager_id');
+    }
+
+    public function salesTeams(): BelongsToMany
+    {
+        return $this->belongsToMany(SalesTeam::class, 'sales_team_members', 'user_id', 'sales_team_id')
+            ->withTimestamps();
+    }
+
+    public function assignedSales(): HasMany
+    {
+        return $this->hasMany(Sale::class, 'assigned_to');
+    }
+
+    public function compensationProfile(): HasOne
+    {
+        return $this->hasOne(\App\Models\Compensation\CompEmployeeProfile::class);
+    }
+
+    public function payrollRuns(): HasMany
+    {
+        return $this->hasMany(\App\Models\Compensation\CompPayrollRun::class);
+    }
+
+    public function assignedCrmTasks(): HasMany
+    {
+        return $this->hasMany(CrmTask::class, 'assigned_to');
+    }
+
+    public function createdCrmTasks(): HasMany
+    {
+        return $this->hasMany(CrmTask::class, 'assigned_by');
+    }
+
+    public function isCrmOnlyUser(): bool
+    {
+        return $this->usesCrmWorkspace();
+    }
+
+    /** مستخدم مبيعات (مدير أو وكيل) بدون صلاحيات إدارة النظام الكاملة */
+    public function usesCrmWorkspace(): bool
+    {
+        if ($this->hasRole(['super_admin', 'admin'])) {
+            return false;
+        }
+
+        return $this->hasRole(array_merge(
+            CrmEmployeeService::LEGACY_MANAGER_ROLES,
+            CrmEmployeeService::LEGACY_EMPLOYEE_ROLES
+        ));
+    }
+
+    public function isSalesAgentOnly(): bool
+    {
+        return $this->hasRole(CrmEmployeeService::LEGACY_EMPLOYEE_ROLES)
+            && !$this->hasRole(array_merge(['super_admin', 'admin'], CrmEmployeeService::LEGACY_MANAGER_ROLES));
+    }
+
+    public function isSalesManager(): bool
+    {
+        return $this->hasRole(CrmEmployeeService::LEGACY_MANAGER_ROLES)
+            || $this->managedSalesTeams()->exists();
+    }
+
+    public function canAccessCrm(): bool
+    {
+        return $this->hasRole(array_merge(
+            ['super_admin', 'admin'],
+            CrmEmployeeService::LEGACY_MANAGER_ROLES,
+            CrmEmployeeService::LEGACY_EMPLOYEE_ROLES
+        ));
+    }
+
+    public function usesMarketingWorkspace(): bool
+    {
+        if ($this->hasRole(['super_admin', 'admin'])) {
+            return false;
+        }
+
+        return $this->hasRole(array_merge(
+            MarketingEmployeeService::LEGACY_MANAGER_ROLES,
+            MarketingEmployeeService::LEGACY_REP_ROLES
+        ));
+    }
+
+    public function isMarketingOnlyUser(): bool
+    {
+        return $this->usesMarketingWorkspace() && !$this->usesCrmWorkspace();
+    }
+
+    public function isMarketingManager(): bool
+    {
+        return $this->hasRole(MarketingEmployeeService::LEGACY_MANAGER_ROLES);
+    }
+
+    public function canAccessMarketing(): bool
+    {
+        return $this->hasRole(array_merge(
+            ['super_admin', 'admin'],
+            MarketingEmployeeService::LEGACY_MANAGER_ROLES,
+            MarketingEmployeeService::LEGACY_REP_ROLES
+        ));
+    }
+
+    public function homeRoute(): string
+    {
+        if ($this->isMarketingOnlyUser()) {
+            return route('marketing.dashboard');
+        }
+
+        if ($this->usesCrmWorkspace()) {
+            return route('crm.dashboard');
+        }
+
+        return route('dashboard');
     }
 }

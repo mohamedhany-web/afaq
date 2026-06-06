@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Employee;
 use App\Models\Project;
-use App\Models\Task;
 use App\Models\Client;
 use App\Models\Sale;
 use App\Models\Attendance;
@@ -26,11 +25,10 @@ class ReportController extends Controller
         $stats = [
             'total_employees' => Employee::where('status', 'active')->count(),
             'total_projects' => Project::count(),
-            'active_projects' => Project::whereIn('status', ['planning', 'in_progress'])->count(),
-            'completed_projects' => Project::where('status', 'completed')->count(),
+            'active_projects' => Project::whereIn('listing_status', ['upcoming', 'active'])->count(),
+            'completed_projects' => Project::whereIn('listing_status', ['completed', 'sold_out'])->count(),
             'total_clients' => Client::count(),
             'total_departments' => Department::where('is_active', true)->count(),
-            'pending_tasks' => Task::where('status', 'pending')->count(),
             'total_sales' => Sale::sum('estimated_value'),
         ];
         
@@ -107,88 +105,6 @@ class ReportController extends Controller
         ];
         
         return view('reports.employees-print', compact('employees', 'departments', 'summary'));
-    }
-
-    /**
-     * Projects report.
-     */
-    public function projects(Request $request)
-    {
-        $status = $request->get('status');
-        $client_id = $request->get('client_id');
-        $department_id = $request->get('department_id');
-        
-        $query = Project::with(['client', 'department', 'tasks']);
-        
-        if ($status) {
-            $query->where('status', $status);
-        }
-        
-        if ($client_id) {
-            $query->where('client_id', $client_id);
-        }
-        
-        if ($department_id) {
-            $query->where('department_id', $department_id);
-        }
-        
-        $projects = $query->get();
-        $clients = Client::all();
-        $departments = Department::where('is_active', true)->get();
-        
-        $summary = [
-            'total' => $projects->count(),
-            'total_budget' => $projects->sum('budget'),
-            'average_progress' => $projects->avg('progress_percentage'),
-            'by_status' => $projects->groupBy('status')->map(function($group) {
-                return [
-                    'count' => $group->count(),
-                    'budget' => $group->sum('budget'),
-                ];
-            }),
-        ];
-        
-        return view('reports.projects', compact('projects', 'clients', 'departments', 'summary'));
-    }
-
-    /**
-     * Projects report - Print version.
-     */
-    public function projectsPrint(Request $request)
-    {
-        $status = $request->get('status');
-        $client_id = $request->get('client_id');
-        $department_id = $request->get('department_id');
-        
-        $query = Project::with(['client', 'department', 'tasks']);
-        
-        if ($status) {
-            $query->where('status', $status);
-        }
-        
-        if ($client_id) {
-            $query->where('client_id', $client_id);
-        }
-        
-        if ($department_id) {
-            $query->where('department_id', $department_id);
-        }
-        
-        $projects = $query->get();
-        
-        $summary = [
-            'total' => $projects->count(),
-            'total_budget' => $projects->sum('budget'),
-            'average_progress' => $projects->avg('progress_percentage'),
-            'by_status' => $projects->groupBy('status')->map(function($group) {
-                return [
-                    'count' => $group->count(),
-                    'budget' => $group->sum('budget'),
-                ];
-            }),
-        ];
-        
-        return view('reports.projects-print', compact('projects', 'summary'));
     }
 
     /**
@@ -399,89 +315,6 @@ class ReportController extends Controller
         ];
         
         return view('reports.salaries-print', compact('salaries', 'summary', 'year', 'month'));
-    }
-
-    /**
-     * Tasks report.
-     */
-    public function tasks(Request $request)
-    {
-        $status = $request->get('status');
-        $priority = $request->get('priority');
-        $project_id = $request->get('project_id');
-        
-        $query = Task::with(['project', 'assignedTo']);
-        
-        if ($status) {
-            $query->where('status', $status);
-        }
-        
-        if ($priority) {
-            $query->where('priority', $priority);
-        }
-        
-        if ($project_id) {
-            $query->where('project_id', $project_id);
-        }
-        
-        $tasks = $query->get();
-        $projects = Project::all();
-        
-        $summary = [
-            'total' => $tasks->count(),
-            'by_status' => $tasks->groupBy('status')->map(function($group) {
-                return $group->count();
-            }),
-            'by_priority' => $tasks->groupBy('priority')->map(function($group) {
-                return $group->count();
-            }),
-            'completion_rate' => $tasks->count() > 0 
-                ? round(($tasks->where('status', 'completed')->count() / $tasks->count()) * 100, 2)
-                : 0,
-        ];
-        
-        return view('reports.tasks', compact('tasks', 'projects', 'summary'));
-    }
-
-    /**
-     * Tasks report - Print version.
-     */
-    public function tasksPrint(Request $request)
-    {
-        $status = $request->get('status');
-        $priority = $request->get('priority');
-        $project_id = $request->get('project_id');
-        
-        $query = Task::with(['project', 'assignedTo']);
-        
-        if ($status) {
-            $query->where('status', $status);
-        }
-        
-        if ($priority) {
-            $query->where('priority', $priority);
-        }
-        
-        if ($project_id) {
-            $query->where('project_id', $project_id);
-        }
-        
-        $tasks = $query->get();
-        
-        $summary = [
-            'total' => $tasks->count(),
-            'by_status' => $tasks->groupBy('status')->map(function($group) {
-                return $group->count();
-            }),
-            'by_priority' => $tasks->groupBy('priority')->map(function($group) {
-                return $group->count();
-            }),
-            'completion_rate' => $tasks->count() > 0 
-                ? round(($tasks->where('status', 'completed')->count() / $tasks->count()) * 100, 2)
-                : 0,
-        ];
-        
-        return view('reports.tasks-print', compact('tasks', 'summary'));
     }
 
     /**

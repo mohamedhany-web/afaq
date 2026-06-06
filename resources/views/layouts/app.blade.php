@@ -199,6 +199,15 @@
             border-color: #e5e7eb;
             backdrop-filter: blur(10px);
         }
+
+        .app-top-header .header-inner {
+            min-height: 3rem;
+        }
+        @media (min-width: 640px) {
+            .app-top-header .header-inner {
+                min-height: 3.25rem;
+            }
+        }
         
         /* Time updater for dashboard */
         #dashboard-time {
@@ -222,6 +231,9 @@
         $displayName = $webUser?->name ?? $clientAccount?->name ?? 'مستخدم';
         $displayEmail = $webUser?->email ?? $clientAccount?->email ?? null;
         $displayRole = $webUser?->roles?->first()?->name ?? ($isClientGuard ? 'عميل' : 'مستخدم');
+        $workDayService = app(\App\Services\WorkDayService::class);
+        $workDayStatus = $webUser ? $workDayService->statusFor($webUser) : ['show_button' => false, 'must_start' => false, 'on_leave' => false, 'required' => false];
+        $themeColorWd = \App\Helpers\SettingsHelper::getThemeColor();
     @endphp
     <div class="flex h-screen">
         <!-- Mobile Overlay -->
@@ -276,7 +288,8 @@
             <nav class="flex-1 overflow-y-auto sidebar-scroll sidebar-nav-bg">
                 <div class="p-3">
                     <div class="space-y-1">
-                        <!-- Dashboard (web users only) -->
+                        @include('layouts.partials.sidebar-realestate')
+                        @if(false) {{-- القائمة القديمة — معطّلة لنظام CRM العقاري --}}
                         @if(!$isClientGuard)
                         <a href="{{ route('dashboard') }}" 
                                class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('dashboard') ? 'active' : '' }}">
@@ -426,8 +439,15 @@
                             @endcan
                             
                             @can('view-reports')
+                            <a href="{{ route('admin.system-reports.index') }}" 
+                               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('admin.system-reports.*') ? 'active' : '' }}">
+                                <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-7M7 3h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"/>
+                                </svg>
+                                تقارير النظام
+                            </a>
                             <a href="{{ route('reports.index') }}" 
-                               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+                               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('reports.*') && !request()->routeIs('admin.system-reports.*') ? 'active' : '' }}">
                                 <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                 </svg>
@@ -448,6 +468,14 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                                 تقارير الأقسام
+                            </a>
+
+                            <a href="{{ route('admin.auto-penalties.index') }}" 
+                               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('admin.auto-penalties.*') ? 'active' : '' }}">
+                                <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M4.93 4.93l14.14 14.14M12 3a9 9 0 100 18 9 9 0 000-18z" />
+                                </svg>
+                                خصومات وعقوبات تلقائية
                             </a>
                             @endcan
                             
@@ -542,30 +570,17 @@
                         </div>
                         @endif
 
-                        <!-- Project Management Section -->
-                        @if($webUser && ($webUser->can('view-own-projects') || $webUser->can('view-all-projects') || $webUser->can('view-own-tasks') || $webUser->can('view-all-tasks')))
+                        <!-- Real Estate Projects Section -->
+                        @if($webUser && ($webUser->can('view-own-projects') || $webUser->can('view-all-projects')))
                         <div class="mt-6">
-                            <h3 class="sidebar-section-title px-4">إدارة المشاريع</h3>
-                            
-                            @if($webUser && ($webUser->can('view-own-projects') || $webUser->can('view-all-projects')))
+                            <h3 class="sidebar-section-title px-4">المشاريع العقارية</h3>
                             <a href="{{ route('projects.index') }}" 
                                class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('projects.*') ? 'active' : '' }}">
                                 <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                 </svg>
-                                المشاريع
+                                المشاريع العقارية
                             </a>
-                            @endif
-                            
-                            @if($webUser && ($webUser->can('view-own-tasks') || $webUser->can('view-all-tasks')))
-                            <a href="{{ route('tasks.index') }}" 
-                               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('tasks.*') ? 'active' : '' }}">
-                                <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                                </svg>
-                                المهام
-                            </a>
-                            @endif
                         </div>
                         @endif
 
@@ -681,63 +696,6 @@
                                 الفواتير
                             </a>
                             @endcan
-                        </div>
-                        @endif
-
-                        <!-- Development Section -->
-                        @if($webUser && ($webUser->can('view-bugs') || $webUser->can('view-qa')))
-                        <div class="mt-6">
-                            <h3 class="sidebar-section-title px-4">التطوير والبرمجة</h3>
-                            
-                            @can('view-bugs')
-                            <a href="{{ route('bugs.index') }}" 
-                               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('bugs.*') ? 'active' : '' }}">
-                                <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                تتبع الأخطاء
-                            </a>
-                            @endcan
-                            
-                            @can('view-qa')
-                            <a href="{{ route('qa.index') }}" 
-                               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('qa.*') ? 'active' : '' }}">
-                                <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                الجودة والاختبارات
-                            </a>
-                            @endcan
-                        </div>
-                        @endif
-
-                        <!-- Design Section -->
-                        @can('view-design')
-                        <div class="mt-6">
-                            <h3 class="sidebar-section-title px-4">التصميم</h3>
-                            
-                            <a href="{{ route('design.index') }}" 
-                               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('design.*') ? 'active' : '' }}">
-                                <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z" />
-                                </svg>
-                                إدارة التصميم
-                            </a>
-                        </div>
-                        @endif
-
-                        <!-- Marketing Section -->
-                        @can('view-marketing')
-                        <div class="mt-6">
-                            <h3 class="sidebar-section-title px-4">التسويق</h3>
-                            
-                            <a href="{{ route('marketing.index') }}" 
-                               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('marketing.*') ? 'active' : '' }}">
-                                <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-                                </svg>
-                                إدارة التسويق
-                            </a>
                         </div>
                         @endif
 
@@ -873,6 +831,7 @@
                             </a>
                         </div>
                         @endif
+                        @endif {{-- end legacy sidebar --}}
 
                     </div>
                 </div>
@@ -908,47 +867,51 @@
         <!-- Main Content -->
         <div class="flex-1 flex flex-col overflow-hidden main-content-mobile">
             <!-- Top Header -->
-            <header class="bg-white shadow-md border-b border-gray-200 overflow-visible sticky top-0 z-30">
-                <div class="px-3 sm:px-5 lg:px-6 py-3 sm:py-4 header-container">
-                    <div class="flex items-center justify-between gap-3 sm:gap-4">
+            <header class="app-top-header bg-white shadow-sm border-b border-gray-200 overflow-visible sticky top-0 z-30">
+                <div class="px-3 sm:px-4 lg:px-5 py-2 header-container header-inner">
+                    <div class="flex items-center justify-between gap-2 sm:gap-3">
                         <!-- Left Side - Menu Button & Title -->
-                        <div class="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                        <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                             <!-- Mobile Menu Button -->
-                            <button class="mobile-menu-btn p-2 rounded-lg transition-all duration-200 flex-shrink-0 hover:bg-gray-100" 
+                            <button class="mobile-menu-btn p-1.5 rounded-lg transition-all duration-200 flex-shrink-0 hover:bg-gray-100" 
                                     style="color: {{ \App\Helpers\SettingsHelper::getThemeColor() }}"
                                     id="mobileMenuBtn"
                                     onmouseover="this.style.backgroundColor='{{ \App\Helpers\SettingsHelper::getThemeColor() }}10'"
                                     onmouseout="this.style.backgroundColor='transparent'">
-                                <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                                 </svg>
                             </button>
-                            <div class="min-w-0 flex-1">
-                                <div class="flex items-center gap-3 sm:gap-4">
-                                    <h2 class="text-lg sm:text-xl font-bold text-gray-900 truncate font-tajawal">@yield('page-title', 'لوحة التحكم')</h2>
-                                    <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50 text-xs text-gray-600">
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
-                                        <span id="current-date">{{ now()->format('Y/m/d') }}</span>
-                                    </div>
-                                </div>
+                            <div class="min-w-0 flex-1 flex items-center gap-2 sm:gap-3">
+                                <h2 class="text-base sm:text-lg font-bold text-gray-900 truncate font-tajawal leading-tight shrink-0 max-w-[45vw] sm:max-w-none">@yield('page-title', 'لوحة التحكم')</h2>
+                                <span class="hidden md:inline text-gray-300 select-none" aria-hidden="true">|</span>
                                 @if($isClientGuard)
-                                    <p class="text-xs text-gray-500 mt-1 hidden sm:block font-tajawal">
+                                    <p class="hidden md:block text-xs text-gray-500 truncate font-tajawal min-w-0">
                                         بوابة العميل — {{ \App\Helpers\SettingsHelper::getCompanyName() }}
                                     </p>
                                 @else
-                                    <p class="text-xs text-gray-500 mt-1 hidden sm:block font-tajawal">مرحباً بك في نظام {{ \App\Helpers\SettingsHelper::getSystemName() }}</p>
+                                    <p class="hidden lg:block text-xs text-gray-500 truncate font-tajawal min-w-0 max-w-[12rem] xl:max-w-xs">
+                                        {{ \App\Helpers\SettingsHelper::getSystemName() }}
+                                    </p>
                                 @endif
+                                <div class="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-gray-50 text-[11px] text-gray-600 shrink-0 ms-auto sm:ms-0">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <span id="current-date">{{ now()->format('Y/m/d') }}</span>
+                                </div>
                             </div>
                         </div>
                         
                         <!-- Right Side - Actions -->
-                        <div class="flex items-center gap-2 sm:gap-3">
+                        <div class="flex items-center gap-1.5 sm:gap-2">
+                            @hasSection('header-actions')
+                                @yield('header-actions')
+                            @endif
                             @if($isClientGuard)
                                 @php $cHdr = $clientAccount; @endphp
                                 <details class="relative z-50 group/client-actions">
-                                    <summary class="flex items-center gap-2 cursor-pointer select-none list-none rounded-xl border border-gray-200 bg-white px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-extrabold text-gray-800 shadow-sm hover:bg-gray-50 transition max-w-[10.5rem] sm:max-w-none [&::-webkit-details-marker]:hidden">
+                                    <summary class="flex items-center gap-1.5 cursor-pointer select-none list-none rounded-lg border border-gray-200 bg-white px-2.5 sm:px-3 py-1.5 text-xs font-extrabold text-gray-800 shadow-sm hover:bg-gray-50 transition max-w-[10.5rem] sm:max-w-none [&::-webkit-details-marker]:hidden">
                                         <svg class="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                         </svg>
@@ -984,35 +947,49 @@
                                     </div>
                                 </details>
                             @else
-                            <!-- Start Day Button -->
+                            @if(($workDayStatus['show_button'] ?? false))
+                            @if(($workDayStatus['on_leave'] ?? false))
+                            <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold font-tajawal bg-blue-50 text-blue-800 border border-blue-200">
+                                إجازة اليوم
+                            </span>
+                            @else
+                            <!-- Start Day Button (إلزامي لموظفي المبيعات) -->
                             <button id="startDayBtn" 
-                                    class="hidden sm:flex items-center gap-2.5 px-4 sm:px-5 py-2.5 text-white rounded-xl transition-all duration-300 text-sm font-medium shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 font-tajawal"
+                                    class="hidden sm:flex items-center gap-2 px-3 py-1.5 text-white rounded-lg transition-all duration-200 text-xs font-medium shadow-sm hover:shadow-md font-tajawal {{ ($workDayStatus['must_start'] ?? false) ? 'ring-2 ring-amber-400 ring-offset-1 animate-pulse' : '' }}"
                                     style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);"
-                                    onclick="toggleWorkTimer()">
-                                <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    onclick="toggleWorkTimer()"
+                                    title="المدة المطلوبة: {{ $workDayStatus['daily_hours'] ?? 8 }} ساعة">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                <div class="flex flex-col items-start">
-                                    <span id="startDayText" class="text-xs font-bold leading-tight">بدء اليوم</span>
-                                    <span id="workTimer" class="text-xs opacity-90 font-mono leading-tight" style="display: none;">00:00:00</span>
-                                </div>
+                                <span id="startDayText" class="font-bold whitespace-nowrap">بدء اليوم</span>
+                                <span id="workTimer" class="font-mono opacity-90 whitespace-nowrap" style="display: none;">00:00:00</span>
+                                <span id="workTimerTarget" class="text-[10px] opacity-80 whitespace-nowrap hidden"></span>
                             </button>
+                            @endif
+                            @endif
 
                             <!-- Notifications -->
-                            <a href="{{ route('notifications.index') }}" 
-                               class="relative p-2.5 sm:p-3 rounded-xl transition-all duration-200 hover:shadow-md flex items-center justify-center flex-shrink-0"
-                               style="background: {{ \App\Helpers\SettingsHelper::getThemeColor() }}15; color: {{ \App\Helpers\SettingsHelper::getThemeColor() }}"
-                               onmouseover="this.style.background='{{ \App\Helpers\SettingsHelper::getThemeColor() }}25'"
-                               onmouseout="this.style.background='{{ \App\Helpers\SettingsHelper::getThemeColor() }}15'">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                                </svg>
-                                <span id="top-bar-notifications-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden font-bold border-2 border-white shadow-lg"></span>
-                            </a>
+                            <div class="relative flex-shrink-0" id="top-bar-notifications-wrap">
+                                <button type="button"
+                                        id="top-bar-notifications-btn"
+                                        onclick="toggleNotifications(event)"
+                                        class="relative p-2 rounded-lg transition-all duration-200 hover:shadow-sm flex items-center justify-center"
+                                        style="background: {{ \App\Helpers\SettingsHelper::getThemeColor() }}15; color: {{ \App\Helpers\SettingsHelper::getThemeColor() }}"
+                                        onmouseover="this.style.background='{{ \App\Helpers\SettingsHelper::getThemeColor() }}25'"
+                                        onmouseout="this.style.background='{{ \App\Helpers\SettingsHelper::getThemeColor() }}15'"
+                                        aria-label="الإشعارات"
+                                        title="الإشعارات">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                    </svg>
+                                    <span id="top-bar-notifications-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden font-bold border-2 border-white shadow-lg"></span>
+                                </button>
+                            </div>
 
                             <!-- Messages -->
                             <a href="{{ route('messages.index') }}" 
-                               class="hidden sm:flex relative p-2.5 sm:p-3 rounded-xl transition-all duration-200 hover:shadow-md items-center justify-center flex-shrink-0"
+                               class="hidden sm:flex relative p-2 rounded-lg transition-all duration-200 hover:shadow-sm items-center justify-center flex-shrink-0"
                                style="background: {{ \App\Helpers\SettingsHelper::getThemeColor() }}15; color: {{ \App\Helpers\SettingsHelper::getThemeColor() }}"
                                onmouseover="this.style.background='{{ \App\Helpers\SettingsHelper::getThemeColor() }}25'"
                                onmouseout="this.style.background='{{ \App\Helpers\SettingsHelper::getThemeColor() }}15'">
@@ -1024,7 +1001,7 @@
 
                             <!-- Settings -->
                             <a href="{{ route('system-settings.index') }}" 
-                               class="hidden sm:flex p-2.5 sm:p-3 rounded-xl transition-all duration-200 hover:shadow-md items-center justify-center flex-shrink-0"
+                               class="hidden sm:flex p-2 rounded-lg transition-all duration-200 hover:shadow-sm items-center justify-center flex-shrink-0"
                                style="background: {{ \App\Helpers\SettingsHelper::getThemeColor() }}15; color: {{ \App\Helpers\SettingsHelper::getThemeColor() }}"
                                onmouseover="this.style.background='{{ \App\Helpers\SettingsHelper::getThemeColor() }}25'"
                                onmouseout="this.style.background='{{ \App\Helpers\SettingsHelper::getThemeColor() }}15'">
@@ -1038,29 +1015,29 @@
                             <!-- User Profile Dropdown -->
                             <div class="relative overflow-visible user-dropdown-container">
                                 <button onclick="toggleUserDropdown()" 
-                                        class="flex items-center gap-2.5 sm:gap-3 rounded-xl p-2 sm:p-2.5 transition-all duration-200 hover:shadow-md group"
+                                        class="flex items-center gap-2 rounded-lg p-1 sm:p-1.5 transition-all duration-200 hover:shadow-sm group"
                                         style="background: {{ \App\Helpers\SettingsHelper::getThemeColor() }}10"
                                         onmouseover="this.style.background='{{ \App\Helpers\SettingsHelper::getThemeColor() }}20'"
                                         onmouseout="this.style.background='{{ \App\Helpers\SettingsHelper::getThemeColor() }}10'">
                                     <!-- User info - hidden on small screens -->
-                                    <div class="text-right hidden sm:block ml-2">
-                                        <div class="text-sm font-bold text-gray-900 truncate max-w-28 font-tajawal">{{ $displayName }}</div>
-                                        <div class="text-xs text-gray-600 truncate max-w-28 font-tajawal">{{ $displayRole }}</div>
+                                    <div class="text-right hidden md:block">
+                                        <div class="text-xs font-bold text-gray-900 truncate max-w-24 font-tajawal leading-tight">{{ $displayName }}</div>
+                                        <div class="text-[10px] text-gray-500 truncate max-w-24 font-tajawal leading-tight">{{ $displayRole }}</div>
                                     </div>
                                     <!-- Profile picture - always visible -->
                                     @if($webUser && $webUser->profile_picture)
                                         <img src="{{ asset('storage/' . Auth::user()->profile_picture) }}" 
                                              alt="Profile Picture" 
-                                             class="h-10 w-10 sm:h-11 sm:w-11 rounded-xl object-cover shadow-lg hover:shadow-xl transition-all duration-200 border-2 border-white ring-2 ring-transparent group-hover:ring-opacity-50 flex-shrink-0"
+                                             class="h-8 w-8 sm:h-9 sm:w-9 rounded-lg object-cover shadow-sm transition-all duration-200 border border-white flex-shrink-0"
                                              style="border-color: {{ \App\Helpers\SettingsHelper::getThemeColor() }}30;">
                                     @else
-                                        <div class="h-10 w-10 sm:h-11 sm:w-11 rounded-xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 border-2 border-white ring-2 ring-transparent group-hover:ring-opacity-50 flex-shrink-0"
+                                        <div class="h-8 w-8 sm:h-9 sm:w-9 rounded-lg flex items-center justify-center shadow-sm transition-all duration-200 border border-white flex-shrink-0"
                                              style="background: linear-gradient(135deg, {{ \App\Helpers\SettingsHelper::getThemeColor() }} 0%, {{ \App\Helpers\SettingsHelper::getThemeColor() }}dd 100%); border-color: {{ \App\Helpers\SettingsHelper::getThemeColor() }}30;">
-                                            <span class="text-sm sm:text-base font-bold text-white">{{ substr($displayName, 0, 1) }}</span>
+                                            <span class="text-xs sm:text-sm font-bold text-white">{{ substr($displayName, 0, 1) }}</span>
                                         </div>
                                     @endif
                                     <!-- Dropdown arrow - hidden on small screens -->
-                                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 hidden sm:block transition-transform duration-200 group-hover:rotate-180 flex-shrink-0" 
+                                    <svg class="w-3 h-3 hidden md:block transition-transform duration-200 group-hover:rotate-180 flex-shrink-0" 
                                          style="color: {{ \App\Helpers\SettingsHelper::getThemeColor() }}" 
                                          fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -1108,7 +1085,7 @@
                                                         </a>
                                                         @endif
                                                         
-                                                        @if(!$isClientGuard)
+                                                        @if(!$isClientGuard && ($workDayStatus['show_button'] ?? false) && !($workDayStatus['on_leave'] ?? false))
                                                         <!-- Mobile-only items (staff) -->
                                                         <div class="sm:hidden">
                                                             <div class="border-t border-gray-100 my-1"></div>
@@ -1165,7 +1142,7 @@
             
             <!-- Page Content -->
             <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
-                <div class="{{ request()->routeIs('messages.*') || request()->routeIs('notifications.*') || request()->routeIs('users.create', 'users.edit') || request()->routeIs('system-monitoring.*') || request()->routeIs('system-settings.*') || request()->routeIs('client-service-reports.*') || request()->routeIs('client.dashboard', 'client.projects', 'client.invoices', 'client.service-reports', 'client.service-reports.download', 'client.notifications*', 'client.documents*', 'client.calendar', 'client.help', 'client.support.*', 'client.website-issues.*', 'client.meeting-requests.*') || request()->routeIs('client-website-issues.*') || request()->routeIs('client-meeting-requests.*') || request()->routeIs('projects.*') ? 'w-full max-w-full px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 min-h-0' : 'container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6' }}">
+                <div class="{{ request()->routeIs('messages.*') || request()->routeIs('notifications.*') || request()->routeIs('users.create', 'users.edit') || request()->routeIs('system-monitoring.*') || request()->routeIs('system-settings.*') || request()->routeIs('client-service-reports.*') || request()->routeIs('client.dashboard', 'client.projects', 'client.invoices', 'client.service-reports', 'client.service-reports.download', 'client.notifications*', 'client.documents*', 'client.calendar', 'client.help', 'client.support.*', 'client.website-issues.*', 'client.meeting-requests.*') || request()->routeIs('client-website-issues.*') || request()->routeIs('client-meeting-requests.*') || request()->routeIs('projects.*') || request()->routeIs('crm.*') ? 'w-full max-w-full px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 min-h-0' : 'container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6' }}">
                     @if(session('success'))
                         <div class="mb-6 bg-green-50 border-l-4 border-green-500 text-green-800 px-4 py-3 rounded-r-lg shadow-sm">
                             {{ session('success') }}
@@ -1175,6 +1152,27 @@
                         <div class="mb-6 bg-red-50 border-l-4 border-red-500 text-red-800 px-4 py-3 rounded-r-lg shadow-sm">
                             {{ session('error') }}
                         </div>
+                    @endif
+                    @if(($workDayStatus['must_start'] ?? false) && !($workDayStatus['on_leave'] ?? false))
+                    <div id="work-day-must-start-banner" class="mb-4 rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-tajawal">
+                        <div class="flex items-start gap-3">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-200 text-amber-900">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </span>
+                            <div>
+                                <p class="text-sm font-bold text-amber-950">بدء يوم العمل مطلوب</p>
+                                <p class="text-xs text-amber-800 mt-0.5">اضغط «بدء اليوم» لتسجيل <strong>{{ $workDayStatus['daily_hours'] ?? 8 }}</strong> ساعات عمل. عند انتهاء المدة يُوقَف التايمر تلقائياً إن نسيت الإيقاف.</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="toggleWorkTimer()" class="shrink-0 px-4 py-2 rounded-lg text-white text-xs font-bold shadow-sm"
+                                style="background: linear-gradient(135deg, {{ $themeColorWd }} 0%, {{ $themeColorWd }}dd 100%);">
+                            بدء اليوم الآن
+                        </button>
+                    </div>
+                    @elseif(($workDayStatus['on_leave'] ?? false))
+                    <div class="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900 font-tajawal">
+                        أنت في <strong>إجازة معتمدة</strong> اليوم — لا يلزم تسجيل بدء يوم العمل.
+                    </div>
                     @endif
                     @yield('content')
                 </div>
@@ -1206,8 +1204,17 @@
                     
                     // Mobile Sidebar Toggle
                     document.addEventListener('DOMContentLoaded', function() {
-                        // Load saved timer state
-                        loadTimerState();
+                        if (workDayConfig.show_button) {
+                            loadTimerState();
+                            setInterval(function () {
+                                if (isWorkTimerRunning) {
+                                    fetch('/attendances/current-work-time')
+                                        .then(r => r.json())
+                                        .then(data => processWorkDayApiData(data))
+                                        .catch(() => {});
+                                }
+                            }, 60000);
+                        }
                         
                         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
                         const sidebar = document.getElementById('sidebar');
@@ -1258,6 +1265,7 @@
                     });
 
                     // Navigation Bar Functions
+                    const workDayConfig = @json($workDayStatus);
                     let isWorkTimerRunning = false;
                     let startTime = null;
                     let timerInterval = null;
@@ -1265,6 +1273,67 @@
 
                     let checkInDateTime = null;
                     let currentDate = new Date().toDateString();
+                    let autoCheckoutInFlight = false;
+
+                    function formatTargetHours(hours) {
+                        const totalSec = Math.round((hours || 8) * 3600);
+                        const hh = Math.floor(totalSec / 3600);
+                        const mm = Math.floor((totalSec % 3600) / 60);
+                        const ss = totalSec % 60;
+                        return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+                    }
+
+                    function updateWorkTimerTarget(data) {
+                        const el = document.getElementById('workTimerTarget');
+                        if (!el || !workDayConfig.show_button) return;
+                        if (data.is_working) {
+                            const required = data.required_daily_hours || data.work_day?.daily_hours || workDayConfig.daily_hours || 8;
+                            el.textContent = `/ ${formatTargetHours(required)}`;
+                            el.classList.remove('hidden');
+                        } else {
+                            el.classList.add('hidden');
+                        }
+                    }
+
+                    function hideMustStartBanner() {
+                        const banner = document.getElementById('work-day-must-start-banner');
+                        if (banner) banner.remove();
+                    }
+
+                    function triggerAutoCheckoutIfNeeded(data) {
+                        if (!data.should_auto_checkout || autoCheckoutInFlight) return false;
+                        autoCheckoutInFlight = true;
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+                        fetch('/attendances/auto-check-out', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken ? csrfToken.getAttribute('content') : '',
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                        })
+                        .then(r => r.json())
+                        .then(result => {
+                            autoCheckoutInFlight = false;
+                            if (result.success) {
+                                showNotification(result.message || 'تم إيقاف يوم العمل تلقائياً', 'info');
+                                loadTimerState();
+                            }
+                        })
+                        .catch(() => { autoCheckoutInFlight = false; });
+                        return true;
+                    }
+
+                    function processWorkDayApiData(data) {
+                        updateWorkTimerTarget(data);
+                        if (data.is_working || data.current_status === 'completed') {
+                            hideMustStartBanner();
+                        }
+                        if (triggerAutoCheckoutIfNeeded(data)) {
+                            return true;
+                        }
+                        return false;
+                    }
                     
                     // Load saved timer state from localStorage and sync with attendance
                     function loadTimerState() {
@@ -1272,6 +1341,9 @@
                         fetch('/attendances/current-work-time')
                         .then(response => response.json())
                         .then(data => {
+                            if (processWorkDayApiData(data)) {
+                                return;
+                            }
                             // Check if date has changed - reset timer if new day
                             const today = new Date().toDateString();
                             if (today !== currentDate) {
@@ -1437,11 +1509,13 @@
                     }
 
                     function toggleWorkTimer() {
+                        if (workDayConfig.on_leave) {
+                            showNotification('أنت في إجازة معتمدة اليوم — لا يلزم بدء يوم العمل.', 'info');
+                            return;
+                        }
                         if (!isWorkTimerRunning) {
-                            // Start timer - Check in or load existing
                             checkIn();
                         } else {
-                            // Stop timer - Check out
                             checkOut();
                         }
                     }
@@ -1651,6 +1725,9 @@
                         fetch('/attendances/current-work-time')
                         .then(response => response.json())
                         .then(data => {
+                            if (processWorkDayApiData(data)) {
+                                return;
+                            }
                             // Check if date has changed
                             const today = new Date().toDateString();
                             if (today !== currentDate) {
@@ -1792,105 +1869,116 @@
                         window.location.href = '/profile';
                     }
 
-                    function toggleNotifications() {
-                        // Fetch real notifications from API
-                        fetch('{{ route("notifications.index") }}' + '?json=1', {
+                    function closeNotificationsDropdown() {
+                        document.querySelectorAll('.notifications-dropdown').forEach(el => el.remove());
+                    }
+
+                    function positionNotificationsDropdown(dropdown, btn) {
+                        const panel = dropdown.querySelector('.notifications-dropdown-panel');
+                        const rect = btn.getBoundingClientRect();
+                        const panelWidth = panel ? panel.offsetWidth : 352;
+                        let left = rect.left + (rect.width / 2) - (panelWidth / 2);
+                        left = Math.max(12, Math.min(left, window.innerWidth - panelWidth - 12));
+                        dropdown.style.position = 'fixed';
+                        dropdown.style.top = (rect.bottom + 8) + 'px';
+                        dropdown.style.left = left + 'px';
+                        dropdown.style.zIndex = '9999';
+                    }
+
+                    window.markNotificationRead = function (notificationId, btn) {
+                        fetch(`/notifications/${notificationId}/mark-read`, {
+                            method: 'POST',
                             headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Content-Type': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
                                 'Accept': 'application/json',
-                                'Content-Type': 'application/json; charset=utf-8'
+                            },
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (!data.success) return;
+                            const row = document.querySelector(`[data-notification-id="${notificationId}"]`);
+                            if (row) {
+                                row.style.background = '';
+                                row.style.borderColor = '';
+                                row.classList.remove('border-r-4');
+                                row.querySelectorAll('button').forEach(b => b.remove());
+                                row.querySelector('.flex-shrink-0.relative span.rounded-full')?.remove();
+                            }
+                            if (typeof updateUnreadNotificationsCount === 'function') {
+                                updateUnreadNotificationsCount();
                             }
                         })
-                        .then(response => response.json())
-                        .then(data => {
-                            // Create notifications dropdown
-                            const dropdown = document.createElement('div');
-                            dropdown.className = 'absolute top-full right-0 mt-2 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden';
-                            
-                            let notificationsHTML = `
-                                <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-4 text-white">
-                                    <div class="flex items-center justify-between">
-                                        <h3 class="text-lg font-bold">الإشعارات</h3>
-                                        <span class="bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-bold">${data.notifications.length}</span>
-                                    </div>
-                                </div>
-                                <div class="max-h-96 overflow-y-auto">`;
+                        .catch(err => console.error(err));
+                    };
 
-                            if (data.notifications && data.notifications.length > 0) {
-                                data.notifications.forEach(notification => {
-                                    const iconColor = notification.type === 'task' ? 'from-green-500 to-emerald-600' : 
-                                                     notification.type === 'project' ? 'from-blue-500 to-indigo-600' : 
-                                                     notification.type === 'message' ? 'from-purple-500 to-pink-600' : 
-                                                     'from-gray-500 to-gray-600';
-                                    
-                                    const isUnread = !notification.is_read;
-                                    notificationsHTML += `
-                                        <div class="p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${isUnread ? 'bg-blue-50 border-r-4 border-r-blue-500' : ''}">
-                                            <div class="flex items-start gap-3">
-                                                <div class="flex-shrink-0 relative">
-                                                    <div class="h-10 w-10 bg-gradient-to-br ${iconColor} rounded-xl flex items-center justify-center shadow-lg">
-                                                        ${notification.type === 'task' ? 
-                                                            '<svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>' :
-                                                            notification.type === 'project' ?
-                                                            '<svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>' :
-                                                            notification.type === 'message' ?
-                                                            '<svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>' :
-                                                            '<svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>'
-                                                        }
-                                                    </div>
-                                                    ${isUnread ? '<div class="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></div>' : ''}
-                                                </div>
-                                                <div class="flex-1">
-                                                    <h4 class="text-sm font-bold text-gray-900 mb-1">${notification.title}</h4>
-                                                    <p class="text-xs text-gray-600 leading-relaxed">${notification.message}</p>
-                                                    <p class="text-xs text-gray-400 mt-2 flex items-center gap-1">
-                                                        <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                        ${formatTime(new Date(notification.created_at))}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>`;
-                                });
+                    window.markAllNotificationsDropdownRead = function (btn) {
+                        btn.disabled = true;
+                        fetch('{{ route('notifications.mark-all-read') }}', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                            },
+                            body: new URLSearchParams({ filter: 'unread', _token: document.querySelector('meta[name="csrf-token"]').content }),
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                closeNotificationsDropdown();
+                                if (typeof updateUnreadNotificationsCount === 'function') {
+                                    updateUnreadNotificationsCount();
+                                }
                             } else {
-                                notificationsHTML += `
-                                    <div class="text-center py-12 px-4">
-                                        <div class="h-16 w-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                            <svg class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                                            </svg>
-                                        </div>
-                                        <p class="text-gray-600 font-medium">لا توجد إشعارات جديدة</p>
-                                    </div>`;
+                                btn.disabled = false;
                             }
-                            
-                            notificationsHTML += `</div>
-                                <div class="bg-gray-50 p-4 border-t border-gray-200">
-                                    <a href="{{ route('notifications.index') }}" class="block text-center text-sm text-blue-600 hover:text-blue-700 font-semibold">
-                                        عرض جميع الإشعارات
-                                    </a>
-                                </div>`;
-                            
-                            dropdown.innerHTML = notificationsHTML;
-                            
-                            // Position dropdown
-                            dropdown.style.position = 'absolute';
-                            dropdown.style.top = '100%';
-                            dropdown.style.right = '0';
-                            dropdown.style.zIndex = '50';
-                            
-                            // Remove existing dropdown if any
-                            const existingDropdown = document.querySelector('.notifications-dropdown');
-                            if (existingDropdown) {
-                                existingDropdown.remove();
-                            }
-                            
-                            dropdown.classList.add('notifications-dropdown');
-                            document.querySelector('button[onclick="toggleNotifications()"]').parentNode.appendChild(dropdown);
-                            
-                            // Close dropdown when clicking outside
+                        })
+                        .catch(() => { btn.disabled = false; });
+                    };
+
+                    function toggleNotifications(event) {
+                        if (event) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+
+                        const existing = document.querySelector('.notifications-dropdown');
+                        if (existing) {
+                            closeNotificationsDropdown();
+                            return;
+                        }
+
+                        const btn = document.getElementById('top-bar-notifications-btn');
+                        if (!btn) {
+                            window.location.href = '{{ route("notifications.index") }}';
+                            return;
+                        }
+
+                        const dropdown = document.createElement('div');
+                        dropdown.className = 'notifications-dropdown font-tajawal';
+                        dropdown.innerHTML = '<div class="notifications-dropdown-panel w-[min(22rem,calc(100vw-1.25rem))] rounded-2xl border border-gray-200 bg-white shadow-2xl p-6 text-center text-sm text-gray-500">جاري التحميل...</div>';
+                        document.body.appendChild(dropdown);
+                        positionNotificationsDropdown(dropdown, btn);
+                        btn.setAttribute('aria-expanded', 'true');
+
+                        fetch('{{ route("notifications.index") }}?dropdown=1', {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+                            credentials: 'same-origin',
+                        })
+                        .then(response => {
+                            if (!response.ok) throw new Error('HTTP ' + response.status);
+                            return response.text();
+                        })
+                        .then(html => {
+                            dropdown.innerHTML = html;
+                            positionNotificationsDropdown(dropdown, btn);
                             setTimeout(() => {
                                 document.addEventListener('click', function closeDropdown(e) {
-                                    if (!dropdown.contains(e.target) && !e.target.closest('button[onclick="toggleNotifications()"]')) {
-                                        dropdown.remove();
+                                    if (!dropdown.contains(e.target) && !e.target.closest('#top-bar-notifications-wrap')) {
+                                        closeNotificationsDropdown();
+                                        btn.setAttribute('aria-expanded', 'false');
                                         document.removeEventListener('click', closeDropdown);
                                     }
                                 });
@@ -1898,7 +1986,7 @@
                         })
                         .catch(error => {
                             console.error('Error fetching notifications:', error);
-                            // Fallback to simple dropdown
+                            closeNotificationsDropdown();
                             window.location.href = '{{ route("notifications.index") }}';
                         });
                     }
@@ -2050,21 +2138,23 @@ function updateUnreadNotificationsCount() {
                 }
             }
             
-            // إظهار إشعار منبثق للإشعارات الجديدة فقط إذا كان هناك إشعار جديد
-            if (data.count > lastNotificationCheck) {
-                showGlobalNotification('إشعار جديد!', 'لديك إشعار جديد في النظام');
+            if (data.count > lastNotificationCheck && data.latest) {
+                showGlobalNotification(data.latest.title, data.latest.message, data.latest.url);
+                lastNotificationCheck = data.count;
+            } else if (data.count > lastNotificationCheck) {
+                showGlobalNotification('إشعار جديد!', 'لديك إشعار جديد في النظام', '{{ route("notifications.index") }}');
                 lastNotificationCheck = data.count;
             }
         })
         .catch(error => console.error('Error updating unread notifications count:', error));
 }
 
-function showGlobalNotification(title, message) {
-    // إنشاء إشعار منبثق عام
+function showGlobalNotification(title, message, url) {
+    url = url || '{{ route("notifications.index") }}';
     const popup = document.createElement('div');
-    popup.className = 'fixed top-4 right-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 max-w-sm transform transition-all duration-300 translate-x-full';
+    popup.className = 'fixed top-4 right-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-6 py-4 rounded-lg shadow-lg z-[100] max-w-sm transform transition-all duration-300 translate-x-full cursor-pointer font-tajawal';
     popup.innerHTML = `
-        <div class="flex items-start space-x-3">
+        <div class="flex items-start space-x-3" role="button" tabindex="0">
             <div class="flex-shrink-0">
                 <div class="h-8 w-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
                     <svg class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2072,18 +2162,22 @@ function showGlobalNotification(title, message) {
                     </svg>
                 </div>
             </div>
-            <div class="flex-1">
+            <div class="flex-1 min-w-0">
                 <p class="text-sm font-bold">${title}</p>
-                <p class="text-sm opacity-90 mt-1">${message}</p>
+                <p class="text-sm opacity-90 mt-1 line-clamp-2">${message}</p>
             </div>
-            <button onclick="this.parentElement.parentElement.remove();" 
-                    class="text-white hover:text-gray-200 transition-colors">
+            <button type="button" class="popup-close text-white hover:text-gray-200 transition-colors shrink-0">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </div>
     `;
+    popup.querySelector('.popup-close')?.addEventListener('click', function (e) {
+        e.stopPropagation();
+        popup.remove();
+    });
+    popup.addEventListener('click', function () { window.location.href = url; });
     
     document.body.appendChild(popup);
     
@@ -2110,6 +2204,8 @@ setInterval(updateUnreadMessagesCount, 10000);
 setInterval(updateUnreadNotificationsCount, 10000);
 </script>
 
+@include('partials.client-search-select-scripts')
+@include('partials.developer-search-select-scripts')
 @stack('scripts')
 </body>
 </html>

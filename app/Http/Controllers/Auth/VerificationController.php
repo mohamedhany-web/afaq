@@ -21,7 +21,15 @@ class VerificationController extends Controller
      */
     public function show(): View|RedirectResponse
     {
-        if (!Auth::check() || !session('verification_pending')) {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        if (config('app.skip_email_verification')) {
+            return redirect()->intended(Auth::user()->homeRoute());
+        }
+
+        if (!session('verification_pending')) {
             return redirect()->route('login');
         }
         
@@ -108,7 +116,7 @@ class VerificationController extends Controller
         $request->session()->forget('verification_pending');
         $request->session()->put('verified', true);
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended($user->homeRoute());
     }
 
     /**

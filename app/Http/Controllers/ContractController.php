@@ -41,8 +41,6 @@ class ContractController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
-        $clients = Client::where('status', 'active')->get();
-        
         // Get projects without permission restrictions for filtering
         $projects = Project::whereIn('status', ['planning', 'in_progress'])
             ->orderBy('name')
@@ -52,7 +50,7 @@ class ContractController extends Controller
         $statuses = ['draft', 'active', 'expired', 'terminated', 'renewed'];
         $contractTypes = ['employment', 'service', 'nda', 'partnership', 'vendor'];
 
-        return view('contracts.index', compact('contracts', 'clients', 'projects', 'users', 'statuses', 'contractTypes'));
+        return view('contracts.index', compact('contracts', 'projects', 'users', 'statuses', 'contractTypes'));
     }
 
     /**
@@ -60,8 +58,6 @@ class ContractController extends Controller
      */
     public function create()
     {
-        $clients = Client::where('status', 'active')->get();
-        
         // Get projects without permission restrictions for contract creation
         $projects = Project::whereIn('status', ['planning', 'in_progress'])
             ->orderBy('name')
@@ -71,7 +67,7 @@ class ContractController extends Controller
         $contractTypes = ['employment', 'service', 'nda', 'partnership', 'vendor'];
         $statuses = ['draft', 'active'];
 
-        return view('contracts.create', compact('clients', 'projects', 'users', 'contractTypes', 'statuses'));
+        return view('contracts.create', compact('projects', 'users', 'contractTypes', 'statuses'));
     }
 
     /**
@@ -146,8 +142,8 @@ class ContractController extends Controller
      */
     public function edit(Contract $contract)
     {
-        $clients = Client::where('status', 'active')->get();
-        
+        $contract->load('client:id,name,phone,company_name,email');
+
         // Get projects without permission restrictions for contract editing
         $projects = Project::whereIn('status', ['planning', 'in_progress'])
             ->orderBy('name')
@@ -157,7 +153,7 @@ class ContractController extends Controller
         $contractTypes = ['employment', 'service', 'nda', 'partnership', 'vendor'];
         $statuses = ['draft', 'active', 'expired', 'terminated', 'renewed'];
 
-        return view('contracts.edit', compact('contract', 'clients', 'projects', 'users', 'contractTypes', 'statuses'));
+        return view('contracts.edit', compact('contract', 'projects', 'users', 'contractTypes', 'statuses'));
     }
 
     /**

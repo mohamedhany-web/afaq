@@ -31,6 +31,7 @@ class Employee extends Model
     protected $casts = [
         'hire_date' => 'date',
         'salary' => 'decimal:2',
+        'daily_hours' => 'decimal:1',
     ];
 
     public function user(): BelongsTo
@@ -45,12 +46,7 @@ class Employee extends Model
 
     public function sales(): HasMany
     {
-        return $this->hasMany(Sale::class, 'sales_rep_id');
-    }
-
-    public function tasks(): HasMany
-    {
-        return $this->hasMany(Task::class, 'assigned_to');
+        return $this->hasMany(Sale::class, 'assigned_to', 'user_id');
     }
 
     public function attendances(): HasMany
@@ -88,29 +84,29 @@ class Employee extends Model
     }
 
     /**
-     * توليد رقم توظيفي متسلسل
+     * توليد رقم توظيفي متسلسل (أعلى رقم مستخدم + 1، مع تجنّب التكرار)
      */
     public static function generateSequentialEmployeeId($prefix = null)
     {
         $prefix = $prefix ?? \App\Helpers\SettingsHelper::getEmployeeIdPrefix();
-        $length = \App\Helpers\SettingsHelper::getEmployeeIdLength();
-        
-        // الحصول على آخر رقم توظيفي
-        $lastEmployee = static::where('employee_id', 'like', $prefix . '%')
-            ->orderBy('employee_id', 'desc')
-            ->first();
-        
-        if ($lastEmployee) {
-            // استخراج الرقم من آخر employee_id
-            $lastNumber = (int) str_replace($prefix, '', $lastEmployee->employee_id);
-            $newNumber = $lastNumber + 1;
-        } else {
-            $newNumber = 1;
-        }
-        
-        // تنسيق الرقم مع padding
-        $employeeId = $prefix . str_pad($newNumber, $length, '0', STR_PAD_LEFT);
-        
+        $length = (int) \App\Helpers\SettingsHelper::getEmployeeIdLength();
+
+        $maxNumber = static::where('employee_id', 'like', $prefix . '%')
+            ->pluck('employee_id')
+            ->map(function (string $id) use ($prefix) {
+                $suffix = preg_replace('/^' . preg_quote($prefix, '/') . '/', '', $id);
+
+                return ctype_digit($suffix) ? (int) $suffix : 0;
+            })
+            ->max() ?? 0;
+
+        $next = $maxNumber;
+
+        do {
+            $next++;
+            $employeeId = $prefix . str_pad((string) $next, $length, '0', STR_PAD_LEFT);
+        } while (static::where('employee_id', $employeeId)->exists());
+
         return $employeeId;
     }
 

@@ -20,10 +20,12 @@ class DatabaseSeeder extends Seeder
             UserPermissionSeeder::class,
             SystemSettingsSeeder::class,
             ProjectSeeder::class,
+            RealEstateCrmSeeder::class,
+            CompensationModuleSeeder::class,
+            AutoPenaltyRuleSeeder::class,
             AttendanceSeeder::class,
             LeaveSeeder::class,
             SalarySeeder::class,
-            QATestSeeder::class,
         ]);
     }
 }

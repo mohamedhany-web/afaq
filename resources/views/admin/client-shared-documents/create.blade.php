@@ -13,12 +13,7 @@
         <form method="POST" action="{{ route('client-shared-documents.store') }}" enctype="multipart/form-data" class="space-y-5">
             @csrf
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">العميل</label>
-                <select name="client_id" required class="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm">
-                    @foreach($clients as $c)
-                        <option value="{{ $c->id }}" @selected(old('client_id')==$c->id)>{{ $c->name }}</option>
-                    @endforeach
-                </select>
+                @include('partials.client-search-select', ['required' => true, 'value' => old('client_id'), 'inputClass' => 'w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm', 'crmScope' => false])
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">عنوان المستند</label>

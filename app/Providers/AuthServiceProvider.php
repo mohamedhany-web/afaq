@@ -6,10 +6,12 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use App\Models\UserPermission;
 use App\Models\Project;
-use App\Models\Task;
+use App\Models\DailySalesReport;
 use App\Models\DepartmentReport;
+use App\Models\MarketingPeriodReport;
+use App\Policies\DailySalesReportPolicy;
+use App\Policies\MarketingPeriodReportPolicy;
 use App\Policies\ProjectPolicy;
-use App\Policies\TaskPolicy;
 use App\Policies\DepartmentReportPolicy;
 
 class AuthServiceProvider extends ServiceProvider
@@ -21,8 +23,9 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         Project::class => ProjectPolicy::class,
-        Task::class => TaskPolicy::class,
         DepartmentReport::class => DepartmentReportPolicy::class,
+        DailySalesReport::class => DailySalesReportPolicy::class,
+        MarketingPeriodReport::class => MarketingPeriodReportPolicy::class,
     ];
 
     /**
@@ -30,8 +33,14 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->registerPolicies();
+
         // التحقق من الصلاحيات المخصصة على مستوى المستخدم قبل صلاحيات الأدوار
-        Gate::before(function ($user, $ability) {
+        Gate::before(function ($user, string $ability, array $arguments = []) {
+            if ($arguments !== [] && ! is_string($arguments[0] ?? null)) {
+                return null;
+            }
+
             // التحقق من وجود صلاحية مخصصة للمستخدم في جدول user_permissions
             $customPermission = UserPermission::where('user_id', $user->id)
                 ->where('permission_key', $ability)

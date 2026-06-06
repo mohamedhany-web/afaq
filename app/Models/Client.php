@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Client extends Model
 {
@@ -15,16 +16,36 @@ class Client extends Model
         'name',
         'email',
         'phone',
-        'company',
+        'company_name',
         'address',
         'status',
+        'lead_stage',
+        'lost_reason',
+        'lost_reason_notes',
+        'lost_at',
         'notes',
+        'assigned_to',
+        'created_by',
+        'client_type',
+        'lead_source',
+        'marketing_campaign_id',
     ];
 
     protected $casts = [
+        'lost_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    public function timelineEvents(): HasMany
+    {
+        return $this->hasMany(ClientTimelineEvent::class)->orderByDesc('occurred_at');
+    }
+
+    public function postSalesCases(): HasMany
+    {
+        return $this->hasMany(ClientPostSalesCase::class)->orderByDesc('created_at');
+    }
 
     public function sales(): HasMany
     {
@@ -49,6 +70,21 @@ class Client extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function assignedEmployee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'assigned_to');
+    }
+
+    public function marketingCampaign(): BelongsTo
+    {
+        return $this->belongsTo(MarketingCampaign::class, 'marketing_campaign_id');
+    }
+
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function accounts(): HasMany

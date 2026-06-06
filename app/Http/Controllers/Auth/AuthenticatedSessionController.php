@@ -31,6 +31,23 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $user = Auth::user();
+
+        if (config('app.skip_email_verification')) {
+            LoginActivityLog::logActivity(
+                $user->id,
+                'login',
+                null,
+                null,
+                'success',
+                'تم تسجيل الدخول بنجاح (بدون تحقق بالبريد — وضع التطوير)'
+            );
+
+            $request->session()->forget('verification_pending');
+            $request->session()->put('verified', true);
+            $request->session()->regenerate();
+
+            return redirect()->intended($user->homeRoute());
+        }
         
         // توليد كود التحقق
         $verificationCode = VerificationCode::createForUser($user->id, 10);
@@ -126,6 +143,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect()->route('login');
     }
 }

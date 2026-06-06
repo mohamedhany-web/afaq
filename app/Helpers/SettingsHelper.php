@@ -350,4 +350,14 @@ class SettingsHelper
     {
         return SystemSetting::get('invoice_financial_notes', '');
     }
+
+    public static function getCurrencySymbol(): string
+    {
+        return SystemSetting::get('currency_symbol', 'ج.م');
+    }
+
+    public static function formatMoney($amount, int $decimals = 0): string
+    {
+        return number_format((float) ($amount ?? 0), $decimals) . ' ' . self::getCurrencySymbol();
+    }
 }

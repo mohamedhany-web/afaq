@@ -71,21 +71,16 @@ class DepartmentController extends Controller
                 $query->with('user')->where('status', 'active');
             },
             'projects' => function($query) {
-                $query->with(['tasks', 'client'])->latest();
+                $query->with(['client'])->latest();
             }
         ]);
         
-        // إحصائيات القسم
         $stats = [
             'total_employees' => $department->employees->count(),
-            'active_projects' => $department->projects->where('status', 'active')->count(),
-            'completed_projects' => $department->projects->where('status', 'completed')->count(),
-            'total_tasks' => $department->projects->sum(function($project) {
-                return $project->tasks->count();
-            }),
-            'pending_tasks' => $department->projects->sum(function($project) {
-                return $project->tasks->where('status', 'pending')->count();
-            }),
+            'active_projects' => $department->projects->whereIn('listing_status', ['upcoming', 'active'])->count(),
+            'completed_projects' => $department->projects->whereIn('listing_status', ['completed', 'sold_out'])->count(),
+            'total_units' => $department->projects->sum('total_units'),
+            'available_units' => $department->projects->sum('available_units'),
             'total_budget' => $department->projects->sum('budget'),
             'average_salary' => $department->employees->avg('salary'),
         ];

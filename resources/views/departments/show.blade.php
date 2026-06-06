@@ -65,9 +65,9 @@
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-5 hover:shadow-md transition-all duration-200">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div class="flex-1">
-                    <p class="text-xs sm:text-sm font-medium text-gray-600 mb-1 sm:mb-2">المهام المعلقة</p>
-                    <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ $stats['pending_tasks'] }}</p>
-                    <p class="text-xs text-gray-500 mt-1">من {{ $stats['total_tasks'] }} مهمة</p>
+                    <p class="text-xs sm:text-sm font-medium text-gray-600 mb-1 sm:mb-2">الوحدات المتاحة</p>
+                    <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ $stats['available_units'] }}</p>
+                    <p class="text-xs text-gray-500 mt-1">من {{ $stats['total_units'] }} وحدة</p>
                 </div>
                 <div class="hidden sm:block p-3 bg-orange-50 rounded-lg flex-shrink-0 mt-2 sm:mt-0">
                     <svg class="w-6 h-6 sm:w-7 sm:h-7 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -202,7 +202,7 @@
                                         <svg class="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                         </svg>
-                                        {{ $project->tasks->count() }} مهمة
+                                        {{ $project->listing_status_name ?? '—' }}
                                     </span>
                                 </div>
                             </div>
@@ -213,9 +213,9 @@
                         </div>
                         <!-- Progress Bar -->
                         <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-blue-600 h-2 rounded-full" style="width: {{ $project->progress_percentage ?? 0 }}%"></div>
+                            <div class="bg-blue-600 h-2 rounded-full" style="width: {{ $project->occupancy_percent }}%"></div>
                         </div>
-                        <p class="text-xs text-gray-500 mt-1">{{ $project->progress_percentage ?? 0 }}% مكتمل</p>
+                        <p class="text-xs text-gray-500 mt-1">{{ $project->occupancy_percent }}% مباع</p>
                     </div>
                     @endforeach
                 </div>
@@ -289,7 +289,7 @@
                         إضافة موظف جديد
                     </a>
                     
-                    <a href="{{ route('projects.create') }}?department={{ $department->id }}" class="flex items-center p-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-colors duration-200">
+                    <a href="{{ route('crm.projects.create') }}?department={{ $department->id }}" class="flex items-center p-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-colors duration-200">
                         <svg class="w-5 h-5 ml-3 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>

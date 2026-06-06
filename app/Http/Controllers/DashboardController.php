@@ -3,10 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
-use App\Models\Task;
 use App\Models\Employee;
 use App\Models\Client;
-use App\Models\Bug;
 use App\Models\Ticket;
 use App\Models\Sale;
 use App\Models\Expense;
@@ -22,6 +20,19 @@ class DashboardController extends Controller
     public function index()
     {
         $user = auth()->user();
+
+        if ($user->usesMarketingWorkspace() && !$user->canAccessCrm()) {
+            return app(\App\Http\Controllers\Marketing\MarketingDashboardController::class)->index();
+        }
+
+        if ($user->canAccessCrm()) {
+            return app(\App\Http\Controllers\Crm\CrmDashboardController::class)->index();
+        }
+
+        if ($user->canAccessMarketing()) {
+            return app(\App\Http\Controllers\Marketing\MarketingDashboardController::class)->index();
+        }
+
         $data = [];
 
         // بيانات عامة للجميع
@@ -43,9 +54,24 @@ class DashboardController extends Controller
             
             // إحصائيات المشاريع
             $data['total_projects'] = Project::count();
-            $data['active_projects'] = Project::whereIn('status', ['planning', 'in_progress'])->count();
-            $data['completed_projects'] = Project::where('status', 'completed')->count();
-            $data['overdue_projects'] = Project::where('end_date', '<', $today)->whereNotIn('status', ['completed', 'cancelled'])->count();
+            $data['active_projects'] = Project::where('listing_status', 'active')->count();
+            $data['completed_projects'] = Project::where('listing_status', 'completed')->count();
+            $data['overdue_projects'] = Project::where('end_date', '<', $today)->whereNotIn('listing_status', ['completed', 'sold_out'])->count();
+            $data['project_portfolio'] = collect(Project::OWNERSHIP_TYPES)->map(function ($label, $key) {
+                $q = Project::where('ownership_type', $key);
+
+                return [
+                    'key' => $key,
+                    'label' => $label,
+                    'count' => (clone $q)->count(),
+                    'units' => (int) (clone $q)->sum('available_units'),
+                ];
+            })->values()->all();
+            $data['top_developers'] = \App\Models\RealEstateDeveloper::withCount('projects')
+                ->having('projects_count', '>', 0)
+                ->orderByDesc('projects_count')
+                ->limit(5)
+                ->get();
             
             // تحليلات المشاريع
             $data['project_completion_rate'] = $data['total_projects'] > 0 
@@ -59,21 +85,7 @@ class DashboardController extends Controller
             
             // إحصائيات العملاء
             $data['total_clients'] = Client::count();
-            $data['active_clients'] = Client::whereHas('projects', function($q) {
-                $q->whereIn('status', ['planning', 'in_progress']);
-            })->count();
-            
-            // إحصائيات المهام
-            $data['total_tasks'] = Task::count();
-            $data['completed_tasks'] = Task::where('status', 'completed')->count();
-            $data['pending_tasks'] = Task::where('status', 'pending')->count();
-            $data['in_progress_tasks'] = Task::where('status', 'in_progress')->count();
-            $data['overdue_tasks'] = Task::where('due_date', '<', $today)->whereNotIn('status', ['completed', 'cancelled'])->count();
-            
-            // تحليلات المهام
-            $data['task_completion_rate'] = $data['total_tasks'] > 0 
-                ? round(($data['completed_tasks'] / $data['total_tasks']) * 100, 1) 
-                : 0;
+            $data['active_clients'] = Client::where('status', 'active')->count();
             
             // تحليلات الحضور المتقدمة
             $data['today_attendance'] = Attendance::whereDate('date', $today)->count();
@@ -93,7 +105,6 @@ class DashboardController extends Controller
                 ? round((($data['this_month_projects'] - $data['last_month_projects']) / $data['last_month_projects']) * 100, 1) 
                 : 0;
             
-            $data['this_month_tasks'] = Task::where('created_at', '>=', $thisMonth)->count();
             $data['this_month_employees'] = Employee::where('created_at', '>=', $thisMonth)->count();
             
             // تحليلات الإيرادات (إذا كانت متاحة)
@@ -118,42 +129,26 @@ class DashboardController extends Controller
                 });
             
             // آخر المشاريع مع تفاصيل أكثر
-            $data['recent_projects'] = Project::with(['client', 'projectManager', 'tasks'])
+            $data['recent_projects'] = Project::with(['client', 'projectManager'])
                 ->orderBy('created_at', 'desc')
                 ->take(5)
                 ->get();
             
-            // آخر المهام مع تفاصيل أكثر
-            $data['recent_tasks'] = Task::with(['project', 'assignedTo'])
-                ->orderBy('created_at', 'desc')
-                ->take(5)
-                ->get();
-            
-            // تحليلات الأداء
             $data['performance_metrics'] = [
                 'project_efficiency' => $data['project_completion_rate'],
-                'task_efficiency' => $data['task_completion_rate'],
                 'attendance_rate' => $data['attendance_rate'],
                 'revenue_growth' => $data['last_month_revenue'] > 0 
                     ? round((($data['this_month_revenue'] - $data['last_month_revenue']) / $data['last_month_revenue']) * 100, 1) 
                     : 0
             ];
             
-            // تحليلات زمنية للمشاريع
             $data['project_timeline'] = Project::selectRaw('DATE(created_at) as date, COUNT(*) as count')
                 ->where('created_at', '>=', Carbon::now()->subDays(30))
                 ->groupBy('date')
                 ->orderBy('date')
                 ->get();
-            
-            // تحليلات زمنية للمهام
-            $data['task_timeline'] = Task::selectRaw('DATE(created_at) as date, COUNT(*) as count')
-                ->where('created_at', '>=', Carbon::now()->subDays(30))
-                ->groupBy('date')
-                ->orderBy('date')
-                ->get();
                 
-        } elseif ($user->hasRole('employee') || $user->hasRole('developer') || $user->hasRole('designer')) {
+        } elseif ($user->hasRole('employee') || $user->hasRole('developer') || $user->hasRole('designer') || $user->hasRole('sales_manager') || $user->hasRole('sales_agent')) {
             // موظفين: بياناتهم مع تحليلات متقدمة
             
             // مشاريعي
@@ -169,34 +164,25 @@ class DashboardController extends Controller
                   ->orWhereHas('teamMembers', function($teamQuery) use ($user) {
                       $teamQuery->where('user_id', $user->id);
                   });
-            })->whereIn('status', ['planning', 'in_progress'])->count();
+            })->whereIn('listing_status', ['upcoming', 'active'])->count();
             
             $data['my_completed_projects'] = Project::where(function($q) use ($user) {
                 $q->where('project_manager_id', $user->id)
                   ->orWhereHas('teamMembers', function($teamQuery) use ($user) {
                       $teamQuery->where('user_id', $user->id);
                   });
-            })->where('status', 'completed')->count();
+            })->whereIn('listing_status', ['completed', 'sold_out'])->count();
             
-            // مهامي
-            $data['my_tasks'] = Task::where('assigned_to', $user->id)->count();
-            $data['my_pending_tasks'] = Task::where('assigned_to', $user->id)
-                ->where('status', 'pending')
+            $data['my_sales'] = Sale::where('assigned_to', $user->id)->count();
+            $data['my_open_sales'] = Sale::where('assigned_to', $user->id)
+                ->whereNotIn('stage', ['closed_won', 'closed_lost'])
                 ->count();
-            $data['my_in_progress_tasks'] = Task::where('assigned_to', $user->id)
-                ->where('status', 'in_progress')
-                ->count();
-            $data['my_completed_tasks'] = Task::where('assigned_to', $user->id)
-                ->where('status', 'completed')
-                ->count();
-            $data['my_overdue_tasks'] = Task::where('assigned_to', $user->id)
-                ->where('due_date', '<', $today)
-                ->whereNotIn('status', ['completed', 'cancelled'])
+            $data['my_won_sales'] = Sale::where('assigned_to', $user->id)
+                ->where('stage', 'closed_won')
                 ->count();
             
-            // تحليلات الأداء الشخصي
-            $data['my_task_completion_rate'] = $data['my_tasks'] > 0 
-                ? round(($data['my_completed_tasks'] / $data['my_tasks']) * 100, 1) 
+            $data['my_sales_completion_rate'] = $data['my_sales'] > 0 
+                ? round(($data['my_won_sales'] / $data['my_sales']) * 100, 1) 
                 : 0;
             
             $data['my_project_completion_rate'] = $data['my_projects'] > 0 
@@ -222,7 +208,7 @@ class DashboardController extends Controller
                 : 0;
                 
             // مشاريعي الأخيرة مع تفاصيل
-            $data['recent_projects'] = Project::with(['client', 'projectManager', 'tasks'])
+            $data['recent_projects'] = Project::with(['client', 'projectManager'])
                 ->where(function($q) use ($user) {
                     $q->where('project_manager_id', $user->id)
                       ->orWhereHas('teamMembers', function($teamQuery) use ($user) {
@@ -233,19 +219,17 @@ class DashboardController extends Controller
                 ->take(5)
                 ->get();
             
-            // مهامي الأخيرة مع تفاصيل
-            $data['recent_tasks'] = Task::with(['project', 'assignedTo'])
+            $data['recent_sales'] = Sale::with(['client', 'project'])
                 ->where('assigned_to', $user->id)
                 ->orderBy('created_at', 'desc')
                 ->take(5)
                 ->get();
             
-            // تحليلات الأداء الشخصي
             $data['my_performance_metrics'] = [
-                'task_efficiency' => $data['my_task_completion_rate'],
+                'sales_efficiency' => $data['my_sales_completion_rate'],
                 'project_efficiency' => $data['my_project_completion_rate'],
                 'attendance_rate' => $data['my_attendance_rate'],
-                'overdue_tasks' => $data['my_overdue_tasks']
+                'open_sales' => $data['my_open_sales'],
             ];
                 
         } elseif ($user->hasRole('hr')) {

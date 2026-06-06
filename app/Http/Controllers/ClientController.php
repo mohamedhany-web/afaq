@@ -62,7 +62,9 @@ class ClientController extends Controller
                 ->withInput();
         }
 
-        Client::create($request->all());
+        Client::create(array_merge($request->all(), [
+            'created_by' => auth()->id(),
+        ]));
 
         return redirect()->route('clients.index')
             ->with('success', 'تم إنشاء العميل بنجاح');

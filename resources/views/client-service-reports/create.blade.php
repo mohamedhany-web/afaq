@@ -20,7 +20,7 @@
         </div>
     </div>
 
-    @if($clients->isEmpty())
+    @if(!\App\Models\Client::exists())
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
             <p class="text-gray-600 text-lg">لا يوجد عملاء في النظام.</p>
             <a href="{{ route('clients.create') }}" class="mt-4 inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200 shadow-sm">
@@ -39,22 +39,7 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- العميل -->
                     <div class="lg:col-span-2">
-                        <label for="client_id" class="block text-sm font-medium text-gray-700 mb-2">العميل <span class="text-red-500">*</span></label>
-                        <select name="client_id" id="client_id" required
-                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 @error('client_id') border-red-500 @enderror">
-                            <option value="">اختر العميل</option>
-                            @foreach($clients as $c)
-                                <option value="{{ $c->id }}" @selected(old('client_id') == $c->id)>
-                                    {{ $c->name }}
-                                    @if($c->company_name)
-                                        — {{ $c->company_name }}
-                                    @endif
-                                    @if($c->email)
-                                        ({{ $c->email }})
-                                    @endif
-                                </option>
-                            @endforeach
-                        </select>
+                        @include('partials.client-search-select', ['required' => true, 'value' => old('client_id'), 'inputClass' => 'w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500', 'crmScope' => false])
                         @error('client_id')
                             <p class="mt-1 text-sm text-red-600 flex items-center">
                                 <svg class="w-4 h-4 ml-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

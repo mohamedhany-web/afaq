@@ -68,7 +68,13 @@ class ProjectPolicy
 
     public function delete(User $user, Project $project): bool
     {
-        return $user->hasRole('super_admin') || $user->hasRole('admin') || $user->can('delete-projects');
+        if (!$project->isDeletable()) {
+            return false;
+        }
+
+        return $user->hasRole('super_admin')
+            || $user->hasRole('admin')
+            || $user->can('edit-projects');
     }
 }
 

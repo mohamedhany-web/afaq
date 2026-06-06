@@ -6,7 +6,7 @@
 <div class="w-full max-w-7xl mx-auto">
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900">لوحة متابعة الأقسام</h1>
-        <p class="text-gray-600 mt-2">نظرة شاملة على الأقسام والتقارير والمهام المتأخرة</p>
+        <p class="text-gray-600 mt-2">نظرة شاملة على الأقسام والتقارير والمشاريع العقارية</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -38,8 +38,6 @@
                             <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">المدير</th>
                             <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">الموظفون</th>
                             <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">المشاريع</th>
-                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">المهام</th>
-                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">متأخرة</th>
                             <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">آخر تقرير</th>
                         </tr>
                     </thead>
@@ -50,10 +48,6 @@
                                 <td class="px-6 py-4 text-sm text-gray-700">{{ $dept->manager?->user?->name ?? '—' }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-700">{{ $dept->employees_count }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-700">{{ $dept->projects_count }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-700">{{ $taskCountsByDept[$dept->id] ?? 0 }}</td>
-                                <td class="px-6 py-4 text-sm font-bold {{ ($overdueCountsByDept[$dept->id] ?? 0) > 0 ? 'text-red-600' : 'text-gray-700' }}">
-                                    {{ $overdueCountsByDept[$dept->id] ?? 0 }}
-                                </td>
                                 <td class="px-6 py-4 text-sm text-gray-700">
                                     {{ isset($latestReportByDept[$dept->id]) ? \Illuminate\Support\Carbon::parse($latestReportByDept[$dept->id])->format('Y-m-d') : '—' }}
                                 </td>

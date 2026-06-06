@@ -23,13 +23,7 @@
                 <input type="text" name="search" value="{{ request('search') }}" class="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">العميل</label>
-                <select name="client_id" class="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm">
-                    <option value="">الكل</option>
-                    @foreach($clients as $c)
-                        <option value="{{ $c->id }}" @selected(request('client_id')==$c->id)>{{ $c->name }}</option>
-                    @endforeach
-                </select>
+                @include('partials.client-search-select', ['required' => false, 'value' => request('client_id'), 'inputClass' => 'w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm', 'crmScope' => false, 'placeholder' => 'ابحث لتصفية حسب عميل...'])
             </div>
             <div class="md:col-span-3 flex gap-2">
                 <button type="submit" class="px-5 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold">تصفية</button>

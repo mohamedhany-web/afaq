@@ -12,7 +12,8 @@ class ProfileController extends Controller
 {
     public function edit()
     {
-        $user = Auth::user();
+        $user = Auth::user()->load(['roles', 'employee.department']);
+
         return view('profile.index', compact('user'));
     }
 

@@ -18,14 +18,7 @@
             @method('PUT')
 
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">العميل</label>
-                <select name="client_id" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 @error('client_id') border-red-500 @enderror">
-                    @foreach($clients as $client)
-                        <option value="{{ $client->id }}" {{ old('client_id', $clientAccount->client_id) == $client->id ? 'selected' : '' }}>
-                            {{ $client->name }} {{ $client->company ? ' - ' . $client->company : '' }}
-                        </option>
-                    @endforeach
-                </select>
+                @include('partials.client-search-select', ['required' => true, 'value' => old('client_id', $clientAccount->client_id), 'label' => $clientAccount->client ? \App\Http\Controllers\ClientSearchController::formatLabel($clientAccount->client) : null, 'inputClass' => 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500', 'crmScope' => false])
                 @error('client_id')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
             </div>
 

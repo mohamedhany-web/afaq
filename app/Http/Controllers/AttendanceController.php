@@ -6,11 +6,15 @@ use Illuminate\Http\Request;
 use App\Models\Attendance;
 use App\Models\Employee;
 use Carbon\Carbon;
+use App\Services\WorkDayService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class AttendanceController extends Controller
 {
+    public function __construct(
+        protected WorkDayService $workDay,
+    ) {}
     /**
      * Display a listing of the resource.
      */
@@ -144,11 +148,25 @@ class AttendanceController extends Controller
                     'success' => false
                 ], 404, [], JSON_UNESCAPED_UNICODE);
             }
+
+            if ($this->workDay->requiresWorkDayButton($currentUser) && $this->workDay->hasApprovedLeaveOnDate($employee, Carbon::today())) {
+                return response()->json([
+                    'error' => 'أنت في إجازة معتمدة اليوم — لا يلزم بدء يوم العمل.',
+                    'success' => false,
+                ], 403, [], JSON_UNESCAPED_UNICODE);
+            }
             
             $today = Carbon::today();
             $existingAttendance = Attendance::where('employee_id', $employee->id)
                 ->whereDate('date', $today)
                 ->first();
+
+            if ($existingAttendance && ($existingAttendance->work_day_locked || $existingAttendance->check_out)) {
+                return response()->json([
+                    'error' => 'تم إنهاء يوم العمل اليوم ولا يمكن البدء مجدداً.',
+                    'success' => false,
+                ], 400, [], JSON_UNESCAPED_UNICODE);
+            }
                 
             if ($existingAttendance && $existingAttendance->check_in) {
                 return response()->json([
@@ -159,28 +177,37 @@ class AttendanceController extends Controller
             
             $checkInTime = Carbon::now();
             $isLate = $checkInTime->format('H:i:s') > '09:00:00';
+            $requiredHours = $this->workDay->requiredDailyHours($employee);
             
             if ($existingAttendance) {
                 $existingAttendance->update([
                     'check_in' => $checkInTime,
                     'status' => $isLate ? 'late' : 'present',
-                    'current_status' => 'working'
+                    'current_status' => 'working',
                 ]);
+                $attendance = $existingAttendance->fresh();
             } else {
-                Attendance::create([
+                $attendance = Attendance::create([
                     'employee_id' => $employee->id,
                     'date' => $today,
                     'check_in' => $checkInTime,
                     'status' => $isLate ? 'late' : 'present',
-                    'current_status' => 'working'
+                    'current_status' => 'working',
                 ]);
+            }
+
+            if ($this->workDay->requiresWorkDayButton($currentUser)) {
+                $this->workDay->applyCheckInSchedule($attendance, $employee, $checkInTime);
+                $attendance->refresh();
             }
             
             return response()->json([
                 'success' => true,
-                'message' => $isLate ? 'تم تسجيل الحضور (متأخر)' : 'تم تسجيل الحضور بنجاح',
+                'message' => $isLate ? 'تم بدء يوم العمل (متأخر)' : 'تم بدء يوم العمل بنجاح',
                 'check_in_time' => $checkInTime->format('H:i:s'),
-                'is_late' => $isLate
+                'is_late' => $isLate,
+                'required_daily_hours' => $requiredHours,
+                'scheduled_checkout_at' => $attendance->scheduled_checkout_at?->format('H:i'),
             ], 200, [], JSON_UNESCAPED_UNICODE);
         } catch (\Exception $e) {
             \Log::error('Error in checkIn: ' . $e->getMessage());
@@ -240,16 +267,22 @@ class AttendanceController extends Controller
             $totalHours = round($totalMinutes / 60, 2);
             $isEarlyDeparture = $checkOutTime->format('H:i:s') < '17:00:00';
             
+            $requiredHours = (float) ($attendance->required_hours ?? $this->workDay->requiredDailyHours($employee));
+            $metRequired = $totalHours >= ($requiredHours - 0.1);
+
             $attendance->update([
                 'check_out' => $checkOutTime,
                 'total_hours' => $totalHours,
-                'status' => $isEarlyDeparture ? 'half_day' : 'present',
-                'current_status' => 'completed'
+                'status' => $isEarlyDeparture && !$metRequired ? 'half_day' : 'present',
+                'current_status' => 'completed',
+                'work_day_locked' => true,
             ]);
             
             return response()->json([
                 'success' => true,
-                'message' => $isEarlyDeparture ? 'تم تسجيل الانصراف (مبكر)' : 'تم تسجيل الانصراف بنجاح',
+                'message' => $metRequired
+                    ? 'تم إنهاء يوم العمل بنجاح'
+                    : ($isEarlyDeparture ? 'تم إنهاء اليوم (لم تكتمل الساعات المطلوبة)' : 'تم إنهاء يوم العمل'),
                 'check_out_time' => $checkOutTime->format('H:i:s'),
                 'total_hours' => $totalHours,
                 'is_early' => $isEarlyDeparture
@@ -408,6 +441,38 @@ class AttendanceController extends Controller
      * This returns the work time for TODAY only, starting from check_in
      * Each day starts fresh from zero
      */
+    public function autoCheckOut(Request $request)
+    {
+        try {
+            $currentUser = Auth::user();
+            $employee = Employee::where('user_id', $currentUser->id)->first();
+
+            if (!$employee) {
+                return response()->json(['error' => 'لم يتم العثور على سجل موظف', 'success' => false], 404, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            $attendance = $this->workDay->todayAttendance($employee);
+
+            if (!$attendance || !$attendance->check_in) {
+                return response()->json(['error' => 'لا توجد جلسة عمل نشطة', 'success' => false], 400, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            if (!$this->workDay->performAutoCheckout($attendance, $employee)) {
+                return response()->json(['error' => 'لم يحن وقت الإيقاف التلقائي بعد', 'success' => false], 400, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'تم إيقاف يوم العمل تلقائياً عند اكتمال المدة المطلوبة',
+                'auto_checkout' => true,
+            ], 200, [], JSON_UNESCAPED_UNICODE);
+        } catch (\Exception $e) {
+            \Log::error('Error in autoCheckOut: ' . $e->getMessage());
+
+            return response()->json(['error' => 'حدث خطأ أثناء الإيقاف التلقائي', 'success' => false], 500, [], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
     public function getCurrentWorkTime()
     {
         $currentUser = Auth::user();
@@ -416,6 +481,8 @@ class AttendanceController extends Controller
         if (!$employee) {
             return response()->json(['error' => 'Employee record not found'], 404);
         }
+
+        $this->workDay->processExpiredSessions();
         
         $today = Carbon::today();
         $attendance = Attendance::where('employee_id', $employee->id)
@@ -424,13 +491,20 @@ class AttendanceController extends Controller
             
         // If no attendance record for today or no check_in, return zero time
         if (!$attendance || !$attendance->check_in) {
-            return response()->json([
+            $payload = [
                 'is_working' => false,
                 'work_time' => '00:00:00',
                 'current_status' => 'not_started',
                 'check_in_time' => null,
-                'date' => $today->format('Y-m-d')
-            ]);
+                'date' => $today->format('Y-m-d'),
+            ];
+
+            return response()->json(
+                $this->workDay->enrichWorkTimePayload($payload, $currentUser, null),
+                200,
+                [],
+                JSON_UNESCAPED_UNICODE
+            );
         }
         
         // If employee has already checked out today, return the final time
@@ -449,15 +523,24 @@ class AttendanceController extends Controller
             $minutes = floor(($totalSeconds % 3600) / 60);
             $seconds = $totalSeconds % 60;
             
-            return response()->json([
+            $payload = [
                 'is_working' => false,
                 'work_time' => sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds),
                 'total_hours' => $attendance->total_hours,
                 'current_status' => 'completed',
                 'check_in_time' => $attendance->check_in->format('H:i:s'),
                 'check_out_time' => $attendance->check_out->format('H:i:s'),
-                'date' => $today->format('Y-m-d')
-            ]);
+                'date' => $today->format('Y-m-d'),
+                'work_day_locked' => (bool) $attendance->work_day_locked,
+                'auto_checkout' => (bool) $attendance->auto_checkout,
+            ];
+
+            return response()->json(
+                $this->workDay->enrichWorkTimePayload($payload, $currentUser, $attendance),
+                200,
+                [],
+                JSON_UNESCAPED_UNICODE
+            );
         }
         
         // Employee is currently working - calculate from check_in to now
@@ -487,16 +570,31 @@ class AttendanceController extends Controller
         $minutes = floor(($totalSeconds % 3600) / 60);
         $seconds = $totalSeconds % 60;
         
-        return response()->json([
+        if ($attendance->scheduled_checkout_at && $attendance->scheduled_checkout_at->lte(now()) && !$attendance->check_out) {
+            $this->workDay->performAutoCheckout($attendance, $employee);
+            $attendance->refresh();
+
+            return $this->getCurrentWorkTime();
+        }
+
+        $payload = [
             'is_working' => true,
             'work_time' => sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds),
-            'work_time_seconds' => $totalSeconds, // For more accurate calculation on client side
+            'work_time_seconds' => $totalSeconds,
             'check_in_time' => $attendance->check_in->format('H:i:s'),
             'check_in_datetime' => $attendance->check_in->toIso8601String(),
             'current_status' => $attendance->current_status ?? 'working',
             'break_start_time' => $attendance->break_start ? $attendance->break_start->format('H:i:s') : null,
-            'date' => $today->format('Y-m-d')
-        ]);
+            'date' => $today->format('Y-m-d'),
+            'required_hours' => (float) ($attendance->required_hours ?? $this->workDay->requiredDailyHours($employee)),
+        ];
+
+        return response()->json(
+            $this->workDay->enrichWorkTimePayload($payload, $currentUser, $attendance),
+            200,
+            [],
+            JSON_UNESCAPED_UNICODE
+        );
     }
 
     /**
