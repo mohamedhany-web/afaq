@@ -666,6 +666,16 @@
                                 </svg>
                                 حسابات العملاء
                             </a>
+
+                            @can('view-developers')
+                            <a href="{{ route('admin.developers.index') }}"
+                               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('admin.developers.*') ? 'active' : '' }}">
+                                <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                                المطورون العقاريون
+                            </a>
+                            @endcan
                             
                             @can('view-sales')
                             <a href="{{ route('sales.index') }}" 
@@ -738,83 +748,14 @@
                         </div>
                         @endif
 
-                        <!-- Finance & Accounting Section -->
-                        @can('view-finance')
-                        <div class="mt-6">
-                            <h3 class="sidebar-section-title px-4">المالية والمحاسبة</h3>
-                            
-                            <!-- لوحة التحكم المالية -->
-                            <a href="{{ route('accounting.index') }}" 
-                               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('accounting.index') ? 'active' : '' }}">
-                                <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                </svg>
-                                لوحة التحكم المالية
-                            </a>
-
-                            <!-- شجرة الحسابات -->
-                            <a href="{{ route('accounting.accounts') }}" 
-                               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('accounting.accounts') ? 'active' : '' }}">
-                                <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                </svg>
-                                شجرة الحسابات
-                            </a>
-
-                            <!-- القيود المحاسبية -->
-                            <a href="{{ route('accounting.journal-entries') }}" 
-                               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('accounting.journal-entries') ? 'active' : '' }}">
-                                <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                </svg>
-                                القيود المحاسبية
-                            </a>
-
-                            <!-- الفواتير المالية -->
-                            <a href="{{ route('financial-invoices.index') }}" 
-                               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('financial-invoices.*') ? 'active' : '' }}">
-                                <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                الفواتير المالية
-                            </a>
-
-                            <!-- المدفوعات -->
-                            <a href="{{ route('payments.index') }}" 
-                               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('payments.*') ? 'active' : '' }}">
-                                <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                                </svg>
-                                المدفوعات
-                            </a>
-
-                            <!-- المصروفات -->
-                            <a href="{{ route('expenses.index') }}" 
-                               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('expenses.*') ? 'active' : '' }}">
-                                <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                المصروفات
-                            </a>
-
-                            <!-- التقارير المالية -->
-                            <a href="{{ route('accounting.reports.index') }}" 
-                               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('accounting.reports.*') ? 'active' : '' }}">
-                                <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                التقارير المالية
-                            </a>
-
-                            <!-- الفواتير القديمة -->
-                            <a href="{{ route('invoices.index') }}" 
-                               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('invoices.*') && !request()->routeIs('financial-invoices.*') ? 'active' : '' }}">
-                                <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                </svg>
-                                فواتير المشاريع
-                            </a>
-                        </div>
+                        @php
+                            $financeInCrmSidebar = $webUser && (
+                                $webUser->usesCrmWorkspace()
+                                || ($webUser->canAccessCrm() && !$webUser->usesCrmWorkspace())
+                            );
+                        @endphp
+                        @if(!$financeInCrmSidebar)
+                            @include('layouts.partials.sidebar-accounting')
                         @endif
 
                         <!-- Legal Section -->
@@ -1142,7 +1083,7 @@
             
             <!-- Page Content -->
             <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
-                <div class="{{ request()->routeIs('messages.*') || request()->routeIs('notifications.*') || request()->routeIs('users.create', 'users.edit') || request()->routeIs('system-monitoring.*') || request()->routeIs('system-settings.*') || request()->routeIs('client-service-reports.*') || request()->routeIs('client.dashboard', 'client.projects', 'client.invoices', 'client.service-reports', 'client.service-reports.download', 'client.notifications*', 'client.documents*', 'client.calendar', 'client.help', 'client.support.*', 'client.website-issues.*', 'client.meeting-requests.*') || request()->routeIs('client-website-issues.*') || request()->routeIs('client-meeting-requests.*') || request()->routeIs('projects.*') || request()->routeIs('crm.*') ? 'w-full max-w-full px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 min-h-0' : 'container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6' }}">
+                <div class="{{ request()->routeIs('messages.*') || request()->routeIs('notifications.*') || request()->routeIs('users.create', 'users.edit') || request()->routeIs('system-monitoring.*') || request()->routeIs('system-settings.*') || request()->routeIs('client-service-reports.*') || request()->routeIs('client.dashboard', 'client.projects', 'client.invoices', 'client.service-reports', 'client.service-reports.download', 'client.notifications*', 'client.documents*', 'client.calendar', 'client.help', 'client.support.*', 'client.website-issues.*', 'client.meeting-requests.*') || request()->routeIs('client-website-issues.*') || request()->routeIs('client-meeting-requests.*') || request()->routeIs('projects.*') || request()->routeIs('crm.*') || request()->routeIs('accounting.*') || request()->routeIs('financial-invoices.*') || request()->routeIs('invoices.*') || request()->routeIs('payments.*') || request()->routeIs('expenses.*') || request()->routeIs('admin.auto-penalties.*') || request()->routeIs('leaves.*') ? 'w-full max-w-full px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 min-h-0' : 'container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6' }}">
                     @if(session('success'))
                         <div class="mb-6 bg-green-50 border-l-4 border-green-500 text-green-800 px-4 py-3 rounded-r-lg shadow-sm">
                             {{ session('success') }}

@@ -1,4 +1,4 @@
-<?php if (! $__env->hasRenderedOnce('70fc0fea-7dfa-448d-bef8-5f99947c1dfc')): $__env->markAsRenderedOnce('70fc0fea-7dfa-448d-bef8-5f99947c1dfc'); ?>
+<?php if (! $__env->hasRenderedOnce('e36cbb4b-b70a-44df-b713-572d61bb0afe')): $__env->markAsRenderedOnce('e36cbb4b-b70a-44df-b713-572d61bb0afe'); ?>
 <?php $__env->startPush('scripts'); ?>
 <script>
 document.addEventListener('alpine:init', () => {
@@ -12,9 +12,11 @@ document.addEventListener('alpine:init', () => {
         loading: false,
         searchUrl: config.searchUrl,
         required: !!config.required,
+        allowCreate: config.allowCreate !== false,
         dropdownStyle: 'display: none;',
 
         get canUseNew() {
+            if (!this.allowCreate) return false;
             const term = this.query.trim();
             if (term.length < 2) return false;
             return !this.results.some(r => r.name.toLowerCase() === term.toLowerCase());

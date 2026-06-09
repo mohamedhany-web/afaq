@@ -1,209 +1,84 @@
 @extends('layouts.app')
-
 @section('page-title', 'إدارة المصروفات')
 
 @section('content')
-<div class="w-full">
-    <!-- Page Header -->
-    <div class="mb-8">
-        <div class="flex items-center justify-between mb-4">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">إدارة المصروفات</h1>
-                <p class="text-gray-600">تتبع وإدارة المصروفات والنفقات</p>
-            </div>
-            @can('create-finance')
-            <a href="{{ route('expenses.create') }}" class="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all duration-200 flex items-center shadow-sm">
-                <svg class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                مصروف جديد
-            </a>
-            @endcan
-        </div>
-    </div>
+@include('accounting.partials.context')
+@include('crm.partials.page-header', array_filter([
+    'title' => 'المصروفات',
+    'subtitle' => 'تتبع وإدارة النفقات والمصروفات التشغيلية',
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />',
+    'actionUrl' => auth()->user()?->can('create-finance') ? route('expenses.create') : null,
+    'actionLabel' => auth()->user()?->can('create-finance') ? 'مصروف جديد' : null,
+    'actionIcon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />',
+]))
+@include('accounting.partials.nav')
 
-    @if(session('success'))
-        <div class="mb-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
-            {{ session('success') }}
-        </div>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+    @include('crm.partials.stat-card', ['label' => 'إجمالي المصروفات', 'value' => $stats['total'], 'accent' => 'theme', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي المبلغ', 'value' => $money($stats['total_amount']), 'accent' => 'purple', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'بانتظار الموافقة', 'value' => $stats['pending'], 'accent' => 'amber', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'موافق عليها', 'value' => $stats['approved'], 'accent' => 'green', 'compact' => true])
+</div>
+
+@include('accounting.partials.filter-bar', [
+    'action' => route('expenses.index'),
+    'fields' => [
+        ['name' => 'search', 'label' => 'بحث', 'placeholder' => 'رقم أو وصف المصروف...'],
+        ['name' => 'status', 'label' => 'الحالة', 'type' => 'select', 'class' => 'w-full lg:w-44', 'options' => ['' => 'الكل', 'pending' => 'معلق', 'approved' => 'موافق عليه', 'rejected' => 'مرفوض']],
+    ],
+])
+
+<div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+    <div class="px-5 py-4 border-b flex justify-between items-center font-tajawal" style="{{ $headerStyle }}">
+        <h2 class="font-bold">قائمة المصروفات</h2>
+        <span class="text-xs px-3 py-1 rounded-full font-medium" style="background:{{ $themeColor }}15;color:{{ $themeColor }};">{{ $expenses->total() }}</span>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[900px] font-tajawal">
+            <thead class="bg-gray-50 border-b">
+                <tr class="text-gray-600">
+                    <th class="p-4 text-right font-bold">رقم المصروف</th>
+                    <th class="p-4 text-right font-bold">الوصف</th>
+                    <th class="p-4 text-right font-bold">الفئة</th>
+                    <th class="p-4 text-center font-bold">المبلغ</th>
+                    <th class="p-4 text-center font-bold">التاريخ</th>
+                    <th class="p-4 text-center font-bold">الحالة</th>
+                    <th class="p-4 text-center font-bold">إجراءات</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @php
+                    $statusColors = ['pending' => 'bg-amber-100 text-amber-800', 'approved' => 'bg-green-100 text-green-800', 'rejected' => 'bg-red-100 text-red-800'];
+                    $statusNames = ['pending' => 'معلق', 'approved' => 'موافق عليه', 'rejected' => 'مرفوض'];
+                @endphp
+                @forelse($expenses as $expense)
+                <tr class="hover:bg-gray-50">
+                    <td class="p-4">
+                        <div class="font-bold text-gray-900">{{ $expense->expense_number }}</div>
+                        <div class="text-xs text-gray-500">{{ $expense->created_at->diffForHumans() }}</div>
+                    </td>
+                    <td class="p-4 text-gray-700">{{ Str::limit($expense->description, 50) }}</td>
+                    <td class="p-4 text-gray-700">{{ $expense->expense_category }}</td>
+                    <td class="p-4 text-center font-bold tabular-nums">{{ $money($expense->amount) }}</td>
+                    <td class="p-4 text-center text-gray-500">{{ $expense->expense_date->format('Y/m/d') }}</td>
+                    <td class="p-4 text-center">
+                        <span class="text-xs font-bold px-2 py-1 rounded-lg {{ $statusColors[$expense->status] ?? 'bg-gray-100 text-gray-800' }}">{{ $statusNames[$expense->status] ?? $expense->status }}</span>
+                    </td>
+                    <td class="p-4 text-center">
+                        <div class="flex items-center justify-center gap-2">
+                            <a href="{{ route('expenses.show', $expense) }}" class="text-xs font-bold" style="color:{{ $themeColor }}">عرض</a>
+                            <a href="{{ route('expenses.edit', $expense) }}" class="text-xs font-bold text-green-600">تعديل</a>
+                        </div>
+                    </td>
+                </tr>
+                @empty
+                <tr><td colspan="7" class="p-10 text-center text-gray-500">لا توجد مصروفات</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+    @if($expenses->hasPages())
+    <div class="px-5 py-4 border-t">{{ $expenses->links() }}</div>
     @endif
-
-    <!-- Quick Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <!-- Total Expenses -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-600 mb-1">إجمالي المصروفات</p>
-                    <p class="text-3xl font-bold text-gray-900">{{ $stats['total'] }}</p>
-                    <p class="text-xs text-blue-600 mt-1">جميع المصروفات</p>
-                </div>
-                <div class="p-4 bg-blue-50 rounded-xl">
-                    <svg class="w-8 h-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
-
-        <!-- Total Amount -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-600 mb-1">إجمالي المبلغ</p>
-                    <p class="text-3xl font-bold text-gray-900">{{ number_format($stats['total_amount'], 2) }}</p>
-                    <p class="text-xs text-purple-600 mt-1">ج.م</p>
-                </div>
-                <div class="p-4 bg-purple-50 rounded-xl">
-                    <svg class="w-8 h-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pending Approval -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-600 mb-1">في انتظار الموافقة</p>
-                    <p class="text-3xl font-bold text-gray-900">{{ $stats['pending'] }}</p>
-                    <p class="text-xs text-yellow-600 mt-1">يحتاج للمراجعة</p>
-                </div>
-                <div class="p-4 bg-yellow-50 rounded-xl">
-                    <svg class="w-8 h-8 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
-
-        <!-- Approved -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-600 mb-1">موافق عليها</p>
-                    <p class="text-3xl font-bold text-gray-900">{{ $stats['approved'] }}</p>
-                    <p class="text-xs text-green-600 mt-1">تمت الموافقة</p>
-                </div>
-                <div class="p-4 bg-green-50 rounded-xl">
-                    <svg class="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Expenses Table -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-gray-900">قائمة المصروفات ({{ $expenses->total() }})</h3>
-                <form method="GET" action="{{ route('expenses.index') }}" class="flex items-center gap-2">
-                    <select name="status" onchange="this.form.submit()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">جميع الحالات</option>
-                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>معلق</option>
-                        <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>موافق عليه</option>
-                        <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>مرفوض</option>
-                    </select>
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="البحث..." class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">بحث</button>
-                    @if(request('search') || request('status'))
-                    <a href="{{ route('expenses.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300">إلغاء</a>
-                    @endif
-                </form>
-            </div>
-        </div>
-        <div class="overflow-x-auto w-full">
-            <table class="w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">رقم المصروف</th>
-                        <th class="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الوصف</th>
-                        <th class="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الفئة</th>
-                        <th class="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">المبلغ</th>
-                        <th class="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">التاريخ</th>
-                        <th class="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الحالة</th>
-                        <th class="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الإجراءات</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($expenses as $expense)
-                    @php
-                        $statusColors = [
-                            'pending' => 'bg-yellow-100 text-yellow-800',
-                            'approved' => 'bg-green-100 text-green-800',
-                            'rejected' => 'bg-red-100 text-red-800',
-                        ];
-                        
-                        $statusNames = [
-                            'pending' => 'معلق',
-                            'approved' => 'موافق عليه',
-                            'rejected' => 'مرفوض',
-                        ];
-                    @endphp
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4">
-                            <div class="text-sm font-medium text-gray-900">{{ $expense->expense_number }}</div>
-                            <div class="text-xs text-gray-500">{{ $expense->created_at->diffForHumans() }}</div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="text-sm text-gray-900">{{ Str::limit($expense->description, 50) }}</div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="text-sm text-gray-900">{{ $expense->expense_category }}</div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="text-sm font-medium text-gray-900">{{ number_format($expense->amount, 2) }} ج.م</div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="text-sm text-gray-500">{{ $expense->expense_date->format('Y/m/d') }}</div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$expense->status] ?? 'bg-gray-100 text-gray-800' }}">
-                                {{ $statusNames[$expense->status] ?? $expense->status }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-sm font-medium">
-                            <div class="flex items-center gap-2">
-                                <a href="{{ route('expenses.show', $expense) }}" class="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors duration-200">
-                                    <svg class="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                    عرض
-                                </a>
-                                <a href="{{ route('expenses.edit', $expense) }}" class="inline-flex items-center px-3 py-1.5 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors duration-200">
-                                    <svg class="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                    تعديل
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="7" class="px-6 py-8 text-center text-gray-500">
-                            <div class="flex flex-col items-center">
-                                <svg class="w-12 h-12 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                                </svg>
-                                <p class="text-lg font-medium">لا توجد مصروفات</p>
-                                <p class="text-sm">قم بإضافة مصروف جديد للبدء</p>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        @if($expenses->hasPages())
-        <div class="px-6 py-4 border-t border-gray-200">
-            {{ $expenses->links() }}
-        </div>
-        @endif
-    </div>
 </div>
 @endsection

@@ -42,7 +42,7 @@
                 <select name="employee_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
                     <option value="">جميع الموظفين</option>
                     @foreach($employees as $emp)
-                        <option value="{{ $emp->id }}">{{ $emp->first_name }} {{ $emp->last_name }}</option>
+                        <option value="{{ $emp->id }}" @selected(request('employee_id') == $emp->id)>{{ $emp->first_name }} {{ $emp->last_name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -55,7 +55,7 @@
     </div>
 
     <!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <p class="text-sm font-medium text-gray-600 mb-1">أيام الحضور</p>
             <p class="text-3xl font-bold text-green-600">{{ $summary['present_days'] }}</p>
@@ -63,6 +63,10 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <p class="text-sm font-medium text-gray-600 mb-1">أيام الغياب</p>
             <p class="text-3xl font-bold text-red-600">{{ $summary['absent_days'] }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <p class="text-sm font-medium text-gray-600 mb-1">أيام التأخير</p>
+            <p class="text-3xl font-bold text-amber-600">{{ $summary['late_days'] ?? 0 }}</p>
         </div>
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <p class="text-sm font-medium text-gray-600 mb-1">معدل الحضور</p>
@@ -82,30 +86,49 @@
                     <tr>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">التاريخ</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الموظف</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">موعد الدوام</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الحضور</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الانصراف</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">تأخير</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الساعات</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الحالة</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    @foreach($attendances as $attendance)
+                    @php
+                        $statusLabels = [
+                            'present' => 'حاضر',
+                            'late' => 'متأخر',
+                            'absent' => 'غائب',
+                            'half_day' => 'نصف يوم',
+                            'leave' => 'إجازة',
+                        ];
+                    @endphp
+                    @forelse($attendances as $attendance)
                     <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 text-sm text-gray-900">{{ $attendance->date }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-900">{{ $attendance->date?->format('Y-m-d') ?? $attendance->date }}</td>
                         <td class="px-6 py-4 text-sm text-gray-900">{{ $attendance->employee->first_name ?? '' }} {{ $attendance->employee->last_name ?? '' }}</td>
-                        <td class="px-6 py-4 text-sm text-gray-600">{{ $attendance->check_in }}</td>
-                        <td class="px-6 py-4 text-sm text-gray-600">{{ $attendance->check_out ?? '-' }}</td>
-                        <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $attendance->hours_worked ?? 0 }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500" dir="ltr">{{ $attendance->scheduled_check_in_at?->format('H:i') ?? '—' }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600" dir="ltr">{{ $attendance->check_in?->format('H:i') ?? '—' }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600" dir="ltr">{{ $attendance->check_out?->format('H:i') ?? '—' }}</td>
+                        <td class="px-6 py-4 text-sm {{ ($attendance->late_minutes ?? 0) > 0 ? 'text-amber-700 font-semibold' : 'text-gray-400' }}">
+                            {{ ($attendance->late_minutes ?? 0) > 0 ? $attendance->late_minutes . ' د' : '—' }}
+                        </td>
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $attendance->total_hours ?? 0 }}</td>
                         <td class="px-6 py-4">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                {{ $attendance->status === 'present' ? 'bg-green-100 text-green-800' : '' }}
-                                {{ $attendance->status === 'absent' ? 'bg-red-100 text-red-800' : '' }}
-                                {{ $attendance->status === 'late' ? 'bg-yellow-100 text-yellow-800' : '' }}">
-                                {{ $attendance->status }}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-tajawal
+                                @if($attendance->status === 'present') bg-green-100 text-green-800
+                                @elseif($attendance->status === 'absent') bg-red-100 text-red-800
+                                @elseif($attendance->status === 'late') bg-yellow-100 text-yellow-800
+                                @elseif($attendance->status === 'half_day') bg-orange-100 text-orange-800
+                                @else bg-gray-100 text-gray-700 @endif">
+                                {{ $statusLabels[$attendance->status] ?? $attendance->status }}
                             </span>
                         </td>
                     </tr>
-                    @endforeach
+                    @empty
+                    <tr><td colspan="8" class="px-6 py-8 text-center text-sm text-gray-500 font-tajawal">لا توجد سجلات في هذه الفترة</td></tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>

@@ -10,14 +10,23 @@ use Carbon\Carbon;
 
 class JournalEntryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $entries = JournalEntry::with(['lines.account', 'lines'])
+        $entries = JournalEntry::with(['lines.account', 'lines', 'creator'])
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->orderBy('date', 'desc')
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
-            
-        return view('accounting.journal-entries', compact('entries'));
+            ->paginate(20)
+            ->withQueryString();
+
+        $stats = [
+            'total' => JournalEntry::count(),
+            'draft' => JournalEntry::where('status', 'draft')->count(),
+            'posted' => JournalEntry::where('status', 'posted')->count(),
+            'amount' => (float) JournalEntry::sum('total_debit'),
+        ];
+
+        return view('accounting.journal-entries', compact('entries', 'stats'));
     }
     
     public function create()

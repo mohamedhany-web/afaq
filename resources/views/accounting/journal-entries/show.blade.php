@@ -107,14 +107,14 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-center font-medium text-gray-900">
                             @if($line->debit > 0)
-                                {{ number_format($line->debit, 2) }} ج.م
+                                {{ $money($line->debit) }}
                             @else
                                 <span class="text-gray-400">-</span>
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-center font-medium text-gray-900">
                             @if($line->credit > 0)
-                                {{ number_format($line->credit, 2) }} ج.م
+                                {{ $money($line->credit) }}
                             @else
                                 <span class="text-gray-400">-</span>
                             @endif
@@ -128,10 +128,10 @@
                             الإجمالي
                         </td>
                         <td class="px-6 py-4 text-center text-sm font-bold text-gray-900">
-                            {{ number_format($journalEntry->total_debit, 2) }} ج.م
+                            {{ $money($journalEntry->total_debit) }}
                         </td>
                         <td class="px-6 py-4 text-center text-sm font-bold text-gray-900">
-                            {{ number_format($journalEntry->total_credit, 2) }} ج.م
+                            {{ $money($journalEntry->total_credit) }}
                         </td>
                     </tr>
                 </tfoot>
@@ -157,11 +157,11 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="bg-gray-50 rounded-lg p-4">
                     <div class="text-sm font-medium text-gray-600 mb-2">إجمالي المدين</div>
-                    <div class="text-2xl font-bold text-gray-900">{{ number_format($journalEntry->total_debit, 2) }} ج.م</div>
+                    <div class="text-2xl font-bold text-gray-900">{{ $money($journalEntry->total_debit) }}</div>
                 </div>
                 <div class="bg-gray-50 rounded-lg p-4">
                     <div class="text-sm font-medium text-gray-600 mb-2">إجمالي الدائن</div>
-                    <div class="text-2xl font-bold text-gray-900">{{ number_format($journalEntry->total_credit, 2) }} ج.م</div>
+                    <div class="text-2xl font-bold text-gray-900">{{ $money($journalEntry->total_credit) }}</div>
                 </div>
                 <div class="bg-gray-50 rounded-lg p-4">
                     <div class="text-sm font-medium text-gray-600 mb-2">حالة الميزان</div>
@@ -178,7 +178,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span class="text-lg font-bold">غير متوازن</span>
-                        <span class="text-sm mr-2">(الفرق: {{ number_format(abs($journalEntry->balance_difference), 2) }} ج.م)</span>
+                        <span class="text-sm mr-2">(الفرق: {{ $money(abs($journalEntry->balance_difference)) }})</span>
                     </div>
                     @endif
                 </div>

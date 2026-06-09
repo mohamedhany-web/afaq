@@ -1,232 +1,129 @@
 @extends('layouts.app')
 
+@php
+    $sectionHeader = 'px-5 py-4 border-b font-bold font-tajawal';
+    $reportDate = \Carbon\Carbon::parse($date);
+    $isBalanced = abs($totalDebit - $totalCredit) < 0.01;
+    $typeLabels = [
+        'asset' => ['الأصول', 'bg-green-100 text-green-800'],
+        'liability' => ['الخصوم', 'bg-amber-100 text-amber-800'],
+        'equity' => ['حقوق الملكية', 'bg-blue-100 text-blue-800'],
+        'revenue' => ['الإيرادات', 'bg-green-100 text-green-800'],
+        'expense' => ['المصروفات', 'bg-red-100 text-red-800'],
+    ];
+    $accountsByType = $accounts->groupBy('type');
+@endphp
+
 @section('page-title', 'ميزان المراجعة')
 
 @section('content')
-<div class="w-full max-w-6xl mx-auto">
-    <!-- Page Header -->
-    <div class="mb-8 no-print">
-        <div class="flex items-center justify-between mb-4">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">ميزان المراجعة</h1>
-                <p class="text-gray-600">حتى تاريخ {{ \Carbon\Carbon::parse($date)->format('Y-m-d') }}</p>
-            </div>
-            <div class="flex items-center gap-3">
-                <form method="GET" class="flex items-center gap-2">
-                    <input type="date" name="date" value="{{ $date }}" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">
-                        تحديث
-                    </button>
-                </form>
-                <button onclick="window.print()" class="bg-gray-600 text-white px-6 py-3 rounded-xl hover:bg-gray-700 transition-all duration-200 flex items-center shadow-sm">
-                    <svg class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                    </svg>
-                    طباعة
-                </button>
-            </div>
+@include('accounting.partials.report-header', [
+    'title' => 'ميزان المراجعة',
+    'subtitle' => 'حتى تاريخ ' . $reportDate->format('Y/m/d'),
+])
+
+@include('accounting.partials.report-toolbar', ['filterType' => 'date', 'date' => $date])
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 no-print">
+    @include('crm.partials.stat-card', ['label' => 'إجمالي المدين', 'value' => $money($totalDebit), 'accent' => 'green', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي الدائن', 'value' => $money($totalCredit), 'accent' => 'blue', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'عدد الحسابات', 'value' => $accounts->count(), 'accent' => 'purple', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'التوازن', 'value' => $isBalanced ? 'متوازن' : 'غير متوازن', 'accent' => $isBalanced ? 'green' : 'red', 'compact' => true])
+</div>
+
+<div id="report-document" class="font-tajawal">
+    <div class="report-print-header text-center mb-6 pb-4 border-b-2 border-gray-900">
+        <h2 class="text-xl font-bold">@include('accounting.partials.company-name')</h2>
+        <h3 class="text-lg font-bold mt-3">ميزان المراجعة</h3>
+        <p class="text-sm text-gray-700">حتى تاريخ: {{ $reportDate->format('Y/m/d') }}</p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden mb-6 no-print">
+        <div class="px-6 py-5 text-white text-center" style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}cc 100%);">
+            <h2 class="text-xl font-bold">@include('accounting.partials.company-name')</h2>
+            <h3 class="text-base font-semibold mt-1 opacity-95">ميزان المراجعة</h3>
+            <p class="text-sm opacity-90 mt-1">حتى تاريخ: {{ $reportDate->format('Y/m/d') }}</p>
         </div>
     </div>
 
-    <!-- Company Header -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-6 text-center no-print">
-        <h2 class="text-2xl font-bold text-gray-900 mb-2">{{ \App\Helpers\SettingsHelper::getCompanyName() ?? 'شركة سولفيستا للبرمجيات' }}</h2>
-        <h3 class="text-xl font-semibold text-gray-700 mb-4">ميزان المراجعة</h3>
-        <p class="text-gray-600">حتى تاريخ: {{ \Carbon\Carbon::parse($date)->format('Y-m-d') }}</p>
-    </div>
-    
-    <!-- Print Header -->
-    <div class="bg-white p-8 mb-6 text-center hidden print:block" style="page-break-after: avoid;">
-        <div class="border-b-2 border-gray-900 pb-4 mb-4">
-            <h2 class="text-2xl font-bold text-gray-900 mb-2">{{ \App\Helpers\SettingsHelper::getCompanyName() ?? 'شركة سولفيستا للبرمجيات' }}</h2>
-            <p class="text-sm text-gray-600">{{ \App\Helpers\SettingsHelper::getCompanyAddress() ?? '' }}</p>
-        </div>
-        <h3 class="text-xl font-semibold text-gray-900 mb-2">ميزان المراجعة</h3>
-        <p class="text-gray-700 font-medium">حتى تاريخ: {{ \Carbon\Carbon::parse($date)->format('Y-m-d') }}</p>
-    </div>
-
-    <!-- Trial Balance Table -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div class="{{ $sectionHeader }}" style="{{ $headerStyle }}">أرصدة الحسابات</div>
         @if($accounts->count() > 0)
         <div class="overflow-x-auto">
-            <table class="w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+            <table class="w-full text-sm min-w-[800px]">
+                <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
                     <tr>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">رمز الحساب</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">اسم الحساب</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">نوع الحساب</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">مدين</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">دائن</th>
+                        <th class="p-4 text-right font-bold">رمز الحساب</th>
+                        <th class="p-4 text-right font-bold">اسم الحساب</th>
+                        <th class="p-4 text-center font-bold">النوع</th>
+                        <th class="p-4 text-center font-bold">مدين</th>
+                        <th class="p-4 text-center font-bold">دائن</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody class="divide-y divide-gray-100">
                     @foreach($accounts as $account)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {{ $account->code }}
+                    <tr class="hover:bg-gray-50/60">
+                        <td class="p-4 font-medium text-gray-900 tabular-nums">{{ $account->code }}</td>
+                        <td class="p-4 text-gray-800">
+                            @if($account->parent_id)<span class="text-gray-400 ml-1">↳</span>@endif
+                            {{ $account->name }}
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-900">
-                            <div class="flex items-center">
-                                @if($account->parent_id)
-                                    <svg class="w-4 h-4 text-gray-400 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                    </svg>
-                                @endif
-                                {{ $account->name }}
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                {{ $account->type === 'asset' ? 'bg-green-100 text-green-800' : '' }}
-                                {{ $account->type === 'liability' ? 'bg-orange-100 text-orange-800' : '' }}
-                                {{ $account->type === 'equity' ? 'bg-blue-100 text-blue-800' : '' }}
-                                {{ $account->type === 'revenue' ? 'bg-green-100 text-green-800' : '' }}
-                                {{ $account->type === 'expense' ? 'bg-red-100 text-red-800' : '' }}">
-                                {{ $account->type_in_arabic }}
+                        <td class="p-4 text-center">
+                            <span class="text-xs font-bold px-2 py-1 rounded-lg {{ $typeLabels[$account->type][1] ?? 'bg-gray-100 text-gray-800' }}">
+                                {{ $account->type_in_arabic ?? ($typeLabels[$account->type][0] ?? $account->type) }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            @if($account->debit_balance > 0)
-                                <span class="font-medium text-green-600">{{ number_format($account->debit_balance, 2) }} ج.م</span>
-                            @else
-                                <span class="text-gray-400">-</span>
-                            @endif
+                        <td class="p-4 text-center tabular-nums font-semibold {{ $account->debit_balance > 0 ? 'text-green-600' : 'text-gray-300' }}">
+                            {{ $account->debit_balance > 0 ? $money($account->debit_balance) : '—' }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            @if($account->credit_balance > 0)
-                                <span class="font-medium text-blue-600">{{ number_format($account->credit_balance, 2) }} ج.م</span>
-                            @else
-                                <span class="text-gray-400">-</span>
-                            @endif
+                        <td class="p-4 text-center tabular-nums font-semibold {{ $account->credit_balance > 0 ? 'text-blue-600' : 'text-gray-300' }}">
+                            {{ $account->credit_balance > 0 ? $money($account->credit_balance) : '—' }}
                         </td>
                     </tr>
                     @endforeach
                 </tbody>
-                <tfoot class="bg-gray-50 border-t-2 border-gray-300">
+                <tfoot class="bg-gray-50 border-t-2 border-gray-200">
                     <tr>
-                        <td colspan="3" class="px-6 py-4 text-right text-sm font-bold text-gray-900">
-                            الإجمالي
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">
-                            {{ number_format($totalDebit, 2) }} ج.م
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-600">
-                            {{ number_format($totalCredit, 2) }} ج.م
-                        </td>
+                        <td colspan="3" class="p-4 text-right font-bold text-gray-900">الإجمالي</td>
+                        <td class="p-4 text-center font-bold text-green-700 tabular-nums">{{ $money($totalDebit) }}</td>
+                        <td class="p-4 text-center font-bold text-blue-700 tabular-nums">{{ $money($totalCredit) }}</td>
                     </tr>
                 </tfoot>
             </table>
         </div>
         @else
-        <div class="px-6 py-12 text-center text-gray-500">
-            <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <p class="text-lg font-medium text-gray-900 mb-2">لا توجد حسابات</p>
-            <p class="text-gray-600">لم يتم تسجيل أي حسابات بعد</p>
-        </div>
+        <div class="p-12 text-center text-gray-500 text-sm">لا توجد حسابات نشطة.</div>
         @endif
     </div>
 
-    <!-- Balance Verification -->
-    <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="text-center">
-            @if(abs($totalDebit - $totalCredit) < 0.01)
-                <div class="flex items-center justify-center text-green-600 mb-2">
-                    <svg class="w-8 h-8 ml-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span class="text-xl font-bold">ميزان المراجعة متوازن</span>
-                </div>
-                <p class="text-gray-600">إجمالي المدين = إجمالي الدائن</p>
-                <p class="text-2xl font-bold text-gray-900 mt-2">{{ number_format($totalDebit, 2) }} ج.م</p>
-            @else
-                <div class="flex items-center justify-center text-red-600 mb-2">
-                    <svg class="w-8 h-8 ml-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span class="text-xl font-bold">ميزان المراجعة غير متوازن</span>
-                </div>
-                <p class="text-gray-600">الفرق: {{ number_format(abs($totalDebit - $totalCredit), 2) }} ج.م</p>
-                <div class="grid grid-cols-2 gap-4 mt-4">
-                    <div class="p-4 bg-green-50 rounded-lg">
-                        <p class="text-sm font-medium text-gray-600">إجمالي المدين</p>
-                        <p class="text-2xl font-bold text-green-600">{{ number_format($totalDebit, 2) }} ج.م</p>
-                    </div>
-                    <div class="p-4 bg-blue-50 rounded-lg">
-                        <p class="text-sm font-medium text-gray-600">إجمالي الدائن</p>
-                        <p class="text-2xl font-bold text-blue-600">{{ number_format($totalCredit, 2) }} ج.م</p>
-                    </div>
-                </div>
-            @endif
+    <div class="mt-6 bg-white rounded-2xl shadow-lg border border-gray-200 p-6 text-center">
+        @if($isBalanced)
+        <div class="inline-flex items-center gap-2 text-green-700 font-bold text-lg">
+            <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            ميزان المراجعة متوازن
         </div>
+        @else
+        <div class="inline-flex items-center gap-2 text-red-700 font-bold text-lg">ميزان المراجعة غير متوازن</div>
+        <p class="text-sm text-gray-600 mt-2">الفرق: {{ $money(abs($totalDebit - $totalCredit)) }}</p>
+        @endif
     </div>
 
-    <!-- Summary by Type -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8 no-print">
-        @php
-            $accountsByType = $accounts->groupBy('type');
-        @endphp
-        
-        @foreach(['asset' => ['الأصول', 'green'], 'liability' => ['الخصوم', 'orange'], 'equity' => ['حقوق الملكية', 'blue'], 'revenue' => ['الإيرادات', 'green'], 'expense' => ['المصروفات', 'red']] as $type => $typeData)
+    @if($accountsByType->isNotEmpty())
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mt-6 no-print">
+        @foreach($typeLabels as $type => $meta)
             @if(isset($accountsByType[$type]))
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h4 class="font-semibold text-gray-900">{{ $typeData[0] }}</h4>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-{{ $typeData[1] }}-100 text-{{ $typeData[1] }}-800">
-                        {{ $accountsByType[$type]->count() }} حساب
-                    </span>
-                </div>
-                <div class="text-2xl font-bold text-{{ $typeData[1] }}-600">
-                    {{ number_format($accountsByType[$type]->sum('balance'), 2) }} ج.م
-                </div>
-            </div>
+            @include('crm.partials.stat-card', [
+                'label' => $meta[0],
+                'value' => $money($accountsByType[$type]->sum('balance')),
+                'accent' => match($type) { 'asset','revenue' => 'green', 'liability' => 'amber', 'equity' => 'blue', 'expense' => 'red', default => 'theme' },
+                'compact' => true,
+                'footer' => '<span class="text-gray-500">' . $accountsByType[$type]->count() . ' حساب</span>',
+            ])
             @endif
         @endforeach
     </div>
+    @endif
 </div>
 
-<style>
-@media print {
-    .no-print {
-        display: none !important;
-    }
-    
-    body {
-        background: white !important;
-    }
-    
-    .bg-white {
-        background: white !important;
-        box-shadow: none !important;
-        border: 1px solid #e5e7eb !important;
-    }
-    
-    .bg-gray-50, .bg-green-50, .bg-blue-50, .bg-orange-50, .bg-red-50 {
-        background: #f9fafb !important;
-    }
-    
-    @page {
-        margin: 15mm;
-        size: A4;
-    }
-    
-    .print\\:block {
-        display: block !important;
-    }
-    
-    table {
-        page-break-inside: auto;
-    }
-    
-    tr {
-        page-break-inside: avoid;
-        page-break-after: auto;
-    }
-}
-
-.hidden {
-    display: none;
-}
-</style>
+@include('accounting.partials.report-styles')
 @endsection

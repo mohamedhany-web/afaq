@@ -26,9 +26,13 @@
         تقارير المبيعات
     </a>
     <?php if(auth()->user()?->can('view-all-projects') || auth()->user()?->can('view-own-projects')): ?>
-    <a href="<?php echo e(route('crm.projects.index')); ?>" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium <?php echo e(request()->routeIs('crm.projects.*') ? 'active' : ''); ?>">
+    <a href="<?php echo e(route('crm.projects.index')); ?>" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium <?php echo e(request()->routeIs('crm.projects.index') || request()->routeIs('crm.projects.show') || request()->routeIs('crm.projects.create') || request()->routeIs('crm.projects.edit') ? 'active' : ''); ?>">
         <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
         المشاريع العقارية
+    </a>
+    <a href="<?php echo e(route('crm.projects.approvals.index')); ?>" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium <?php echo e(request()->routeIs('crm.projects.approvals.*') ? 'active' : ''); ?>">
+        <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        موافقات المشاريع
     </a>
     <?php endif; ?>
     <a href="<?php echo e(route('crm.teams.index')); ?>" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium <?php echo e(request()->routeIs('crm.teams.*') ? 'active' : ''); ?>">
@@ -36,6 +40,15 @@
         فرق المبيعات
     </a>
 </div>
+<?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('view-developers')): ?>
+<div class="mt-6">
+    <h3 class="sidebar-section-title px-4">المطورون والتعاقدات</h3>
+    <a href="<?php echo e(route('admin.developers.index')); ?>" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium <?php echo e(request()->routeIs('admin.developers.*') ? 'active' : ''); ?>">
+        <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+        المطورون العقاريون
+    </a>
+</div>
+<?php endif; ?>
 <div class="mt-6">
     <h3 class="sidebar-section-title px-4">التحليلات</h3>
     <a href="<?php echo e(route('crm.intelligence.index')); ?>" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium <?php echo e(request()->routeIs('crm.intelligence.*') ? 'active' : ''); ?>">
@@ -53,10 +66,37 @@
     <?php endif; ?>
 </div>
 <div class="mt-6">
+    <h3 class="sidebar-section-title px-4">انضباط الموظفين</h3>
+    <a href="<?php echo e(route('crm.employee-compliance.index')); ?>" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium <?php echo e(request()->routeIs('crm.employee-compliance.*') ? 'active' : ''); ?>">
+        <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        الالتزام والعقوبات
+    </a>
+    <a href="<?php echo e(route('admin.auto-penalties.index')); ?>" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium <?php echo e(request()->routeIs('admin.auto-penalties.*') ? 'active' : ''); ?>">
+        <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        قواعد الخصومات
+    </a>
+    <a href="<?php echo e(route('leaves.index')); ?>" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium <?php echo e(request()->routeIs('leaves.*') ? 'active' : ''); ?>">
+        <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        الإجازات
+    </a>
+</div>
+<div class="mt-6">
+    <h3 class="sidebar-section-title px-4">الوكلاء والعمولات</h3>
+    <a href="<?php echo e(route('crm.freelance-agents.index')); ?>" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium <?php echo e(request()->routeIs('crm.freelance-agents.*') ? 'active' : ''); ?>">
+        <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        الوكلاء المستقلون
+    </a>
+    <a href="<?php echo e(route('crm.freelance-agents.scheme')); ?>" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium <?php echo e(request()->routeIs('crm.freelance-agents.scheme') ? 'active' : ''); ?>">
+        <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-7M7 3h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg>
+        جدول هيكل العمولات
+    </a>
+</div>
+<div class="mt-6">
     <h3 class="sidebar-section-title px-4">التعويضات والرواتب</h3>
     <a href="<?php echo e(route('crm.compensation.dashboard')); ?>" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium <?php echo e(request()->routeIs('crm.compensation.*') ? 'active' : ''); ?>">
         <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
         الرواتب والـ KPI
     </a>
 </div>
+<?php echo $__env->make('layouts.partials.sidebar-accounting', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 <?php /**PATH C:\xampp\htdocs\afaq\resources\views/layouts/partials/sidebar-crm-admin.blade.php ENDPATH**/ ?>

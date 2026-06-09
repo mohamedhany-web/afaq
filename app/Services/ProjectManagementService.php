@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Helpers\MapLocationHelper;
 use App\Models\Project;
 use App\Models\ProjectMapPin;
 use App\Models\RealEstateDeveloper;
@@ -79,6 +80,7 @@ class ProjectManagementService
             'ownership_details' => 'nullable|array',
             'city' => 'nullable|string|max:100',
             'location' => 'nullable|string|max:255',
+            'land_area_m2' => 'nullable|numeric|min:0',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
             'map_zoom' => 'nullable|integer|between:3,20',
@@ -113,10 +115,12 @@ class ProjectManagementService
                 $v->errors()->add('ownership_details.partner_name', 'اسم الشريك مطلوب في مشاريع المشاركة.');
             }
 
-            if ($type === 'developer_third_party'
-                && !$request->filled('real_estate_developer_id')
-                && !trim((string) $request->input('developer_name', ''))) {
-                $v->errors()->add('developer_name', 'اسم المطور العقاري مطلوب لمشاريع المطورين الخارجيين.');
+            if ($type === 'developer_third_party') {
+                if (!$request->filled('real_estate_developer_id')) {
+                    $v->errors()->add('real_estate_developer_id', 'اختر مطوراً عقارياً مسجلاً بتعاقد نشط من لوحة الإدارة.');
+                } elseif (!RealEstateDeveloper::contracted()->whereKey($request->input('real_estate_developer_id'))->exists()) {
+                    $v->errors()->add('real_estate_developer_id', 'المطور المحدد غير مسجل أو التعاقد غير نشط.');
+                }
             }
         });
 
@@ -146,10 +150,29 @@ class ProjectManagementService
         $data['progress_percentage'] = $total > 0 ? (int) round(($sold / $total) * 100) : 0;
         $data['start_date'] = $data['start_date'] ?? now()->toDateString();
         $data['map_zoom'] = $data['map_zoom'] ?? 14;
-        $data['ownership_details'] = $this->filterOwnershipDetails(
-            $data['ownership_type'] ?? 'developer_third_party',
-            $data['ownership_details'] ?? []
+
+        $lat = isset($data['latitude']) && $data['latitude'] !== '' && $data['latitude'] !== null
+            ? (float) $data['latitude'] : null;
+        $lng = isset($data['longitude']) && $data['longitude'] !== '' && $data['longitude'] !== null
+            ? (float) $data['longitude'] : null;
+        $pins = $request->input('map_pins', []);
+        $hasProjectPin = is_array($pins) && collect($pins)->contains(
+            fn ($pin) => ($pin['pin_type'] ?? '') === 'project'
         );
+
+        if (!$hasProjectPin && MapLocationHelper::isPlaceholder($lat, $lng)) {
+            $data['latitude'] = null;
+            $data['longitude'] = null;
+        }
+
+        if (($data['ownership_type'] ?? '') === 'developer_third_party') {
+            $data['ownership_details'] = null;
+        } else {
+            $data['ownership_details'] = $this->filterOwnershipDetails(
+                $data['ownership_type'] ?? 'developer_third_party',
+                $data['ownership_details'] ?? []
+            );
+        }
 
         unset($data['map_pins']);
 
@@ -165,29 +188,12 @@ class ProjectManagementService
             return $data;
         }
 
-        if (!empty($data['real_estate_developer_id'])) {
-            $developer = RealEstateDeveloper::find($data['real_estate_developer_id']);
-            if ($developer) {
-                $data['developer_name'] = $developer->name;
-            }
+        $developer = !empty($data['real_estate_developer_id'])
+            ? RealEstateDeveloper::find($data['real_estate_developer_id'])
+            : null;
 
-            return $data;
-        }
-
-        $name = trim((string) ($data['developer_name'] ?? ''));
-        if ($name === '') {
-            $data['real_estate_developer_id'] = null;
-
-            return $data;
-        }
-
-        $developer = RealEstateDeveloper::firstOrCreate(
-            ['name' => $name],
-            ['created_by' => $user->id]
-        );
-
-        $data['real_estate_developer_id'] = $developer->id;
-        $data['developer_name'] = $developer->name;
+        $data['developer_name'] = $developer?->name;
+        $data['real_estate_developer_id'] = $developer?->id;
 
         return $data;
     }
@@ -270,12 +276,22 @@ class ProjectManagementService
             ]);
         }
 
-        if (!$project->latitude && !empty($pins[0]['latitude'])) {
-            $main = collect($pins)->firstWhere('pin_type', 'project') ?? $pins[0];
-            $project->update([
-                'latitude' => $main['latitude'],
-                'longitude' => $main['longitude'],
-            ]);
+        $main = collect($pins)->firstWhere('pin_type', 'project') ?? ($pins[0] ?? null);
+
+        if ($main && !empty($main['latitude']) && !empty($main['longitude'])) {
+            $lat = (float) $main['latitude'];
+            $lng = (float) $main['longitude'];
+            if (!MapLocationHelper::isPlaceholder($lat, $lng)) {
+                $project->update([
+                    'latitude' => $lat,
+                    'longitude' => $lng,
+                ]);
+            }
+        } elseif (empty($pins) && MapLocationHelper::isPlaceholder(
+            $project->latitude !== null ? (float) $project->latitude : null,
+            $project->longitude !== null ? (float) $project->longitude : null,
+        )) {
+            $project->update(['latitude' => null, 'longitude' => null]);
         }
     }
 

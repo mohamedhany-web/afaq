@@ -64,6 +64,43 @@ class AutoPenaltyRuleSeeder extends Seeder
                 'applies_to' => 'manager',
                 'grace_hours' => 48,
             ],
+            [
+                'name' => 'تأخر حضور',
+                'department_code' => 'HR',
+                'source_type' => 'attendance_late',
+                'amount' => 100,
+                'grace_hours' => 2,
+            ],
+            [
+                'name' => 'عدم بدء يوم العمل',
+                'department_code' => 'HR',
+                'source_type' => 'attendance_no_start',
+                'amount' => 150,
+                'grace_hours' => 2,
+            ],
+            [
+                'name' => 'ساعات عمل يومية ناقصة',
+                'department_code' => 'HR',
+                'source_type' => 'attendance_short_hours',
+                'amount' => 120,
+                'grace_hours' => 4,
+            ],
+            [
+                'name' => 'KPI شهري دون الحد (مبيعات)',
+                'department_code' => 'SAL',
+                'source_type' => 'kpi_monthly',
+                'amount' => 300,
+                'grace_hours' => 48,
+                'applies_to' => 'employee',
+            ],
+            [
+                'name' => 'KPI شهري دون الحد (مدير مبيعات)',
+                'department_code' => 'SAL',
+                'source_type' => 'kpi_monthly',
+                'amount' => 500,
+                'grace_hours' => 48,
+                'applies_to' => 'manager',
+            ],
         ];
 
         foreach ($rules as $rule) {

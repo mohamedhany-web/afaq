@@ -27,6 +27,7 @@ class EnsureCrmOnlyAccess
             'notifications',
             'messages',
             'attendances',
+            'leaves',
         ];
         $path = trim($request->path(), '/');
 
@@ -36,7 +37,7 @@ class EnsureCrmOnlyAccess
             }
         }
 
-        if ($request->routeIs('logout', 'profile.*', 'verification.*', 'notifications.*', 'messages.*', 'attendances.*')) {
+        if ($request->routeIs('logout', 'profile.*', 'verification.*', 'notifications.*', 'messages.*', 'attendances.*', 'leaves.*')) {
             return $next($request);
         }
 

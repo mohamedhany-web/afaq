@@ -104,4 +104,25 @@ class GoogleMapsHelper
             . '&q=' . $q
             . '&zoom=' . (int) config('maps.satellite_zoom', 18);
     }
+
+    /** صورة قمر صناعي ثابتة — لنسيج أرض المشهد 3D (Static Maps API) */
+    public static function staticSatelliteUrl(float $lat, float $lng, int $width = 640, int $height = 640, ?int $zoom = null): ?string
+    {
+        $key = self::apiKey();
+        if (!$key) {
+            return null;
+        }
+
+        $width = max(100, min(640, $width));
+        $height = max(100, min(640, $height));
+        $zoom = $zoom ?? (int) config('maps.satellite_zoom', 18);
+
+        return 'https://maps.googleapis.com/maps/api/staticmap'
+            . '?center=' . urlencode(self::formatCoords($lat, $lng))
+            . '&zoom=' . $zoom
+            . '&size=' . $width . 'x' . $height
+            . '&maptype=satellite'
+            . '&scale=2'
+            . '&key=' . urlencode($key);
+    }
 }

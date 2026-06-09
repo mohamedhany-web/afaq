@@ -19,6 +19,15 @@
 </div>
 @endif
 
+@if($activePlan)
+<div class="mb-6 p-4 rounded-2xl border border-gray-200 bg-white shadow font-tajawal">
+    <p class="text-xs font-bold text-gray-500 mb-1">خطة الشهر</p>
+    <p class="font-bold text-gray-900">{{ $activePlan->title }}</p>
+    <p class="text-xs text-gray-600 mt-1 mb-3">{{ $activePlan->periodLabel() }} — تقدم الفريق {{ $activePlan->activities_count ? round(($activePlan->completed_activities_count / $activePlan->activities_count) * 100) : 0 }}%</p>
+    <a href="{{ route('marketing.plans.show', $activePlan) }}" class="inline-flex px-4 py-2 rounded-xl text-white text-xs font-bold" style="background:{{ $themeColor }}">مهامي في الخطة</a>
+</div>
+@endif
+
 <div class="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
     @include('crm.partials.stat-card', ['label' => 'مهام اليوم', 'value' => $k['activities_today'], 'accent' => 'purple', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />'])
     @include('crm.partials.stat-card', ['label' => 'Leads اليوم', 'value' => $k['leads_today'], 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />'])

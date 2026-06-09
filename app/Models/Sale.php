@@ -33,6 +33,13 @@ class Sale extends Model
         'interest_type',
         'viewing_date',
         'viewing_notes',
+        'transaction_type',
+        'company_commission_amount',
+        'listing_agent_id',
+        'commission_collected',
+        'commission_collected_at',
+        'commission_payout_status',
+        'commission_notes',
     ];
 
     protected $casts = [
@@ -42,6 +49,9 @@ class Sale extends Model
         'actual_close_date' => 'date',
         'lost_at' => 'datetime',
         'viewing_date' => 'date',
+        'company_commission_amount' => 'decimal:2',
+        'commission_collected' => 'boolean',
+        'commission_collected_at' => 'datetime',
         'competitors' => 'array',
         'decision_makers' => 'array',
         'created_at' => 'datetime',
@@ -92,5 +102,20 @@ class Sale extends Model
     public function salesTeam(): BelongsTo
     {
         return $this->belongsTo(SalesTeam::class);
+    }
+
+    public function listingAgent(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'listing_agent_id');
+    }
+
+    public function commissionSplits(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(SaleCommissionSplit::class);
+    }
+
+    public function transactionTypeLabel(): string
+    {
+        return config('freelance_agents.transaction_types')[$this->transaction_type] ?? ($this->transaction_type ?? '—');
     }
 }

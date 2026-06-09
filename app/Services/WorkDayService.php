@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Log;
 
 class WorkDayService
 {
+    public function __construct(
+        protected EmployeeScheduleService $schedule,
+    ) {}
+
     public function isExempt(User $user): bool
     {
         return $user->hasRole(config('work_day.exempt_roles', ['super_admin', 'admin']));
@@ -29,7 +33,7 @@ class WorkDayService
 
     public function requiredDailyHours(Employee $employee): float
     {
-        return (float) ($employee->daily_hours ?: config('work_day.default_daily_hours', 8));
+        return $this->schedule->requiredDailyHours($employee);
     }
 
     public function hasApprovedLeaveOnDate(Employee $employee, Carbon $date): bool
@@ -55,11 +59,14 @@ class WorkDayService
     public function applyCheckInSchedule(Attendance $attendance, Employee $employee, ?Carbon $checkInAt = null): void
     {
         $checkInAt ??= Carbon::parse($attendance->check_in);
+        $date = $checkInAt->copy()->startOfDay();
         $hours = $this->requiredDailyHours($employee);
 
         $attendance->update([
             'required_hours' => $hours,
-            'scheduled_checkout_at' => $checkInAt->copy()->addMinutes((int) round($hours * 60)),
+            'scheduled_check_in_at' => $this->schedule->scheduledCheckInAt($employee, $date),
+            'scheduled_checkout_at' => $this->schedule->scheduledCheckOutAt($employee, $date),
+            'late_minutes' => $this->schedule->lateMinutes($employee, $checkInAt, $date),
             'auto_checkout' => false,
             'work_day_locked' => false,
         ]);
@@ -148,6 +155,7 @@ class WorkDayService
         }
 
         $onLeave = $this->hasApprovedLeaveOnDate($employee, $date);
+        $weeklyOff = $this->schedule->isWeeklyOffDay($employee, $date);
         $dailyHours = $this->requiredDailyHours($employee);
         $attendance = Attendance::query()
             ->where('employee_id', $employee->id)
@@ -161,13 +169,15 @@ class WorkDayService
 
         $isCompleted = $attendance && ($attendance->check_out || $attendance->work_day_locked);
 
-        $mustStart = !$onLeave && !$isWorking && !$isCompleted;
+        $mustStart = !$onLeave && !$weeklyOff && !$isWorking && !$isCompleted;
 
         return [
             'show_button' => true,
-            'required' => true,
+            'required' => !$onLeave && !$weeklyOff,
             'on_leave' => $onLeave,
-            'leave_label' => $onLeave ? 'إجازة معتمدة' : null,
+            'weekly_off' => $weeklyOff,
+            'leave_label' => $onLeave ? 'إجازة معتمدة' : ($weeklyOff ? 'إجازة أسبوعية' : null),
+            'schedule_label' => $this->schedule->scheduleLabel($employee),
             'must_start' => $mustStart,
             'is_working' => $isWorking,
             'is_completed' => (bool) $isCompleted,
@@ -201,6 +211,10 @@ class WorkDayService
         return [
             'tracked' => true,
             'on_leave' => $onLeave,
+            'weekly_off' => $this->schedule->isWeeklyOffDay($employee, $date),
+            'schedule_label' => $this->schedule->scheduleLabel($employee),
+            'scheduled_check_in' => $this->schedule->scheduledCheckInAt($employee, $date)->format('H:i'),
+            'scheduled_check_out' => $this->schedule->scheduledCheckOutAt($employee, $date)->format('H:i'),
             'required_hours' => $required,
             'day_started' => (bool) ($attendance?->check_in),
             'check_in' => $attendance?->check_in?->format('H:i'),

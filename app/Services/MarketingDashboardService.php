@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\MarketingActivity;
 use App\Models\MarketingCampaign;
+use App\Models\MarketingPlan;
 use App\Models\User;
 use Carbon\Carbon;
 
@@ -82,11 +83,21 @@ class MarketingDashboardService
         $reportPending = $compliance->pendingFor($user);
         $teamDailyStatus = $isManager ? $compliance->teamDailyStatus($user) : [];
 
+        $activePlan = $scope->plansQuery()
+            ->withCount([
+                'activities',
+                'activities as completed_activities_count' => fn ($q) => $q->where('status', MarketingActivity::STATUS_COMPLETED),
+            ])
+            ->where('status', MarketingPlan::STATUS_ACTIVE)
+            ->where('year', now()->year)
+            ->where('month', now()->month)
+            ->first();
+
         return compact(
             'user', 'kpis', 'recentCampaigns', 'upcomingActivities',
             'overdueActivities', 'leadsByChannel', 'leadsTrend',
             'isManager', 'isRep', 'role', 'resolver',
-            'reportPending', 'teamDailyStatus'
+            'reportPending', 'teamDailyStatus', 'activePlan'
         );
     }
 }

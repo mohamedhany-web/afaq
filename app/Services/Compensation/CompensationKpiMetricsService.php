@@ -9,16 +9,23 @@ use App\Models\DailySalesReport;
 use App\Models\Sale;
 use App\Models\User;
 use App\Services\CrmScopeService;
+use App\Services\EmployeeComplianceService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class CompensationKpiMetricsService
 {
-    public function __construct(protected CrmScopeService $scope) {}
+    public function __construct(
+        protected CrmScopeService $scope,
+        protected EmployeeComplianceService $compliance,
+    ) {}
 
     public static function for(User $user): self
     {
-        return new self(CrmScopeService::for($user));
+        return new self(
+            CrmScopeService::for($user),
+            app(EmployeeComplianceService::class),
+        );
     }
 
     public function collect(User $user, CompPayrollPeriod $period, string $targetRole): array
@@ -31,11 +38,12 @@ class CompensationKpiMetricsService
             return $this->collectManagerMetrics($user, $start, $end);
         }
 
-        return $this->collectRepMetrics($userId, $start, $end);
+        return $this->collectRepMetrics($user, $start, $end);
     }
 
-    protected function collectRepMetrics(int $userId, Carbon $start, Carbon $end): array
+    protected function collectRepMetrics(User $user, Carbon $start, Carbon $end): array
     {
+        $userId = $user->id;
         $salesQuery = fn () => Sale::query()->where('assigned_to', $userId)->whereBetween('updated_at', [$start, $end]);
         $closed = Sale::query()
             ->where('assigned_to', $userId)
@@ -81,8 +89,10 @@ class CompensationKpiMetricsService
             ->whereBetween('report_date', [$start->toDateString(), $end->toDateString()])
             ->count();
 
-        $workdays = max(1, $start->diffInWeekdays($end) + 1);
-        $crmCompliance = min(100, round(($reportsSubmitted / $workdays) * 100, 2));
+        $complianceSnapshot = $this->compliance->evaluate($user, $start, $end);
+        $expectedWorkDays = max(1, $complianceSnapshot['period']['expected_work_days']);
+        $crmCompliance = min(100, round(($reportsSubmitted / $expectedWorkDays) * 100, 2));
+        $attendanceCompliance = $complianceSnapshot['attendance_compliance'];
 
         return [
             'leads_contacted' => $leadsContacted,
@@ -93,6 +103,8 @@ class CompensationKpiMetricsService
             'closed_deals' => $closedCount,
             'revenue_generated' => $revenue,
             'crm_compliance' => $crmCompliance,
+            'attendance_compliance' => $attendanceCompliance,
+            'report_compliance' => $crmCompliance,
         ];
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Helpers\SettingsHelper;
 use App\Models\ClientMeetingRequest;
 use App\Models\ClientSharedDocument;
 use App\Models\FinancialInvoice;
@@ -9,6 +10,7 @@ use App\Models\Invoice;
 use App\Observers\FinancialInvoiceObserver;
 use App\Observers\InvoiceObserver;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -35,6 +37,21 @@ class AppServiceProvider extends ServiceProvider
 
         Route::bind('sharedDocument', function (string $value) {
             return ClientSharedDocument::where('id', $value)->firstOrFail();
+        });
+
+        View::composer([
+            'accounting.*',
+            'invoices.*',
+            'payments.*',
+            'expenses.*',
+        ], function ($view) {
+            $themeColor = SettingsHelper::getThemeColor();
+
+            $view->with([
+                'themeColor' => $themeColor,
+                'money' => fn ($v) => SettingsHelper::formatMoney($v),
+                'headerStyle' => "background: linear-gradient(135deg, {$themeColor}08 0%, {$themeColor}03 100%);",
+            ]);
         });
     }
 }

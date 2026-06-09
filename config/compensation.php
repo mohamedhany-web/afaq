@@ -22,6 +22,7 @@ return [
         'fixed_per_deal' => 'مبلغ ثابت لكل صفقة',
         'revenue_tier' => 'شرائح حسب الإيراد',
         'hybrid' => 'هجين (أساسي + حافز)',
+        'freelance_scheme' => 'هيكل عمولات الوكيل المستقل',
     ],
 
     'bonus_amount_types' => ['fixed', 'percent_salary', 'percent_revenue'],
@@ -48,7 +49,9 @@ return [
         'conversion_rate' => 'معدل التحويل %',
         'closed_deals' => 'صفقات مغلقة',
         'revenue_generated' => 'إيراد محقق',
-        'crm_compliance' => 'التزام CRM %',
+        'crm_compliance' => 'التزام التقارير %',
+        'attendance_compliance' => 'التزام الحضور %',
+        'report_compliance' => 'رفع التقارير %',
     ],
 
     'manager_kpi_slugs' => [
@@ -70,6 +73,7 @@ return [
         ['slug' => 'closed_deals', 'weight' => 20, 'target_value' => 8],
         ['slug' => 'revenue_generated', 'weight' => 20, 'target_value' => 2000000],
         ['slug' => 'crm_compliance', 'weight' => 5, 'target_value' => 90],
+        ['slug' => 'attendance_compliance', 'weight' => 5, 'target_value' => 90],
     ],
 
     'manager_kpi_defaults' => [

@@ -3,10 +3,10 @@
 return [
     /*
     |--------------------------------------------------------------------------
-    | Google Maps API Key (اختياري — للعرض المدمج: قمر صناعي + Street View)
+    | Google Maps API Key (اختياري — لصفحات المشاركة القديمة فقط)
     |--------------------------------------------------------------------------
-    | أنشئ المفتاح من: Google Cloud Console → Maps Embed API + Street View Static API
-    | بدون المفتاح: تعمل روابط فتح Google Maps وStreet View في تبويب خارجي فقط.
+    | عارض CRM 3D يستخدم OpenStreetMap + Nominatim + Overpass بدون مفتاح.
+    | المفتاح اختياري لعرض Google Embed في صفحات أخرى إن رغبت.
     */
     'google_api_key' => env('GOOGLE_MAPS_API_KEY'),
 

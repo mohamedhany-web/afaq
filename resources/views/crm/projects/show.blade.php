@@ -40,6 +40,8 @@
 @endif
 @include('projects.partials.map-display', compact('project', 'themeColor'))
 
+@include('crm.projects.partials.building-units', compact('project', 'themeColor', 'buildingSummary'))
+
 <div class="mb-6">
     @include('projects.partials.ownership-summary', compact('project', 'themeColor'))
 </div>
@@ -73,17 +75,27 @@
         @if(session('error'))
         <div class="mx-5 sm:mx-6 mt-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-tajawal">{{ session('error') }}</div>
         @endif
+        @if(!empty($pendingChange))
+        <div class="mx-5 sm:mx-6 mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm font-tajawal">
+            يوجد طلب <strong>{{ $pendingChange->actionLabel() }}</strong> بانتظار موافقة الإدارة.
+            <a href="{{ route('crm.projects.approvals.show', $pendingChange) }}" class="font-bold mr-1" style="color:{{ $themeColor }}">عرض الطلب</a>
+        </div>
+        @endif
         <div class="px-5 sm:px-6 py-4 border-t border-gray-100 flex flex-col gap-2">
             @can('edit-projects')
+            @if(empty($pendingChange))
             <a href="{{ route('crm.projects.edit', $project) }}" class="inline-flex justify-center w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-white font-tajawal"
-               style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">تعديل المشروع</a>
+               style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">{{ ($requiresApproval ?? false) ? 'طلب تعديل' : 'تعديل المشروع' }}</a>
+            @endif
             @endcan
             @can('delete', $project)
+            @if(empty($pendingChange))
             <form action="{{ route('crm.projects.destroy', $project) }}" method="POST"
-                  onsubmit="return confirm('حذف هذا المشروع؟ لا يمكن التراجع.')">
+                  onsubmit="return confirm('{{ ($requiresApproval ?? false) ? 'إرسال طلب حذف للإدارة العليا؟' : 'حذف هذا المشروع؟ لا يمكن التراجع.' }}')">
                 @csrf @method('DELETE')
-                <button type="submit" class="w-full px-4 py-2.5 rounded-xl text-sm font-semibold bg-red-50 text-red-600 hover:bg-red-100 font-tajawal">حذف المشروع</button>
+                <button type="submit" class="w-full px-4 py-2.5 rounded-xl text-sm font-semibold bg-red-50 text-red-600 hover:bg-red-100 font-tajawal">{{ ($requiresApproval ?? false) ? 'طلب حذف المشروع' : 'حذف المشروع' }}</button>
             </form>
+            @endif
             @elseif(!$project->isDeletable())
             <p class="text-xs text-center text-gray-400 font-tajawal py-1">لا يمكن الحذف — المشروع مرتبط بصفقات أو يحتوي وحدات مباعة</p>
             @endif

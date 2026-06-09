@@ -1,524 +1,372 @@
 @extends('layouts.app')
 
-@section('page-title', 'إدارة الأجازات')
+@php
+    $themeColor = \App\Helpers\SettingsHelper::getThemeColor();
+    $scope = \App\Services\LeaveScopeService::for(auth()->user());
+    $titles = [
+        'admin' => ['title' => 'إدارة الإجازات', 'subtitle' => 'مراجعة واعتماد طلبات الإجازة لجميع الموظفين'],
+        'manager' => ['title' => 'إجازات الفريق', 'subtitle' => 'مراجعة طلبات فريقك وإجازاتك الشخصية'],
+        'self' => ['title' => 'إجازاتي', 'subtitle' => 'تقديم طلب إجازة ومتابعة حالة الطلبات'],
+    ];
+    $header = $titles[$mode] ?? $titles['self'];
+    $typeColors = [
+        'annual' => 'bg-green-100 text-green-800',
+        'sick' => 'bg-blue-100 text-blue-800',
+        'emergency' => 'bg-red-100 text-red-800',
+        'maternity' => 'bg-pink-100 text-pink-800',
+        'paternity' => 'bg-purple-100 text-purple-800',
+        'unpaid' => 'bg-gray-100 text-gray-800',
+        'compensatory' => 'bg-amber-100 text-amber-800',
+    ];
+    $statusColors = [
+        'pending' => 'bg-amber-100 text-amber-800',
+        'approved' => 'bg-green-100 text-green-800',
+        'rejected' => 'bg-red-100 text-red-800',
+    ];
+@endphp
+
+@section('page-title', $header['title'])
 
 @section('content')
-<div class="w-full">
-    <!-- Page Header -->
-    <div class="mb-6">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-            <div>
-                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">إدارة الأجازات</h1>
-                <p class="text-sm sm:text-base text-gray-600">إدارة طلبات الأجازات والغياب</p>
-            </div>
-            @if($employee)
-            <button id="newLeaveBtn" class="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all duration-200 flex items-center shadow-sm">
-                <svg class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                طلب أجازة جديد
+@include('crm.partials.page-header', [
+    'title' => $header['title'],
+    'subtitle' => $header['subtitle'],
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
+])
+
+@if(!$employee && $mode === 'self')
+<div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 font-tajawal">
+    لا يوجد ملف موظف مرتبط بحسابك. تواصل مع الإدارة لربط حسابك قبل تقديم طلب إجازة.
+</div>
+@endif
+
+<div class="grid grid-cols-2 lg:grid-cols-{{ $mode === 'admin' ? '4' : '5' }} gap-3 sm:gap-4 mb-6">
+    @include('crm.partials.stat-card', [
+        'label' => $mode === 'self' ? 'طلباتي المعلقة' : 'طلبات معلقة',
+        'value' => $stats['pending'],
+        'accent' => 'amber',
+        'compact' => true,
+        'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />',
+    ])
+    @include('crm.partials.stat-card', [
+        'label' => 'موافق عليها (الشهر)',
+        'value' => $stats['approved_month'],
+        'accent' => 'green',
+        'compact' => true,
+        'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />',
+    ])
+    @include('crm.partials.stat-card', [
+        'label' => 'مرفوضة (الشهر)',
+        'value' => $stats['rejected_month'],
+        'accent' => 'red',
+        'compact' => true,
+        'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />',
+    ])
+    @include('crm.partials.stat-card', [
+        'label' => $mode === 'admin' ? 'أيام معتمدة (السنة)' : 'أيامي المعتمدة',
+        'value' => $stats['total_days_year'],
+        'accent' => 'blue',
+        'compact' => true,
+        'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
+    ])
+    @if($mode !== 'admin' && $stats['remaining_annual'] !== null)
+    @include('crm.partials.stat-card', [
+        'label' => 'رصيد السنوية',
+        'value' => $stats['remaining_annual'] . ' يوم',
+        'accent' => 'theme',
+        'compact' => true,
+        'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />',
+        'footer' => '<span class="text-gray-500">من ' . config('leaves.annual_limit_days', 21) . ' يوم سنوياً</span>',
+    ])
+    @endif
+</div>
+
+<div class="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+    <div class="px-5 py-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3" style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">
+        <h3 class="text-lg font-bold text-gray-900 font-tajawal">طلبات الإجازة</h3>
+        <div class="flex flex-wrap items-center gap-2">
+            <form method="GET" action="{{ route('leaves.index') }}" class="flex items-center gap-2">
+                <select name="status" onchange="this.form.submit()" class="px-3 py-2 border border-gray-200 rounded-xl text-sm font-tajawal focus:ring-2 focus:border-transparent" style="focus-ring-color: {{ $themeColor }};">
+                    <option value="">جميع الحالات</option>
+                    @foreach(config('leaves.status_labels', []) as $key => $label)
+                    <option value="{{ $key }}" @selected(request('status') === $key)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </form>
+            @if($canRequest)
+            <button id="newLeaveBtn" type="button" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all font-tajawal"
+                    style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                طلب إجازة
             </button>
             @endif
         </div>
     </div>
 
-    <!-- Quick Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <!-- Pending Leaves -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-600 mb-1">طلبات معلقة</p>
-                    <p class="text-3xl font-bold text-gray-900">{{ $stats['pending_leaves'] }}</p>
-                    <p class="text-xs text-orange-600 mt-1">تنتظر الموافقة</p>
-                </div>
-                <div class="p-4 bg-orange-50 rounded-xl">
-                    <svg class="w-8 h-8 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
-
-        <!-- Approved Leaves -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-600 mb-1">أجازات موافق عليها</p>
-                    <p class="text-3xl font-bold text-gray-900">{{ $stats['approved_leaves'] }}</p>
-                    <p class="text-xs text-green-600 mt-1">هذا الشهر</p>
-                </div>
-                <div class="p-4 bg-green-50 rounded-xl">
-                    <svg class="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
-
-        <!-- Rejected Leaves -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-600 mb-1">طلبات مرفوضة</p>
-                    <p class="text-3xl font-bold text-gray-900">{{ $stats['rejected_leaves'] }}</p>
-                    <p class="text-xs text-red-600 mt-1">هذا الشهر</p>
-                </div>
-                <div class="p-4 bg-red-50 rounded-xl">
-                    <svg class="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
-
-        <!-- Total Leave Days -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-600 mb-1">إجمالي أيام الأجازة</p>
-                    <p class="text-3xl font-bold text-gray-900">{{ $stats['total_leave_days'] }}</p>
-                    <p class="text-xs text-blue-600 mt-1">هذا العام</p>
-                </div>
-                <div class="p-4 bg-blue-50 rounded-xl">
-                    <svg class="w-8 h-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm font-tajawal">
+            <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
+                <tr>
+                    @if($mode !== 'self')
+                    <th class="px-5 py-3 text-right">الموظف</th>
+                    @endif
+                    <th class="px-5 py-3 text-right">النوع</th>
+                    <th class="px-5 py-3 text-right">من</th>
+                    <th class="px-5 py-3 text-right">إلى</th>
+                    <th class="px-5 py-3 text-right">الأيام</th>
+                    <th class="px-5 py-3 text-right">السبب</th>
+                    <th class="px-5 py-3 text-right">الحالة</th>
+                    @if($canApprove)
+                    <th class="px-5 py-3 text-right">إجراء</th>
+                    @endif
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @forelse($leaves as $leave)
+                <tr class="hover:bg-gray-50/80">
+                    @if($mode !== 'self')
+                    <td class="px-5 py-4">
+                        <div class="font-semibold text-gray-900">{{ $leave->employee?->first_name }} {{ $leave->employee?->last_name }}</div>
+                        <div class="text-xs text-gray-500">{{ $leave->employee?->position }}</div>
+                    </td>
+                    @endif
+                    <td class="px-5 py-4">
+                        <span class="inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold {{ $typeColors[$leave->leave_type] ?? 'bg-gray-100 text-gray-800' }}">
+                            {{ $leave->leave_type_name }}
+                        </span>
+                    </td>
+                    <td class="px-5 py-4 text-gray-900">{{ $leave->start_date->format('Y/m/d') }}</td>
+                    <td class="px-5 py-4 text-gray-900">{{ $leave->end_date->format('Y/m/d') }}</td>
+                    <td class="px-5 py-4 font-semibold">{{ $leave->total_days }}</td>
+                    <td class="px-5 py-4 text-gray-600 max-w-[12rem] truncate" title="{{ $leave->reason }}">{{ $leave->reason }}</td>
+                    <td class="px-5 py-4">
+                        <span class="inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold {{ $statusColors[$leave->status] ?? 'bg-gray-100 text-gray-800' }}">
+                            {{ config('leaves.status_labels.' . $leave->status, $leave->status) }}
+                        </span>
+                        @if($leave->status === 'rejected' && $leave->rejection_reason)
+                        <div class="text-xs text-red-600 mt-1 max-w-[10rem] truncate" title="{{ $leave->rejection_reason }}">{{ $leave->rejection_reason }}</div>
+                        @endif
+                    </td>
+                    @if($canApprove)
+                    <td class="px-5 py-4">
+                        @if($scope->canApproveLeave($leave))
+                        <div class="flex items-center gap-1">
+                            <button type="button" onclick="approveLeave({{ $leave->id }})" class="p-2 text-green-600 hover:bg-green-50 rounded-lg" title="موافقة">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            </button>
+                            <button type="button" onclick="rejectLeave({{ $leave->id }})" class="p-2 text-red-600 hover:bg-red-50 rounded-lg" title="رفض">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                        @else
+                        <span class="text-xs text-gray-400">—</span>
+                        @endif
+                    </td>
+                    @endif
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="{{ ($mode !== 'self' ? 7 : 6) + ($canApprove ? 1 : 0) }}" class="px-5 py-16 text-center text-gray-500">
+                        لا توجد طلبات إجازة للعرض
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 
-    <!-- Leave Requests Table -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-gray-900">طلبات الأجازات</h3>
-                <div class="flex items-center gap-2">
-                    <select class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option>جميع الحالات</option>
-                        <option value="pending">معلق</option>
-                        <option value="approved">موافق عليه</option>
-                        <option value="rejected">مرفوض</option>
-                    </select>
-                    @if(auth()->user()->hasRole(['admin', 'hr', 'super_admin']) && $employees->count() > 0)
-                    <select class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option>جميع الموظفين</option>
-                        @foreach($employees as $emp)
-                        <option value="{{ $emp->id }}">{{ $emp->first_name }} {{ $emp->last_name }}</option>
+    @if($leaves->hasPages())
+    <div class="px-5 py-4 border-t">{{ $leaves->links() }}</div>
+    @endif
+</div>
+
+@if($canRequest)
+<div id="newLeaveModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-gray-900/50" onclick="closeNewLeaveModal()"></div>
+    <div class="relative flex min-h-full items-center justify-center p-4">
+        <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl border overflow-hidden">
+            <div class="px-5 py-4 border-b font-bold font-tajawal" style="background: linear-gradient(135deg, {{ $themeColor }}10 0%, {{ $themeColor }}05 100%);">طلب إجازة جديد</div>
+            <form id="newLeaveForm" class="p-5 space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5 font-tajawal">نوع الإجازة</label>
+                    <select name="leave_type" required class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-tajawal">
+                        <option value="">اختر النوع</option>
+                        @foreach($leaveTypes as $key => $label)
+                        <option value="{{ $key }}">{{ $label }}</option>
                         @endforeach
                     </select>
-                    @endif
                 </div>
-            </div>
-        </div>
-        <div class="overflow-x-auto w-full">
-            <table class="w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">الموظف</th>
-                        <th class="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">نوع الأجازة</th>
-                        <th class="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">تاريخ البداية</th>
-                        <th class="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">تاريخ النهاية</th>
-                        <th class="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">عدد الأيام</th>
-                        <th class="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">الحالة</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($leaves as $leave)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 w-1/6">
-                            <div class="flex items-center">
-                                <div class="h-10 w-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center ml-3">
-                                    <span class="text-sm font-medium text-white">
-                                        {{ substr($leave->employee->first_name ?? 'م', 0, 1) }}
-                                    </span>
-                                </div>
-                                <div>
-                                    <div class="text-sm font-medium text-gray-900">
-                                        {{ $leave->employee->first_name }} {{ $leave->employee->last_name }}
-                                    </div>
-                                    <div class="text-sm text-gray-500">{{ $leave->employee->position }}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 w-1/6">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                @if($leave->leave_type == 'annual') bg-green-100 text-green-800
-                                @elseif($leave->leave_type == 'sick') bg-blue-100 text-blue-800
-                                @elseif($leave->leave_type == 'emergency') bg-red-100 text-red-800
-                                @elseif($leave->leave_type == 'maternity') bg-pink-100 text-pink-800
-                                @elseif($leave->leave_type == 'paternity') bg-purple-100 text-purple-800
-                                @elseif($leave->leave_type == 'unpaid') bg-gray-100 text-gray-800
-                                @elseif($leave->leave_type == 'compensatory') bg-yellow-100 text-yellow-800
-                                @else bg-gray-100 text-gray-800
-                                @endif">
-                                {{ $leave->leave_type_name }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 w-1/6 text-sm text-gray-900">
-                            {{ $leave->start_date->format('Y/m/d') }}
-                        </td>
-                        <td class="px-6 py-4 w-1/6 text-sm text-gray-900">
-                            {{ $leave->end_date->format('Y/m/d') }}
-                        </td>
-                        <td class="px-6 py-4 w-1/6 text-sm text-gray-900">
-                            {{ $leave->total_days }} أيام
-                        </td>
-                        <td class="px-6 py-4 w-1/6">
-                            @if($leave->status == 'pending')
-                            <div class="flex items-center gap-2">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                    معلق
-                                </span>
-                                @if(auth()->user()->hasRole(['admin', 'hr', 'super_admin']))
-                                <div class="flex items-center gap-1">
-                                    <button onclick="approveLeave({{ $leave->id }})" class="p-1 text-green-600 hover:bg-green-50 rounded">
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                    </button>
-                                    <button onclick="rejectLeave({{ $leave->id }})" class="p-1 text-red-600 hover:bg-red-50 rounded">
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
-                                </div>
-                                @endif
-                            </div>
-                            @elseif($leave->status == 'approved')
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                موافق عليه
-                            </span>
-                            @elseif($leave->status == 'rejected')
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                مرفوض
-                            </span>
-                            @endif
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
-                            لا توجد طلبات أجازات للعرض
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- New Leave Modal -->
-<div id="newLeaveModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <div class="mt-3">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900">طلب أجازة جديد</h3>
-                <button onclick="closeNewLeaveModal()" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-            
-            <form id="newLeaveForm" class="space-y-4">
-                @csrf
-                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5 font-tajawal">من</label>
+                        <input type="date" name="start_date" required min="{{ now()->toDateString() }}" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5 font-tajawal">إلى</label>
+                        <input type="date" name="end_date" required min="{{ now()->toDateString() }}" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm">
+                    </div>
+                </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">نوع الأجازة</label>
-                    <select name="leave_type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">اختر نوع الأجازة</option>
-                        <option value="annual">إجازة سنوية</option>
-                        <option value="sick">إجازة مرضية</option>
-                        <option value="emergency">إجازة طارئة</option>
-                        <option value="maternity">إجازة أمومة</option>
-                        <option value="paternity">إجازة أبوة</option>
-                        <option value="unpaid">إجازة غير مدفوعة</option>
-                        <option value="compensatory">إجازة تعويضية</option>
-                    </select>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5 font-tajawal">السبب</label>
+                    <textarea name="reason" required rows="3" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-tajawal" placeholder="اذكر سبب طلب الإجازة"></textarea>
                 </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">تاريخ البداية</label>
-                    <input type="date" name="start_date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">تاريخ النهاية</label>
-                    <input type="date" name="end_date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">السبب</label>
-                    <textarea name="reason" required rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="اذكر سبب طلب الإجازة"></textarea>
-                </div>
-                
-                <div class="flex items-center justify-end gap-3 pt-4">
-                    <button type="button" onclick="closeNewLeaveModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors">
-                        إلغاء
-                    </button>
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                        تقديم الطلب
-                    </button>
+                @if($stats['remaining_annual'] !== null)
+                <p class="text-xs text-gray-500 font-tajawal">رصيد الإجازة السنوية المتبقي: <strong>{{ $stats['remaining_annual'] }}</strong> يوم</p>
+                @endif
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeNewLeaveModal()" class="px-4 py-2 rounded-xl border text-sm font-tajawal">إلغاء</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl text-white text-sm font-semibold" style="background: {{ $themeColor }};">تقديم الطلب</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Reject Leave Modal -->
-<div id="rejectLeaveModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <div class="mt-3">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900">رفض طلب الإجازة</h3>
-                <button onclick="closeRejectLeaveModal()" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-            
-            <form id="rejectLeaveForm" class="space-y-4">
+@endif
+
+@if($canApprove)
+<div id="rejectLeaveModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-gray-900/50" onclick="closeRejectLeaveModal()"></div>
+    <div class="relative flex min-h-full items-center justify-center p-4">
+        <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl border overflow-hidden">
+            <div class="px-5 py-4 border-b font-bold font-tajawal text-red-700 bg-red-50">رفض طلب الإجازة</div>
+            <form id="rejectLeaveForm" class="p-5 space-y-4">
                 @csrf
                 <input type="hidden" name="leave_id" id="rejectLeaveId">
-                
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">سبب الرفض</label>
-                    <textarea name="rejection_reason" required rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="اذكر سبب رفض طلب الإجازة"></textarea>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5 font-tajawal">سبب الرفض</label>
+                    <textarea name="rejection_reason" required rows="3" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-tajawal"></textarea>
                 </div>
-                
-                <div class="flex items-center justify-end gap-3 pt-4">
-                    <button type="button" onclick="closeRejectLeaveModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors">
-                        إلغاء
-                    </button>
-                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                        رفض الطلب
-                    </button>
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="closeRejectLeaveModal()" class="px-4 py-2 rounded-xl border text-sm font-tajawal">إلغاء</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-semibold">رفض الطلب</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+@endif
 
-@if($employee)
+@if($canRequest || $canApprove)
 <script>
-let isSubmittingLeave = false; // Flag to prevent double submission
+let isSubmittingLeave = false;
 
 document.addEventListener('DOMContentLoaded', function() {
-    // New Leave Button
-    const newLeaveBtn = document.getElementById('newLeaveBtn');
-    if (newLeaveBtn) {
-        newLeaveBtn.addEventListener('click', function() {
-            document.getElementById('newLeaveModal').classList.remove('hidden');
-        });
-    }
-    
-    // New Leave Form - Use once option to prevent multiple listeners
-    const newLeaveForm = document.getElementById('newLeaveForm');
-    if (newLeaveForm) {
-        // Remove any existing listeners by cloning
-        const oldForm = newLeaveForm;
-        const newForm = oldForm.cloneNode(true);
-        oldForm.parentNode.replaceChild(newForm, oldForm);
-        
-        // Get the new form reference
-        const form = document.getElementById('newLeaveForm');
-        
-        // Add single event listener - check flag to prevent double submission
-        form.addEventListener('submit', function submitHandler(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            
-            if (!isSubmittingLeave) {
-                submitLeaveRequest();
-            }
-            return false;
-        });
-        
-        // Also prevent button double click
-        const submitBtn = form.querySelector('button[type="submit"]');
-        if (submitBtn) {
-            submitBtn.addEventListener('click', function(e) {
-                if (isSubmittingLeave) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-                    return false;
-                }
-            }, { once: false });
-        }
-    }
-    
-    // Reject Leave Form
-    const rejectLeaveForm = document.getElementById('rejectLeaveForm');
-    if (rejectLeaveForm) {
-        rejectLeaveForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            submitRejectLeave();
-        });
-    }
+    document.getElementById('newLeaveBtn')?.addEventListener('click', () => {
+        document.getElementById('newLeaveModal').classList.remove('hidden');
+    });
+
+    document.getElementById('newLeaveForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (!isSubmittingLeave) submitLeaveRequest();
+    });
+
+    document.getElementById('rejectLeaveForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        submitRejectLeave();
+    });
 });
 
 function closeNewLeaveModal() {
-    isSubmittingLeave = false; // Reset flag
-    document.getElementById('newLeaveModal').classList.add('hidden');
-    document.getElementById('newLeaveForm').reset();
+    isSubmittingLeave = false;
+    document.getElementById('newLeaveModal')?.classList.add('hidden');
+    document.getElementById('newLeaveForm')?.reset();
 }
 
 function closeRejectLeaveModal() {
-    document.getElementById('rejectLeaveModal').classList.add('hidden');
-    document.getElementById('rejectLeaveForm').reset();
+    document.getElementById('rejectLeaveModal')?.classList.add('hidden');
+    document.getElementById('rejectLeaveForm')?.reset();
 }
 
+@if($canRequest)
 function submitLeaveRequest() {
-    // Prevent double submission
-    if (isSubmittingLeave) {
-        return false;
-    }
-    
+    if (isSubmittingLeave) return;
     isSubmittingLeave = true;
     const form = document.getElementById('newLeaveForm');
-    const submitBtn = form.querySelector('button[type="submit"]');
-    
-    // Disable submit button
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'جاري الإرسال...';
-    }
-    
-    const formData = new FormData(form);
-    
+    const btn = form.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.textContent = 'جاري الإرسال...'; }
+
     fetch('{{ route("leaves.store") }}', {
         method: 'POST',
         headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
         },
-        body: formData
+        body: new FormData(form)
     })
-    .then(response => response.json())
+    .then(async r => {
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+            throw new Error(data.error || data.message || 'تعذر تقديم الطلب');
+        }
+        return data;
+    })
     .then(data => {
         if (data.success) {
-            showNotification(data.message, 'success');
+            notify(data.message, 'success');
             closeNewLeaveModal();
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
+            setTimeout(() => location.reload(), 800);
         } else {
-            isSubmittingLeave = false; // Reset on error
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'تقديم الطلب';
-            }
-            showNotification(data.error || 'حدث خطأ في تقديم طلب الإجازة', 'error');
+            isSubmittingLeave = false;
+            if (btn) { btn.disabled = false; btn.textContent = 'تقديم الطلب'; }
+            notify(data.error || 'حدث خطأ', 'error');
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
-        isSubmittingLeave = false; // Reset on error
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'تقديم الطلب';
-        }
-        showNotification('حدث خطأ في تقديم طلب الإجازة', 'error');
+    .catch((err) => {
+        isSubmittingLeave = false;
+        if (btn) { btn.disabled = false; btn.textContent = 'تقديم الطلب'; }
+        notify(err.message || 'حدث خطأ في تقديم الطلب', 'error');
     });
-    
-    return false;
 }
+@endif
 
-function approveLeave(leaveId) {
-    if (!confirm('هل أنت متأكد من الموافقة على هذا الطلب؟')) {
-        return;
-    }
-    
-    fetch(`/leaves/${leaveId}/approve`, {
+@if($canApprove)
+function approveLeave(id) {
+    if (!confirm('الموافقة على هذا الطلب؟')) return;
+    fetch(`/leaves/${id}/approve`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
         }
     })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
-        if (data.success) {
-            showNotification(data.message, 'success');
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
-        } else {
-            showNotification(data.error, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showNotification('حدث خطأ في الموافقة على الطلب', 'error');
+        if (data.success) { notify(data.message, 'success'); setTimeout(() => location.reload(), 800); }
+        else notify(data.error, 'error');
     });
 }
 
-function rejectLeave(leaveId) {
-    document.getElementById('rejectLeaveId').value = leaveId;
+function rejectLeave(id) {
+    document.getElementById('rejectLeaveId').value = id;
     document.getElementById('rejectLeaveModal').classList.remove('hidden');
 }
 
 function submitRejectLeave() {
     const form = document.getElementById('rejectLeaveForm');
-    const formData = new FormData(form);
-    const leaveId = formData.get('leave_id');
-    
-    fetch(`/leaves/${leaveId}/reject`, {
+    const id = form.querySelector('[name=leave_id]').value;
+    fetch(`/leaves/${id}/reject`, {
         method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: formData
+        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+        body: new FormData(form)
     })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
-        if (data.success) {
-            showNotification(data.message, 'success');
-            closeRejectLeaveModal();
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
-        } else {
-            showNotification(data.error, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showNotification('حدث خطأ في رفض الطلب', 'error');
+        if (data.success) { notify(data.message, 'success'); closeRejectLeaveModal(); setTimeout(() => location.reload(), 800); }
+        else notify(data.error, 'error');
     });
 }
+@endif
 
-function showNotification(message, type) {
-    const notification = document.createElement('div');
-    const colors = {
-        success: 'bg-green-500',
-        error: 'bg-red-500',
-        info: 'bg-blue-500'
-    };
-    
-    notification.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300`;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    
-    // Animate in
-    setTimeout(() => {
-        notification.classList.remove('translate-x-full');
-    }, 100);
-    
-    // Remove after 3 seconds
-    setTimeout(() => {
-        notification.classList.add('translate-x-full');
-        setTimeout(() => {
-            notification.remove();
-        }, 300);
-    }, 3000);
+function notify(message, type) {
+    const colors = { success: 'bg-green-600', error: 'bg-red-600', info: 'bg-blue-600' };
+    const el = document.createElement('div');
+    el.className = `fixed top-4 left-4 ${colors[type] || colors.info} text-white px-5 py-3 rounded-xl shadow-lg z-[100] font-tajawal text-sm`;
+    el.textContent = message;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
 }
 </script>
 @endif

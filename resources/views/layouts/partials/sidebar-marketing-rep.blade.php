@@ -6,8 +6,10 @@
 <div class="mt-6">
     <h3 class="sidebar-section-title px-4">مهامي</h3>
     <a href="{{ route('marketing.campaigns.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('marketing.campaigns.*') ? 'active' : '' }}">الحملات</a>
-    <a href="{{ route('marketing.activities.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('marketing.activities.*') ? 'active' : '' }}">جدولي الدوري</a>
+    <a href="{{ route('marketing.plans.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('marketing.plans.*') ? 'active' : '' }}">خطة الشهر</a>
+    <a href="{{ route('marketing.activities.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('marketing.activities.*') ? 'active' : '' }}">مهامي</a>
     <a href="{{ route('marketing.leads.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('marketing.leads.*') ? 'active' : '' }}">عملائي المحتملون</a>
     <a href="{{ route('marketing.leads.create') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium">إضافة Lead</a>
     <a href="{{ route('marketing.reports.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('marketing.reports.*') ? 'active' : '' }}">تقريري اليومي</a>
+    @include('layouts.partials.sidebar-leaves-link')
 </div>

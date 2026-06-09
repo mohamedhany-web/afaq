@@ -1,4 +1,4 @@
-<?php if (! $__env->hasRenderedOnce('f0f8efcf-e5da-40ca-b59b-df9d9abfef71')): $__env->markAsRenderedOnce('f0f8efcf-e5da-40ca-b59b-df9d9abfef71'); ?>
+<?php if (! $__env->hasRenderedOnce('b839761e-bc54-4ddd-8738-de8cef963a31')): $__env->markAsRenderedOnce('b839761e-bc54-4ddd-8738-de8cef963a31'); ?>
 <?php $__env->startPush('scripts'); ?>
 <script>
 document.addEventListener('alpine:init', () => {

@@ -1,8 +1,9 @@
 <?php
+    use App\Helpers\MapLocationHelper;
     $themeColor = $themeColor ?? \App\Helpers\SettingsHelper::getThemeColor();
     $existingPins = [];
     if (isset($project)) {
-        if ($project->hasMapLocation()) {
+        if (MapLocationHelper::hasReliableCoordinates($project)) {
             $existingPins[] = [
                 'title' => $project->name,
                 'pin_type' => 'project',
@@ -12,7 +13,7 @@
             ];
         }
         foreach ($project->mapPins ?? [] as $pin) {
-            if ($pin->pin_type === 'project' && $project->hasMapLocation()) {
+            if ($pin->pin_type === 'project' && MapLocationHelper::hasReliableCoordinates($project)) {
                 continue;
             }
             $existingPins[] = [
@@ -27,8 +28,10 @@
     $initialPins = old('map_pins_payload')
         ? json_decode(old('map_pins_payload'), true)
         : $existingPins;
-    $defaultLat = old('latitude', $project->latitude ?? 30.0444);
-    $defaultLng = old('longitude', $project->longitude ?? 31.2357);
+    $savedLat = old('latitude', isset($project) && MapLocationHelper::hasReliableCoordinates($project) ? $project->latitude : null);
+    $savedLng = old('longitude', isset($project) && MapLocationHelper::hasReliableCoordinates($project) ? $project->longitude : null);
+    $defaultLat = $savedLat ?? '';
+    $defaultLng = $savedLng ?? '';
     $defaultZoom = old('map_zoom', $project->map_zoom ?? 14);
 ?>
 
@@ -36,7 +39,7 @@
     <div class="px-5 sm:px-6 py-4 border-b border-gray-200 font-tajawal font-bold text-gray-900"
          style="background: linear-gradient(135deg, <?php echo e($themeColor); ?>08 0%, <?php echo e($themeColor); ?>03 100%);">
         الموقع على الخريطة
-        <p class="text-xs font-normal text-gray-500 mt-1">ابحث عن المكان، انقر لإضافة سهم تحديد، أو أضف علامات للوحدات</p>
+        <p class="text-xs font-normal text-gray-500 mt-1">ابحث عن المكان ثم انقر على الخريطة لتحديد موقع المشروع — بدون تحديد، لن يُحفظ موقع افتراضي</p>
     </div>
     <div class="p-5 sm:p-6 space-y-4">
         <div class="flex flex-col sm:flex-row gap-2">
@@ -95,8 +98,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const payloadInput = document.getElementById('map_pins_payload');
     const pinsList = document.getElementById('map-pins-list');
 
-    const startLat = parseFloat(latInput.value) || 30.0444;
-    const startLng = parseFloat(lngInput.value) || 31.2357;
+    const savedLat = latInput.value !== '' ? parseFloat(latInput.value) : null;
+    const savedLng = lngInput.value !== '' ? parseFloat(lngInput.value) : null;
+    const startLat = savedLat ?? 30.0444;
+    const startLng = savedLng ?? 31.2357;
     const startZoom = parseInt(zoomInput.value, 10) || 14;
 
     const map = L.map('project-map', { scrollWheelZoom: true }).setView([startLat, startLng], startZoom);
@@ -140,6 +145,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (main) {
             latInput.value = main.latitude;
             lngInput.value = main.longitude;
+        } else {
+            latInput.value = '';
+            lngInput.value = '';
         }
         renderPinsList();
     }

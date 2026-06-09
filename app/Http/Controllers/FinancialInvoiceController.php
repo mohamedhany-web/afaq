@@ -48,7 +48,7 @@ class FinancialInvoiceController extends Controller
      */
     public function create()
     {
-        $clients = Client::where('is_active', true)->orderBy('name')->get();
+        $clients = Client::where('status', 'active')->orderBy('name')->get();
         $projects = Project::where('status', 'active')->orderBy('name')->get();
         $invoiceNumber = Invoice::generateInvoiceNumber();
         

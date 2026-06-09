@@ -2,79 +2,42 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Account;
-use App\Models\JournalEntry;
-use App\Models\JournalEntryLine;
+use App\Services\AccountingReportService;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class FinancialReportController extends Controller
 {
+    public function __construct(protected AccountingReportService $reports) {}
+
     public function index()
     {
         return view('accounting.reports.index');
     }
-    
+
     public function balanceSheet(Request $request)
     {
         $date = $request->get('date', Carbon::now()->format('Y-m-d'));
         $reportDate = Carbon::parse($date);
-        
-        // الأصول - فقط الحسابات الرئيسية (بدون parent_id)
-        $assets = Account::where('type', 'asset')
-            ->where('is_active', true)
-            ->whereNull('parent_id')
-            ->with('children')
-            ->orderBy('code')
-            ->get();
-            
-        // حساب إجمالي الأصول مع الحسابات الفرعية
-        $totalAssets = 0;
-        foreach ($assets as $asset) {
-            $asset->total_balance = $asset->balance + $asset->children->sum('balance');
-            $totalAssets += $asset->total_balance;
-        }
-        
-        // الخصوم - فقط الحسابات الرئيسية
-        $liabilities = Account::where('type', 'liability')
-            ->where('is_active', true)
-            ->whereNull('parent_id')
-            ->with('children')
-            ->orderBy('code')
-            ->get();
-            
-        $totalLiabilities = 0;
-        foreach ($liabilities as $liability) {
-            $liability->total_balance = $liability->balance + $liability->children->sum('balance');
-            $totalLiabilities += $liability->total_balance;
-        }
-        
-        // حقوق الملكية - فقط الحسابات الرئيسية
-        $equity = Account::where('type', 'equity')
-            ->where('is_active', true)
-            ->whereNull('parent_id')
-            ->with('children')
-            ->orderBy('code')
-            ->get();
-            
-        $totalEquity = 0;
-        foreach ($equity as $equityItem) {
-            $equityItem->total_balance = $equityItem->balance + $equityItem->children->sum('balance');
-            $totalEquity += $equityItem->total_balance;
-        }
-        
-        // الأرباح المحتجزة (الإيرادات - المصروفات) للفترة حتى التاريخ المحدد
-        $totalRevenue = Account::where('type', 'revenue')
-            ->where('is_active', true)
-            ->sum('balance');
-        $totalExpenses = Account::where('type', 'expense')
-            ->where('is_active', true)
-            ->sum('balance');
+
+        $assets = $this->reports->parentAccountsWithBalances('asset', $date);
+        $liabilities = $this->reports->parentAccountsWithBalances('liability', $date);
+        $equity = $this->reports->parentAccountsWithBalances('equity', $date);
+
+        $totalAssets = $assets->sum('total_balance');
+        $totalLiabilities = $liabilities->sum('total_balance');
+        $totalEquityAccounts = $equity->sum('total_balance');
+
+        $totalRevenue = collect($this->reports->accountIdsByType('revenue'))
+            ->sum(fn ($id) => $this->reports->accountBalanceAsOf($id, $date));
+        $totalExpenses = collect($this->reports->accountIdsByType('expense'))
+            ->sum(fn ($id) => $this->reports->accountBalanceAsOf($id, $date));
         $retainedEarnings = $totalRevenue - $totalExpenses;
-        
-        $totalEquity += $retainedEarnings;
+
+        $totalEquity = $totalEquityAccounts + $retainedEarnings;
         $totalLiabilitiesEquity = $totalLiabilities + $totalEquity;
-        
+
         return view('accounting.reports.balance-sheet', compact(
             'date',
             'reportDate',
@@ -88,49 +51,23 @@ class FinancialReportController extends Controller
             'totalLiabilitiesEquity'
         ));
     }
-    
+
     public function incomeStatement(Request $request)
     {
         $startDate = $request->get('start_date', Carbon::now()->startOfYear()->format('Y-m-d'));
         $endDate = $request->get('end_date', Carbon::now()->format('Y-m-d'));
-        
+
         $reportStartDate = Carbon::parse($startDate);
         $reportEndDate = Carbon::parse($endDate);
-        
-        // الإيرادات - فقط الحسابات الرئيسية
-        $revenues = Account::where('type', 'revenue')
-            ->where('is_active', true)
-            ->whereNull('parent_id')
-            ->with('children')
-            ->orderBy('code')
-            ->get();
-            
-        $totalRevenue = 0;
-        foreach ($revenues as $revenue) {
-            $revenue->total_balance = $revenue->balance + $revenue->children->sum('balance');
-            $totalRevenue += $revenue->total_balance;
-        }
-        
-        // المصروفات - فقط الحسابات الرئيسية
-        $expenses = Account::where('type', 'expense')
-            ->where('is_active', true)
-            ->whereNull('parent_id')
-            ->with('children')
-            ->orderBy('code')
-            ->get();
-            
-        $totalExpenses = 0;
-        foreach ($expenses as $expense) {
-            $expense->total_balance = $expense->balance + $expense->children->sum('balance');
-            $totalExpenses += $expense->total_balance;
-        }
-        
-        // صافي الدخل
+
+        $revenues = $this->reports->periodActivityByType('revenue', $startDate, $endDate);
+        $expenses = $this->reports->periodActivityByType('expense', $startDate, $endDate);
+
+        $totalRevenue = $revenues->sum('total_balance');
+        $totalExpenses = $expenses->sum('total_balance');
         $netIncome = $totalRevenue - $totalExpenses;
-        
-        // حساب هامش الربح
         $profitMargin = $totalRevenue > 0 ? ($netIncome / $totalRevenue) * 100 : 0;
-        
+
         return view('accounting.reports.income-statement', compact(
             'startDate',
             'endDate',
@@ -144,34 +81,24 @@ class FinancialReportController extends Controller
             'profitMargin'
         ));
     }
-    
+
     public function cashFlow(Request $request)
     {
         $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', Carbon::now()->format('Y-m-d'));
-        
+
         $reportStartDate = Carbon::parse($startDate);
         $reportEndDate = Carbon::parse($endDate);
-        
-        // التدفقات النقدية من الأنشطة التشغيلية
-        $operatingCashFlow = $this->calculateOperatingCashFlow($startDate, $endDate);
-        
-        // التدفقات النقدية من الأنشطة الاستثمارية
-        $investingCashFlow = $this->calculateInvestingCashFlow($startDate, $endDate);
-        
-        // التدفقات النقدية من الأنشطة التمويلية
-        $financingCashFlow = $this->calculateFinancingCashFlow($startDate, $endDate);
-        
+
+        $operatingCashFlow = $this->reports->operatingCashFlow($startDate, $endDate);
+        $investingCashFlow = $this->reports->investingCashFlow($startDate, $endDate);
+        $financingCashFlow = $this->reports->financingCashFlow($startDate, $endDate);
         $netCashFlow = $operatingCashFlow + $investingCashFlow + $financingCashFlow;
-        
-        // الرصيد النقدي في بداية الفترة
-        $cashAccounts = Account::where('type', 'asset')
-            ->whereIn('name', ['النقدية', 'البنوك', 'الخزينة', 'نقدية', 'بنوك', 'خزينة'])
-            ->get();
-            
-        $beginningCash = $cashAccounts->sum('balance') - $netCashFlow;
-        $endingCash = $cashAccounts->sum('balance');
-        
+
+        $endingCash = $this->reports->cashBalances();
+        $cashMovement = $this->reports->netCashMovement($startDate, $endDate);
+        $beginningCash = $endingCash - $cashMovement;
+
         return view('accounting.reports.cash-flow', compact(
             'startDate',
             'endDate',
@@ -185,89 +112,50 @@ class FinancialReportController extends Controller
             'endingCash'
         ));
     }
-    
+
     public function trialBalance(Request $request)
     {
         $date = $request->get('date', Carbon::now()->format('Y-m-d'));
-        
+
         $accounts = Account::where('is_active', true)
             ->orderBy('type')
             ->orderBy('code')
             ->get();
-            
+
         $totalDebit = 0;
         $totalCredit = 0;
-        
+
         foreach ($accounts as $account) {
+            $balance = $this->reports->accountBalanceAsOf($account->id, $date);
+
             if ($account->type === 'asset' || $account->type === 'expense') {
-                if ($account->balance >= 0) {
-                    $account->debit_balance = $account->balance;
+                if ($balance >= 0) {
+                    $account->debit_balance = $balance;
                     $account->credit_balance = 0;
                 } else {
                     $account->debit_balance = 0;
-                    $account->credit_balance = abs($account->balance);
+                    $account->credit_balance = abs($balance);
                 }
             } else {
-                if ($account->balance >= 0) {
+                if ($balance >= 0) {
                     $account->debit_balance = 0;
-                    $account->credit_balance = $account->balance;
+                    $account->credit_balance = $balance;
                 } else {
-                    $account->debit_balance = abs($account->balance);
+                    $account->debit_balance = abs($balance);
                     $account->credit_balance = 0;
                 }
             }
-            
+
             $totalDebit += $account->debit_balance;
             $totalCredit += $account->credit_balance;
+            $account->balance = $balance;
         }
-        
+
         return view('accounting.reports.trial-balance', compact(
             'date',
             'accounts',
             'totalDebit',
             'totalCredit'
         ));
-    }
-    
-    private function calculateOperatingCashFlow($startDate, $endDate)
-    {
-        // حساب التدفقات النقدية من الأنشطة التشغيلية
-        $revenueAccounts = Account::where('type', 'revenue')->pluck('id');
-        $expenseAccounts = Account::where('type', 'expense')->pluck('id');
-        
-        $revenueCash = JournalEntryLine::whereIn('account_id', $revenueAccounts)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('debit');
-            
-        $expenseCash = JournalEntryLine::whereIn('account_id', $expenseAccounts)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('credit');
-            
-        return $revenueCash - $expenseCash;
-    }
-    
-    private function calculateInvestingCashFlow($startDate, $endDate)
-    {
-        // حساب التدفقات النقدية من الأنشطة الاستثمارية
-        $assetAccounts = Account::where('type', 'asset')
-            ->whereIn('name', ['المعدات', 'الأراضي', 'المباني', 'المركبات'])
-            ->pluck('id');
-            
-        return JournalEntryLine::whereIn('account_id', $assetAccounts)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('debit');
-    }
-    
-    private function calculateFinancingCashFlow($startDate, $endDate)
-    {
-        // حساب التدفقات النقدية من الأنشطة التمويلية
-        $liabilityAccounts = Account::where('type', 'liability')->pluck('id');
-        $equityAccounts = Account::where('type', 'equity')->pluck('id');
-        
-        $allAccounts = $liabilityAccounts->merge($equityAccounts);
-        
-        return JournalEntryLine::whereIn('account_id', $allAccounts)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('credit');
     }
 }

@@ -77,6 +77,8 @@ class Project extends Model
         'ownership_type',
         'ownership_details',
         'listing_status',
+        'land_area_m2',
+        'building_config',
     ];
 
     protected $casts = [
@@ -93,6 +95,8 @@ class Project extends Model
         'available_units' => 'integer',
         'sold_units' => 'integer',
         'ownership_details' => 'array',
+        'land_area_m2' => 'decimal:2',
+        'building_config' => 'array',
     ];
 
     /**
@@ -251,6 +255,26 @@ class Project extends Model
         return $this->hasMany(ProjectMapPin::class)->orderBy('pin_type')->orderBy('title');
     }
 
+    public function buildingFloors(): HasMany
+    {
+        return $this->hasMany(BuildingFloor::class)->orderBy('sort_order');
+    }
+
+    public function units(): HasMany
+    {
+        return $this->hasMany(ProjectUnit::class);
+    }
+
+    public function scene3d(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Project3dScene::class);
+    }
+
+    public function hasGeneratedUnits(): bool
+    {
+        return $this->units()->exists();
+    }
+
     public function hasMapLocation(): bool
     {
         return $this->latitude !== null && $this->longitude !== null;
@@ -270,6 +294,10 @@ class Project extends Model
         }
 
         if ((int) ($this->sold_units ?? 0) > 0) {
+            return false;
+        }
+
+        if ($this->units()->where('status', ProjectUnit::STATUS_SOLD)->exists()) {
             return false;
         }
 

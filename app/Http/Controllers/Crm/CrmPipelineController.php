@@ -9,6 +9,8 @@ use App\Models\Sale;
 use App\Models\SalesTeam;
 use App\Services\Crm\ClientTimelineService;
 use App\Services\CrmScopeService;
+use App\Services\Freelance\FreelanceCommissionSchemeService;
+use App\Services\Freelance\SaleCommissionSplitService;
 use App\Support\CrmLostReasonRules;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -19,6 +21,11 @@ use Illuminate\Support\Facades\Validator;
 class CrmPipelineController extends Controller
 {
     protected array $stages = ['lead', 'prospect', 'proposal', 'negotiation', 'closed_won', 'closed_lost'];
+
+    public function __construct(
+        protected SaleCommissionSplitService $commissionSplits,
+        protected FreelanceCommissionSchemeService $commissionScheme,
+    ) {}
 
     public const COLUMN_PAGE_SIZE = 15;
 
@@ -368,9 +375,10 @@ class CrmPipelineController extends Controller
     public function show(Sale $sale)
     {
         $this->authorizeSale($sale);
-        $sale->load(['client', 'project', 'salesRep', 'salesTeam']);
+        $sale->load(['client', 'project', 'salesRep', 'salesTeam', 'listingAgent', 'commissionSplits.user']);
+        $commissionPreview = $this->commissionScheme->previewForSale($sale);
 
-        return view('crm.pipeline.show', compact('sale'));
+        return view('crm.pipeline.show', compact('sale', 'commissionPreview'));
     }
 
     public function edit(Sale $sale)
@@ -379,10 +387,16 @@ class CrmPipelineController extends Controller
         $sale->load('client:id,name,phone,company_name');
         $projects = Project::orderBy('name')->get();
 
+        $agents = \App\Models\User::role(\App\Services\CrmEmployeeService::LEGACY_EMPLOYEE_ROLES)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         return view('crm.pipeline.edit', [
             'sale' => $sale,
             'projects' => $projects,
             'stages' => $this->stages,
+            'agents' => $agents,
+            'transactionTypes' => config('freelance_agents.transaction_types'),
         ]);
     }
 
@@ -403,6 +417,12 @@ class CrmPipelineController extends Controller
             'viewing_date' => 'nullable|date',
             'viewing_notes' => 'nullable|string',
             'notes' => 'nullable|string',
+            'actual_close_date' => 'nullable|date',
+            'transaction_type' => 'nullable|in:' . implode(',', array_keys(config('freelance_agents.transaction_types', []))),
+            'company_commission_amount' => 'nullable|numeric|min:0',
+            'listing_agent_id' => 'nullable|exists:users,id',
+            'commission_collected' => 'nullable|boolean',
+            'commission_notes' => 'nullable|string',
         ], CrmLostReasonRules::stageRules('stage', $this->stages)));
 
         if ($validator->fails()) {
@@ -415,10 +435,23 @@ class CrmPipelineController extends Controller
         $from = $sale->stage;
         $to = $validator->validated()['stage'];
 
-        $sale->update(array_merge(
+        $payload = array_merge(
             $validator->validated(),
             CrmLostReasonRules::applyLostFields($request->only(['lost_reason', 'lost_reason_notes']), $to),
-        ));
+            ['commission_collected' => $request->boolean('commission_collected')],
+        );
+
+        if ($to === 'closed_won' && empty($payload['actual_close_date'])) {
+            $payload['actual_close_date'] = now()->toDateString();
+        }
+
+        $sale->update($payload);
+
+        if ($sale->commission_collected && !$sale->commission_collected_at) {
+            $this->commissionSplits->markCollected($sale->fresh());
+        }
+
+        $this->commissionSplits->syncForSale($sale->fresh());
 
         if ($from !== $to) {
             $sale->load('client');
@@ -444,8 +477,14 @@ class CrmPipelineController extends Controller
         $from = $sale->stage;
         $to = $request->stage;
 
+        $extra = [];
+        if ($to === 'closed_won' && !$sale->actual_close_date) {
+            $extra['actual_close_date'] = now()->toDateString();
+        }
+
         $sale->update(array_merge(
             ['stage' => $to],
+            $extra,
             CrmLostReasonRules::applyLostFields($request->only(['lost_reason', 'lost_reason_notes']), $to),
         ));
 
@@ -459,6 +498,10 @@ class CrmPipelineController extends Controller
                 $request->lost_reason,
                 $request->lost_reason_notes,
             );
+        }
+
+        if ($to === 'closed_won') {
+            $this->commissionSplits->syncForSale($sale->fresh());
         }
 
         if ($request->wantsJson()) {

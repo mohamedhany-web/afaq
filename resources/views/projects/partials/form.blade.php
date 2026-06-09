@@ -28,6 +28,10 @@
             <input name="location" value="{{ old('location', $project->location ?? '') }}" class="{{ $input }}" placeholder="التجمع الخامس">
         </div>
         <div>
+            <label class="{{ $label }}">مساحة الأرض (م²)</label>
+            <input type="number" name="land_area_m2" min="0" step="0.01" value="{{ old('land_area_m2', $project->land_area_m2 ?? '') }}" class="{{ $input }}" placeholder="31000">
+        </div>
+        <div>
             <label class="{{ $label }}">نوع العقار *</label>
             <select name="property_type" required class="{{ $input }}">
                 @foreach(\App\Models\Project::PROPERTY_TYPES as $val => $txt)

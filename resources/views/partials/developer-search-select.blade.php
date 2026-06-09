@@ -4,6 +4,8 @@
     'inputClass' => 'w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm font-tajawal',
     'wrapperClass' => '',
     'required' => false,
+    'contractedOnly' => false,
+    'allowCreate' => true,
 ])
 
 @php
@@ -14,7 +16,7 @@
         $prefill = \App\Models\RealEstateDeveloper::find($selectedId);
         $selectedLabel = $prefill?->name ?? '';
     }
-    $searchUrl = route('crm.developers.search');
+    $searchUrl = route('crm.developers.search', $contractedOnly ? ['contracted' => 1] : []);
 @endphp
 
 <div
@@ -25,6 +27,7 @@
         selectedLabel: @js($selectedLabel),
         searchUrl: @js($searchUrl),
         required: @js((bool) $required),
+        allowCreate: @js((bool) $allowCreate),
     })"
 >
     <input type="hidden" name="real_estate_developer_id" x-model="selectedId">
@@ -42,12 +45,12 @@
     <div class="flex gap-2">
         <input type="text" x-ref="queryInput" x-model="query" @input.debounce.350ms="search()"
                @keydown.enter.prevent="search()" @keydown.escape="open = false"
-               class="{{ $inputClass }} flex-1" placeholder="ابحث عن مطور أو اكتب اسماً جديداً..." autocomplete="off">
+               class="{{ $inputClass }} flex-1" placeholder="{{ $allowCreate ? 'ابحث عن مطور أو اكتب اسماً جديداً...' : 'ابحث عن مطور مسجل بتعاقد...' }}" autocomplete="off">
         <button type="button" @click="search()" class="shrink-0 px-4 py-2 rounded-xl text-white text-sm font-bold"
                 style="background: {{ \App\Helpers\SettingsHelper::getThemeColor() }};">بحث</button>
     </div>
 
-    <p class="text-[11px] text-gray-400 mt-1">اختر من القائمة أو استخدم «اسم جديد» لإضافة مطور</p>
+    <p class="text-[11px] text-gray-400 mt-1">{{ $allowCreate ? 'اختر من القائمة أو استخدم «اسم جديد» لإضافة مطور' : 'يظهر فقط المطورون المسجلون بتعاقد من لوحة الإدارة' }}</p>
 
     <template x-teleport="body">
         <div x-ref="dropdownPanel" x-show="open && (results.length || canUseNew)" x-cloak

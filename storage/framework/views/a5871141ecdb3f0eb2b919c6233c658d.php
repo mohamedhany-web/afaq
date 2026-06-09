@@ -12,6 +12,13 @@
     'actionIcon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />',
 ], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
+<?php if(session('success')): ?>
+<div class="mb-4 p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm font-tajawal"><?php echo e(session('success')); ?></div>
+<?php endif; ?>
+<?php if(session('error')): ?>
+<div class="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-tajawal"><?php echo e(session('error')); ?></div>
+<?php endif; ?>
+
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
     <?php echo $__env->make('crm.partials.stat-card', ['label' => 'المشاريع', 'value' => $stats['total'], 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16" />'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
     <?php echo $__env->make('crm.partials.stat-card', ['label' => 'متاح للبيع', 'value' => $stats['active'], 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4" />'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
@@ -102,6 +109,13 @@
             <a href="<?php echo e(route('crm.pipeline.create', ['project_id' => $project->id])); ?>"
                class="px-3 py-2 rounded-lg text-xs font-semibold font-tajawal hover:opacity-90"
                style="background: <?php echo e($themeColor); ?>12; color: <?php echo e($themeColor); ?>;">+ صفقة</a>
+            <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('delete', $project)): ?>
+            <form action="<?php echo e(route('crm.projects.destroy', $project)); ?>" method="POST"
+                  onsubmit="return confirm('حذف المشروع «<?php echo e($project->name); ?>»؟ لا يمكن التراجع.')">
+                <?php echo csrf_field(); ?> <?php echo method_field('DELETE'); ?>
+                <button type="submit" class="px-3 py-2 rounded-lg text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 font-tajawal">حذف</button>
+            </form>
+            <?php endif; ?>
         </div>
     </div>
     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>

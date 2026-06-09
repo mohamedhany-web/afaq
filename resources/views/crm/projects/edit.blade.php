@@ -20,13 +20,19 @@
 </div>
 @endif
 
+@if($requiresApproval ?? false)
+<div class="mb-4 p-4 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-900 font-tajawal">
+    التعديلات تُرسل للإدارة العليا ولن تُطبَّق على المشروع إلا بعد الموافقة.
+</div>
+@endif
+
 <form action="{{ route('crm.projects.update', $project) }}" method="POST" class="w-full space-y-6">
     @csrf @method('PUT')
     @include('projects.partials.form', ['project' => $project, 'users' => $users, 'themeColor' => $themeColor])
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-6">
         <a href="{{ route('crm.projects.show', $project) }}" class="inline-flex items-center justify-center px-6 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 font-tajawal">إلغاء</a>
         <button type="submit" class="inline-flex items-center justify-center px-8 py-3 rounded-xl text-white font-semibold text-sm shadow-md font-tajawal"
-                style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">حفظ التعديلات</button>
+                style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">{{ ($requiresApproval ?? false) ? 'إرسال طلب التعديل' : 'حفظ التعديلات' }}</button>
     </div>
 </form>
 @endsection

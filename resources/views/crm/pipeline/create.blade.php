@@ -62,13 +62,13 @@
         <div class="p-5 sm:p-6 space-y-4 sm:space-y-6">
             <div>
                 <label class="{{ $label }}">وصف الصفقة *</label>
-                <input name="product_service" value="{{ old('product_service') }}" required class="{{ $input }}"
+                <input name="product_service" value="{{ old('product_service', request('product_service')) }}" required class="{{ $input }}"
                        placeholder="مثال: شقة 3 غرف — الدور الخامس — برج النخيل">
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 <div>
                     <label class="{{ $label }}">القيمة المتوقعة (ج.م) *</label>
-                    <input name="estimated_value" type="number" step="0.01" min="0" value="{{ old('estimated_value') }}" required class="{{ $input }}">
+                    <input name="estimated_value" type="number" step="0.01" min="0" value="{{ old('estimated_value', request('estimated_value')) }}" required class="{{ $input }}">
                 </div>
                 <div>
                     <label class="{{ $label }}">احتمالية الإغلاق % *</label>

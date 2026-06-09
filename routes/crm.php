@@ -8,7 +8,9 @@ use App\Http\Controllers\Crm\CrmClientController;
 use App\Http\Controllers\Crm\CrmFollowUpController;
 use App\Http\Controllers\Crm\CrmIntelligenceController;
 use App\Http\Controllers\Crm\CrmPipelineController;
+use App\Http\Controllers\Crm\CrmProjectApprovalController;
 use App\Http\Controllers\Crm\CrmProjectController;
+use App\Http\Controllers\Crm\CrmProjectUnitController;
 use App\Http\Controllers\Crm\CrmTeamMemberController;
 use App\Http\Controllers\Crm\Compensation\CompAdjustmentController;
 use App\Http\Controllers\Crm\Compensation\CompEmployeeCompensationController;
@@ -17,6 +19,8 @@ use App\Http\Controllers\Crm\Compensation\CompensationReportController;
 use App\Http\Controllers\Crm\Compensation\CompKpiTemplateController;
 use App\Http\Controllers\Crm\Compensation\CompPayrollController;
 use App\Http\Controllers\Crm\CrmTaskController;
+use App\Http\Controllers\Crm\EmployeeComplianceController;
+use App\Http\Controllers\Crm\FreelanceAgentController;
 use App\Http\Controllers\Crm\SalesTeamController;
 use Illuminate\Support\Facades\Route;
 
@@ -81,10 +85,16 @@ Route::middleware(['auth', 'verified', 'verified.code'])->prefix('crm')->name('c
     Route::get('projects', [CrmProjectController::class, 'index'])->name('projects.index');
     Route::get('projects/create', [CrmProjectController::class, 'create'])->name('projects.create');
     Route::post('projects', [CrmProjectController::class, 'store'])->name('projects.store');
+    Route::get('projects/approvals/list', [CrmProjectApprovalController::class, 'index'])->name('projects.approvals.index');
+    Route::get('projects/approvals/{changeRequest}', [CrmProjectApprovalController::class, 'show'])->name('projects.approvals.show');
+    Route::post('projects/approvals/{changeRequest}/approve', [CrmProjectApprovalController::class, 'approve'])->name('projects.approvals.approve');
+    Route::post('projects/approvals/{changeRequest}/reject', [CrmProjectApprovalController::class, 'reject'])->name('projects.approvals.reject');
     Route::get('projects/{project}', [CrmProjectController::class, 'show'])->name('projects.show');
     Route::get('projects/{project}/edit', [CrmProjectController::class, 'edit'])->name('projects.edit');
     Route::put('projects/{project}', [CrmProjectController::class, 'update'])->name('projects.update');
     Route::delete('projects/{project}', [CrmProjectController::class, 'destroy'])->name('projects.destroy');
+    Route::post('projects/{project}/units/generate', [CrmProjectUnitController::class, 'generate'])->name('projects.units.generate');
+    Route::patch('projects/{project}/units/{unit}', [CrmProjectUnitController::class, 'update'])->name('projects.units.update');
 
     Route::get('teams', [SalesTeamController::class, 'index'])->name('teams.index');
     Route::get('teams/create', [SalesTeamController::class, 'create'])->name('teams.create');
@@ -115,4 +125,21 @@ Route::middleware(['auth', 'verified', 'verified.code'])->prefix('crm')->name('c
 
         Route::get('reports', [CompensationReportController::class, 'index'])->name('reports.index');
     });
+
+    Route::get('employee-compliance', [EmployeeComplianceController::class, 'index'])->name('employee-compliance.index');
+    Route::get('employee-compliance/users/{user}', [EmployeeComplianceController::class, 'show'])->name('employee-compliance.show');
+
+    Route::prefix('freelance-agents')->name('freelance-agents.')->group(function () {
+        Route::get('scheme', [FreelanceAgentController::class, 'scheme'])->name('scheme');
+        Route::get('/', [FreelanceAgentController::class, 'index'])->name('index');
+        Route::get('create', [FreelanceAgentController::class, 'create'])->name('create');
+        Route::post('/', [FreelanceAgentController::class, 'store'])->name('store');
+        Route::get('{contract}', [FreelanceAgentController::class, 'show'])->name('show');
+        Route::get('{contract}/edit', [FreelanceAgentController::class, 'edit'])->name('edit');
+        Route::put('{contract}', [FreelanceAgentController::class, 'update'])->name('update');
+        Route::get('{contract}/contract-print', [FreelanceAgentController::class, 'contractPrint'])->name('contract-print');
+    });
+
+    Route::post('pipeline/{sale}/commission-collected', [FreelanceAgentController::class, 'markCommissionCollected'])
+        ->name('pipeline.commission-collected');
 });

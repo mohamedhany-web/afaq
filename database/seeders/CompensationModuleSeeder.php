@@ -34,7 +34,8 @@ class CompensationModuleSeeder extends Seeder
             ['slug' => 'conversion_rate', 'name' => 'معدل التحويل %', 'weight' => 10, 'target' => 25],
             ['slug' => 'closed_deals', 'name' => 'صفقات مغلقة', 'weight' => 20, 'target' => 8],
             ['slug' => 'revenue_generated', 'name' => 'إيراد محقق', 'weight' => 20, 'target' => 2000000],
-            ['slug' => 'crm_compliance', 'name' => 'التزام CRM %', 'weight' => 5, 'target' => 90],
+            ['slug' => 'crm_compliance', 'name' => 'التزام التقارير %', 'weight' => 5, 'target' => 90],
+            ['slug' => 'attendance_compliance', 'name' => 'التزام الحضور %', 'weight' => 5, 'target' => 90],
         ];
 
         $this->seedItems($repTemplate, $repItems);
@@ -95,6 +96,16 @@ class CompensationModuleSeeder extends Seeder
             ],
         );
 
+        CompCommissionPlan::firstOrCreate(
+            ['name' => 'هيكل عمولات الوكيل المستقل'],
+            [
+                'model' => 'freelance_scheme',
+                'config' => config('freelance_agents.scheme'),
+                'is_active' => true,
+                'description' => 'تقسيم عمولة الشركة المحصّلة حسب نوع العملية (Primary / Resale / Rental)',
+            ],
+        );
+
         $bonuses = [
             ['code' => 'target_achieved', 'name' => 'مكافأة تحقيق الهدف', 'amount_type' => 'percent_salary', 'amount' => 10],
             ['code' => 'revenue_milestone', 'name' => 'مكافأة إنجاز إيراد', 'amount_type' => 'percent_revenue', 'amount' => 0.5],
@@ -113,6 +124,7 @@ class CompensationModuleSeeder extends Seeder
             ['code' => 'missed_followups', 'name' => 'متابعات فائتة', 'amount' => 200],
             ['code' => 'crm_incomplete', 'name' => 'تحديث CRM ناقص', 'amount' => 150],
             ['code' => 'policy_violation', 'name' => 'مخالفة سياسة', 'amount' => 500],
+            ['code' => 'kpi_underperformance', 'name' => 'أداء KPI دون المستهدف', 'amount' => 300],
             ['code' => 'admin_manual', 'name' => 'خصم إداري', 'amount' => 0],
         ];
 

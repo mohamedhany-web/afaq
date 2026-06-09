@@ -132,11 +132,11 @@ class ReportController extends Controller
             'absent_days' => $attendances->where('status', 'absent')->count(),
             'late_days' => $attendances->where('status', 'late')->count(),
             'total_hours' => $attendances->sum('total_hours'),
-            'attendance_rate' => $attendances->count() > 0 
-                ? round(($attendances->where('status', 'present')->count() / $attendances->count()) * 100, 2)
+            'attendance_rate' => $attendances->count() > 0
+                ? round(($attendances->whereIn('status', ['present', 'late'])->count() / $attendances->count()) * 100, 2)
                 : 0,
         ];
-        
+
         return view('reports.attendance', compact('attendances', 'employees', 'summary', 'start_date', 'end_date'));
     }
 

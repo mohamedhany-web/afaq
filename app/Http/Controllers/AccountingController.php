@@ -9,18 +9,27 @@ use App\Models\JournalEntryLine;
 use App\Models\FinancialInvoice;
 use App\Models\Payment;
 use App\Models\Expense;
+use App\Services\AccountingReportService;
 use Carbon\Carbon;
 
 class AccountingController extends Controller
 {
+    public function __construct(protected AccountingReportService $reports) {}
+
     public function index()
     {
-        // إحصائيات المحاسبة
-        $totalAssets = Account::where('type', 'asset')->sum('balance');
-        $totalLiabilities = Account::where('type', 'liability')->sum('balance');
-        $totalEquity = Account::where('type', 'equity')->sum('balance');
-        $totalRevenue = Account::where('type', 'revenue')->sum('balance');
-        $totalExpenses = Account::where('type', 'expense')->sum('balance');
+        $today = Carbon::now()->format('Y-m-d');
+
+        $totalAssets = collect($this->reports->accountIdsByType('asset'))
+            ->sum(fn ($id) => $this->reports->accountBalanceAsOf($id, $today));
+        $totalLiabilities = collect($this->reports->accountIdsByType('liability'))
+            ->sum(fn ($id) => $this->reports->accountBalanceAsOf($id, $today));
+        $totalEquity = collect($this->reports->accountIdsByType('equity'))
+            ->sum(fn ($id) => $this->reports->accountBalanceAsOf($id, $today));
+        $totalRevenue = collect($this->reports->accountIdsByType('revenue'))
+            ->sum(fn ($id) => $this->reports->accountBalanceAsOf($id, $today));
+        $totalExpenses = collect($this->reports->accountIdsByType('expense'))
+            ->sum(fn ($id) => $this->reports->accountBalanceAsOf($id, $today));
         
         // الأرباح/الخسائر
         $netIncome = $totalRevenue - $totalExpenses;
@@ -58,30 +67,13 @@ class AccountingController extends Controller
             ->get()
             ->groupBy('type');
         
-        // الإيرادات والمصروفات الشهرية
-        $monthlyRevenue = JournalEntry::whereMonth('date', Carbon::now()->month)
-            ->whereYear('date', Carbon::now()->year)
-            ->with(['lines' => function($query) {
-                $query->whereHas('account', function($q) {
-                    $q->where('type', 'revenue');
-                });
-            }])
-            ->get()
-            ->sum(function($entry) {
-                return $entry->lines->sum('credit');
-            });
-            
-        $monthlyExpenses = JournalEntry::whereMonth('date', Carbon::now()->month)
-            ->whereYear('date', Carbon::now()->year)
-            ->with(['lines' => function($query) {
-                $query->whereHas('account', function($q) {
-                    $q->where('type', 'expense');
-                });
-            }])
-            ->get()
-            ->sum(function($entry) {
-                return $entry->lines->sum('debit');
-            });
+        $monthStart = Carbon::now()->startOfMonth()->format('Y-m-d');
+        $monthEnd = Carbon::now()->format('Y-m-d');
+        $revenueIds = $this->reports->accountIdsByType('revenue');
+        $expenseIds = $this->reports->accountIdsByType('expense');
+
+        $monthlyRevenue = $this->reports->sumCreditsBetween($revenueIds, $monthStart, $monthEnd);
+        $monthlyExpenses = $this->reports->sumDebitsBetween($expenseIds, $monthStart, $monthEnd);
         
         // الفواتير والمدفوعات المعلقة
         $pendingInvoices = \App\Models\Invoice::where('status', 'pending')->sum('total_amount');

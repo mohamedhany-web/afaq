@@ -3,39 +3,31 @@
 @section('page-title', 'القيود المحاسبية')
 
 @section('content')
-<div class="w-full">
-    <!-- Page Header -->
-    <div class="mb-8">
-        <div class="flex items-center justify-between mb-4">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">القيود المحاسبية</h1>
-                <p class="text-gray-600">إدارة القيود المحاسبية والحركات المالية</p>
-            </div>
-            <div class="flex items-center gap-3">
-                <a href="{{ route('accounting.journal-entries.create') }}" class="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all duration-200 flex items-center shadow-sm">
-                    <svg class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    قيد محاسبي جديد
-                </a>
-            </div>
-        </div>
-    </div>
+@include('accounting.partials.context')
+@include('crm.partials.page-header', [
+    'title' => 'القيود المحاسبية',
+    'subtitle' => 'إدارة القيود والحركات المالية',
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />',
+    'actionUrl' => route('accounting.journal-entries.create'),
+    'actionLabel' => 'قيد جديد',
+    'actionIcon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />',
+])
+@include('accounting.partials.nav')
 
-    <!-- Journal Entries Table -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-gray-900">قائمة القيود المحاسبية</h3>
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div class="px-5 py-4 border-b font-bold font-tajawal flex justify-between items-center" style="{{ $headerStyle }}">
+                <h3>قائمة القيود المحاسبية</h3>
                 <div class="flex items-center gap-3">
                     <div class="flex items-center gap-2">
                         <span class="text-sm text-gray-600">فلترة:</span>
-                        <select class="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">جميع الحالات</option>
-                            <option value="draft">مسودة</option>
-                            <option value="approved">معتمد</option>
-                            <option value="posted">مرحل</option>
-                        </select>
+                        <form method="GET" class="inline">
+                            <select name="status" onchange="this.form.submit()" class="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">جميع الحالات</option>
+                                <option value="draft" @selected(request('status') === 'draft')>مسودة</option>
+                                <option value="approved" @selected(request('status') === 'approved')>معتمد</option>
+                                <option value="posted" @selected(request('status') === 'posted')>مرحل</option>
+                            </select>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -69,8 +61,8 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             <div class="text-right">
-                                <div class="font-medium">{{ number_format($entry->total_debit, 2) }} ج.م</div>
-                                <div class="text-xs text-gray-500">مدين: {{ number_format($entry->total_debit, 2) }} | دائن: {{ number_format($entry->total_credit, 2) }}</div>
+                                <div class="font-medium">{{ $money($entry->total_debit) }}</div>
+                                <div class="text-xs text-gray-500">مدين: {{ $money($entry->total_debit) }} | دائن: {{ $money($entry->total_credit) }}</div>
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
@@ -153,7 +145,7 @@
             </div>
             <div class="mr-4">
                 <p class="text-sm font-medium text-gray-600">إجمالي القيود</p>
-                <p class="text-2xl font-bold text-gray-900">{{ $entries->total() }}</p>
+                <p class="text-2xl font-bold text-gray-900">{{ $stats['total'] }}</p>
             </div>
         </div>
     </div>
@@ -167,7 +159,7 @@
             </div>
             <div class="mr-4">
                 <p class="text-sm font-medium text-gray-600">مسودة</p>
-                <p class="text-2xl font-bold text-gray-900">{{ $entries->where('status', 'draft')->count() }}</p>
+                <p class="text-2xl font-bold text-gray-900">{{ $stats['draft'] }}</p>
             </div>
         </div>
     </div>
@@ -181,7 +173,7 @@
             </div>
             <div class="mr-4">
                 <p class="text-sm font-medium text-gray-600">مرحلة</p>
-                <p class="text-2xl font-bold text-gray-900">{{ $entries->where('status', 'posted')->count() }}</p>
+                <p class="text-2xl font-bold text-gray-900">{{ $stats['posted'] }}</p>
             </div>
         </div>
     </div>
@@ -195,7 +187,7 @@
             </div>
             <div class="mr-4">
                 <p class="text-sm font-medium text-gray-600">إجمالي المبالغ</p>
-                <p class="text-2xl font-bold text-gray-900">{{ number_format($entries->sum('total_debit'), 2) }} ج.م</p>
+                <p class="text-2xl font-bold text-gray-900">{{ $money($stats['amount']) }}</p>
             </div>
         </div>
     </div>

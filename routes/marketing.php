@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Marketing\MarketingActivityController;
+use App\Http\Controllers\Marketing\MarketingPlanController;
 use App\Http\Controllers\Marketing\MarketingCampaignController;
 use App\Http\Controllers\Marketing\MarketingDashboardController;
 use App\Http\Controllers\Marketing\MarketingLeadController;
@@ -19,6 +20,16 @@ Route::middleware(['auth', 'verified', 'verified.code'])->prefix('marketing')->n
     Route::get('campaigns/{campaign}/edit', [MarketingCampaignController::class, 'edit'])->name('campaigns.edit');
     Route::put('campaigns/{campaign}', [MarketingCampaignController::class, 'update'])->name('campaigns.update');
     Route::delete('campaigns/{campaign}', [MarketingCampaignController::class, 'destroy'])->name('campaigns.destroy');
+
+    Route::get('plans', [MarketingPlanController::class, 'index'])->name('plans.index');
+    Route::get('plans/create', [MarketingPlanController::class, 'create'])->name('plans.create');
+    Route::post('plans', [MarketingPlanController::class, 'store'])->name('plans.store');
+    Route::get('plans/{plan}', [MarketingPlanController::class, 'show'])->name('plans.show');
+    Route::get('plans/{plan}/edit', [MarketingPlanController::class, 'edit'])->name('plans.edit');
+    Route::put('plans/{plan}', [MarketingPlanController::class, 'update'])->name('plans.update');
+    Route::post('plans/{plan}/tasks', [MarketingPlanController::class, 'storeTasks'])->name('plans.tasks.store');
+    Route::post('plans/{plan}/distribute', [MarketingPlanController::class, 'distribute'])->name('plans.distribute');
+    Route::post('plans/{plan}/activate', [MarketingPlanController::class, 'activate'])->name('plans.activate');
 
     Route::get('activities', [MarketingActivityController::class, 'index'])->name('activities.index');
     Route::get('activities/create', [MarketingActivityController::class, 'create'])->name('activities.create');

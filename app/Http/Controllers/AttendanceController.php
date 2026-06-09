@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Attendance;
 use App\Models\Employee;
 use Carbon\Carbon;
+use App\Services\AutoPenaltyService;
+use App\Services\EmployeeScheduleService;
 use App\Services\WorkDayService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +16,8 @@ class AttendanceController extends Controller
 {
     public function __construct(
         protected WorkDayService $workDay,
+        protected EmployeeScheduleService $schedule,
+        protected AutoPenaltyService $autoPenalties,
     ) {}
     /**
      * Display a listing of the resource.
@@ -84,21 +88,40 @@ class AttendanceController extends Controller
             ->whereNotNull('check_in')
             ->count();
             
-        // Count late arrivals (after 9:00 AM)
         $lateToday = Attendance::whereDate('date', $date)
             ->whereNotNull('check_in')
+            ->with('employee')
             ->get()
             ->filter(function ($attendance) {
-                return $attendance->check_in && Carbon::parse($attendance->check_in)->format('H:i:s') > '09:00:00';
+                if (!$attendance->check_in || !$attendance->employee) {
+                    return false;
+                }
+                if ($attendance->status === 'late' || ($attendance->late_minutes ?? 0) > 0) {
+                    return true;
+                }
+
+                return $this->schedule->isLate(
+                    $attendance->employee,
+                    Carbon::parse($attendance->check_in),
+                    Carbon::parse($attendance->date),
+                );
             })
             ->count();
-            
-        // Count early departures (before 5:00 PM)
+
         $earlyDepartures = Attendance::whereDate('date', $date)
             ->whereNotNull('check_out')
+            ->with('employee')
             ->get()
             ->filter(function ($attendance) {
-                return $attendance->check_out && Carbon::parse($attendance->check_out)->format('H:i:s') < '17:00:00';
+                if (!$attendance->check_out || !$attendance->employee) {
+                    return false;
+                }
+
+                return $this->schedule->isEarlyDeparture(
+                    $attendance->employee,
+                    Carbon::parse($attendance->check_out),
+                    Carbon::parse($attendance->date),
+                );
             })
             ->count();
             
@@ -155,6 +178,13 @@ class AttendanceController extends Controller
                     'success' => false,
                 ], 403, [], JSON_UNESCAPED_UNICODE);
             }
+
+            if ($this->schedule->isWeeklyOffDay($employee, Carbon::today())) {
+                return response()->json([
+                    'error' => 'اليوم إجازة أسبوعية حسب جدول دوامك — لا يلزم تسجيل الحضور.',
+                    'success' => false,
+                ], 403, [], JSON_UNESCAPED_UNICODE);
+            }
             
             $today = Carbon::today();
             $existingAttendance = Attendance::where('employee_id', $employee->id)
@@ -176,9 +206,10 @@ class AttendanceController extends Controller
             }
             
             $checkInTime = Carbon::now();
-            $isLate = $checkInTime->format('H:i:s') > '09:00:00';
+            $isLate = $this->schedule->isLate($employee, $checkInTime, $today);
+            $lateMinutes = $this->schedule->lateMinutes($employee, $checkInTime, $today);
             $requiredHours = $this->workDay->requiredDailyHours($employee);
-            
+
             if ($existingAttendance) {
                 $existingAttendance->update([
                     'check_in' => $checkInTime,
@@ -196,16 +227,22 @@ class AttendanceController extends Controller
                 ]);
             }
 
-            if ($this->workDay->requiresWorkDayButton($currentUser)) {
-                $this->workDay->applyCheckInSchedule($attendance, $employee, $checkInTime);
-                $attendance->refresh();
+            $this->workDay->applyCheckInSchedule($attendance, $employee, $checkInTime);
+            $attendance->refresh();
+
+            if ($isLate) {
+                $this->autoPenalties->tryApplyAttendanceLate($attendance);
             }
-            
+
             return response()->json([
                 'success' => true,
-                'message' => $isLate ? 'تم بدء يوم العمل (متأخر)' : 'تم بدء يوم العمل بنجاح',
+                'message' => $isLate
+                    ? 'تم بدء يوم العمل (متأخر ' . $lateMinutes . ' دقيقة)'
+                    : 'تم بدء يوم العمل بنجاح',
                 'check_in_time' => $checkInTime->format('H:i:s'),
                 'is_late' => $isLate,
+                'late_minutes' => $lateMinutes,
+                'scheduled_check_in' => $attendance->scheduled_check_in_at?->format('H:i'),
                 'required_daily_hours' => $requiredHours,
                 'scheduled_checkout_at' => $attendance->scheduled_checkout_at?->format('H:i'),
             ], 200, [], JSON_UNESCAPED_UNICODE);
@@ -265,27 +302,36 @@ class AttendanceController extends Controller
             }
             
             $totalHours = round($totalMinutes / 60, 2);
-            $isEarlyDeparture = $checkOutTime->format('H:i:s') < '17:00:00';
-            
+            $isEarlyDeparture = $this->schedule->isEarlyDeparture($employee, $checkOutTime, $today);
+            $wasLate = ($attendance->late_minutes ?? 0) > 0 || $attendance->status === 'late';
+
             $requiredHours = (float) ($attendance->required_hours ?? $this->workDay->requiredDailyHours($employee));
             $metRequired = $totalHours >= ($requiredHours - 0.1);
+
+            $finalStatus = 'present';
+            if ($wasLate) {
+                $finalStatus = 'late';
+            } elseif ($isEarlyDeparture && !$metRequired) {
+                $finalStatus = 'half_day';
+            }
 
             $attendance->update([
                 'check_out' => $checkOutTime,
                 'total_hours' => $totalHours,
-                'status' => $isEarlyDeparture && !$metRequired ? 'half_day' : 'present',
+                'status' => $finalStatus,
                 'current_status' => 'completed',
                 'work_day_locked' => true,
             ]);
-            
+
             return response()->json([
                 'success' => true,
                 'message' => $metRequired
-                    ? 'تم إنهاء يوم العمل بنجاح'
-                    : ($isEarlyDeparture ? 'تم إنهاء اليوم (لم تكتمل الساعات المطلوبة)' : 'تم إنهاء يوم العمل'),
+                    ? ($wasLate ? 'تم إنهاء اليوم (مع تأخير في الحضور)' : 'تم إنهاء يوم العمل بنجاح')
+                    : ($isEarlyDeparture ? 'تم إنهاء اليوم (انصراف مبكر — لم تكتمل الساعات)' : 'تم إنهاء يوم العمل'),
                 'check_out_time' => $checkOutTime->format('H:i:s'),
                 'total_hours' => $totalHours,
-                'is_early' => $isEarlyDeparture
+                'is_early' => $isEarlyDeparture,
+                'scheduled_checkout' => $attendance->scheduled_checkout_at?->format('H:i'),
             ], 200, [], JSON_UNESCAPED_UNICODE);
         } catch (\Exception $e) {
             \Log::error('Error in checkOut: ' . $e->getMessage());

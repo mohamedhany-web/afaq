@@ -246,6 +246,7 @@
     </div>
 </div>
 
+<?php if(auth()->user()?->can('view-all-projects') || auth()->user()?->can('view-own-projects')): ?>
 
 <div class="mb-2"><h2 class="text-sm font-bold text-gray-500 font-tajawal px-1">عقارات للعرض</h2></div>
 <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
@@ -279,6 +280,7 @@
     </div>
     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 </div>
+<?php endif; ?>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startPush('scripts'); ?>

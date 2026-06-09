@@ -15,7 +15,7 @@ class MarketingActivity extends Model
     public const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
-        'title', 'description', 'type', 'status', 'priority', 'campaign_id',
+        'title', 'description', 'type', 'status', 'priority', 'campaign_id', 'marketing_plan_id',
         'assigned_to', 'assigned_by', 'due_at', 'completed_at', 'recurrence',
         'recurrence_interval', 'parent_activity_id', 'next_occurrence_at',
         'completion_notes', 'notes',
@@ -30,6 +30,11 @@ class MarketingActivity extends Model
     public function campaign(): BelongsTo
     {
         return $this->belongsTo(MarketingCampaign::class, 'campaign_id');
+    }
+
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(MarketingPlan::class, 'marketing_plan_id');
     }
 
     public function assignee(): BelongsTo

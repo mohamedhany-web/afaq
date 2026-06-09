@@ -63,37 +63,18 @@
         </div>
 
         <div class="ownership-pane {{ $ownershipType !== 'developer_third_party' ? 'hidden' : '' }}" data-pane="developer_third_party">
-            <p class="text-xs text-gray-500 mb-3 font-tajawal">بيانات مشاريع المطورين الخارجيين — نحن نسوق لحسابهم</p>
-            <div class="mb-4">
+            <p class="text-xs text-gray-500 mb-3 font-tajawal">اختر مطوراً مسجلاً بتعاقد نشط — بيانات التعاقد تُدار من <a href="{{ route('admin.developers.index') }}" class="font-bold underline" style="color:{{ $themeColor ?? \App\Helpers\SettingsHelper::getThemeColor() }}">إدارة المطورين العقاريين</a></p>
+            <div class="mb-2">
                 @include('partials.developer-search-select', [
                     'developerId' => old('real_estate_developer_id', $project->real_estate_developer_id ?? null),
                     'developerName' => old('developer_name', $project->developer_name ?? ''),
                     'inputClass' => $input,
                     'required' => true,
+                    'contractedOnly' => true,
+                    'allowCreate' => false,
                 ])
+                @error('real_estate_developer_id')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
                 @error('developer_name')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div><label class="{{ $label }}">نسبة العمولة %</label>
-                    <input type="number" min="0" max="100" step="0.01" name="ownership_details[commission_percent]" value="{{ $details['commission_percent'] ?? '' }}" class="{{ $input }}"></div>
-                <div><label class="{{ $label }}">مرجع عقد الوكالة</label>
-                    <input name="ownership_details[contract_ref]" value="{{ $details['contract_ref'] ?? '' }}" class="{{ $input }}"></div>
-                <div><label class="{{ $label }}">مسؤول المطور</label>
-                    <input name="ownership_details[contact_person]" value="{{ $details['contact_person'] ?? '' }}" class="{{ $input }}"></div>
-                <div><label class="{{ $label }}">هاتف المطور</label>
-                    <input name="ownership_details[contact_phone]" value="{{ $details['contact_phone'] ?? '' }}" class="{{ $input }}" dir="ltr"></div>
-                <div><label class="{{ $label }}">حصرية تسويق</label>
-                    <select name="ownership_details[exclusivity]" class="{{ $input }}">
-                        <option value="">—</option>
-                        <option value="1" @selected(($details['exclusivity'] ?? '') == '1')>نعم — حصرية</option>
-                        <option value="0" @selected(($details['exclusivity'] ?? '') === '0')>لا</option>
-                    </select></div>
-                <div><label class="{{ $label }}">انتهاء الحصرية</label>
-                    <input type="date" name="ownership_details[exclusivity_until]" value="{{ $details['exclusivity_until'] ?? '' }}" class="{{ $input }}"></div>
-                <div class="sm:col-span-2"><label class="{{ $label }}">شروط العرض / التسويق</label>
-                    <textarea name="ownership_details[listing_terms]" rows="2" class="{{ $input }}">{{ $details['listing_terms'] ?? '' }}</textarea></div>
-                <div class="sm:col-span-2"><label class="{{ $label }}">ملاحظات</label>
-                    <textarea name="ownership_details[developer_notes]" rows="2" class="{{ $input }}">{{ $details['developer_notes'] ?? '' }}</textarea></div>
             </div>
         </div>
     </div>

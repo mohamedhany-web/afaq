@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\CrmEmployeeService;
 use App\Services\CrmScopeService;
 use App\Services\EmployeeRoleService;
+use App\Services\EmployeeScheduleService;
 use App\Services\MarketingEmployeeService;
 use App\Services\MarketingScopeService;
 use Illuminate\Http\Request;
@@ -15,6 +16,10 @@ use Illuminate\Support\Facades\Validator;
 
 class EmployeeController extends Controller
 {
+    public function __construct(
+        protected EmployeeScheduleService $schedule,
+    ) {}
+
     public function index(Request $request)
     {
         $marketingOnly = $request->boolean('marketing_only');
@@ -130,6 +135,11 @@ class EmployeeController extends Controller
             'address' => 'nullable|string',
             'emergency_contact' => 'nullable|string',
             'emergency_phone' => 'nullable|string',
+            'work_start_time' => 'required|date_format:H:i',
+            'work_end_time' => 'required|date_format:H:i|after:work_start_time',
+            'weekly_off_days' => 'nullable|array',
+            'weekly_off_days.*' => 'integer|min:0|max:6',
+            'late_grace_minutes' => 'nullable|integer|min:0|max:60',
         ]);
 
         $validator->sometimes('password', 'required|string|min:8|confirmed', function ($input) {
@@ -314,6 +324,11 @@ class EmployeeController extends Controller
             'emergency_contact' => 'nullable|string',
             'emergency_phone' => 'nullable|string',
             'hire_date' => 'nullable|date',
+            'work_start_time' => 'required|date_format:H:i',
+            'work_end_time' => 'required|date_format:H:i|after:work_start_time',
+            'weekly_off_days' => 'nullable|array',
+            'weekly_off_days.*' => 'integer|min:0|max:6',
+            'late_grace_minutes' => 'nullable|integer|min:0|max:60',
         ]);
 
         if ($validator->fails()) {
@@ -344,6 +359,7 @@ class EmployeeController extends Controller
             'address' => $request->address,
             'emergency_contact' => $request->emergency_contact,
             'emergency_phone' => $request->emergency_phone,
+            ...$this->schedule->scheduleAttributesFromRequest($request->all()),
         ]);
 
         if ($employee->user_id) {
@@ -455,6 +471,7 @@ class EmployeeController extends Controller
             'address' => $request->address,
             'emergency_contact' => $request->emergency_contact,
             'emergency_phone' => $request->emergency_phone,
+            ...$this->schedule->scheduleAttributesFromRequest($request->all()),
         ];
 
         $attempts = 0;

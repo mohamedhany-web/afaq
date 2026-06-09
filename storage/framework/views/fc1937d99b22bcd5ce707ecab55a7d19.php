@@ -27,16 +27,16 @@ unset($__errorArgs, $__bag); ?>
             <textarea name="description" rows="3" class="<?php echo e($input); ?>" placeholder="وصف المشروع، المرافق، المميزات..."><?php echo e(old('description', $project->description ?? '')); ?></textarea>
         </div>
         <div>
-            <label class="<?php echo e($label); ?>">المطور العقاري</label>
-            <input name="developer_name" value="<?php echo e(old('developer_name', $project->developer_name ?? '')); ?>" class="<?php echo e($input); ?>" placeholder="اسم شركة التطوير">
-        </div>
-        <div>
             <label class="<?php echo e($label); ?>">المدينة</label>
             <input name="city" value="<?php echo e(old('city', $project->city ?? '')); ?>" class="<?php echo e($input); ?>" placeholder="القاهرة الجديدة">
         </div>
         <div>
             <label class="<?php echo e($label); ?>">المنطقة / الموقع</label>
             <input name="location" value="<?php echo e(old('location', $project->location ?? '')); ?>" class="<?php echo e($input); ?>" placeholder="التجمع الخامس">
+        </div>
+        <div>
+            <label class="<?php echo e($label); ?>">مساحة الأرض (م²)</label>
+            <input type="number" name="land_area_m2" min="0" step="0.01" value="<?php echo e(old('land_area_m2', $project->land_area_m2 ?? '')); ?>" class="<?php echo e($input); ?>" placeholder="31000">
         </div>
         <div>
             <label class="<?php echo e($label); ?>">نوع العقار *</label>
@@ -81,6 +81,14 @@ unset($__errorArgs, $__bag); ?>
         </div>
     </div>
 </div>
+
+<?php echo $__env->make('projects.partials.ownership-fields', [
+    'project' => $project ?? null,
+    'themeColor' => $themeColor ?? \App\Helpers\SettingsHelper::getThemeColor(),
+    'input' => $input,
+    'label' => $label,
+    'sectionHeader' => $sectionHeader,
+], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
 <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full">
     <div class="<?php echo e($sectionHeader); ?>" style="background: linear-gradient(135deg, <?php echo e($themeColor); ?>08 0%, <?php echo e($themeColor); ?>03 100%);">

@@ -5,13 +5,18 @@ namespace App\Http\Controllers\Crm;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Services\CrmScopeService;
+use App\Services\ProjectApprovalService;
 use App\Services\ProjectManagementService;
+use App\Services\ProjectUnitGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class CrmProjectController extends Controller
 {
-    public function __construct(protected ProjectManagementService $projects) {}
+    public function __construct(
+        protected ProjectManagementService $projects,
+        protected ProjectApprovalService $approval,
+    ) {}
 
     public function index(Request $request)
     {
@@ -53,6 +58,7 @@ class CrmProjectController extends Controller
 
         return view('crm.projects.create', [
             'users' => $this->projects->formUsers(),
+            'requiresApproval' => $this->approval->requiresApproval(Auth::user()),
         ]);
     }
 
@@ -60,6 +66,13 @@ class CrmProjectController extends Controller
     {
         $user = Auth::user();
         abort_unless($this->projects->canCreate($user), 403);
+
+        if ($this->approval->requiresApproval($user)) {
+            $this->approval->submitCreate($request, $user);
+
+            return redirect()->route('crm.projects.approvals.index')
+                ->with('success', 'تم إرسال طلب إضافة المشروع — بانتظار موافقة الإدارة العليا.');
+        }
 
         $data = $this->projects->validate($request);
         $data = $this->projects->normalize($data, $request, $user);
@@ -84,7 +97,13 @@ class CrmProjectController extends Controller
         $scopedSales = CrmScopeService::for(Auth::user())->salesQuery()
             ->where('project_id', $project->id);
 
-        $project->load(['projectManager', 'department', 'mapPins', 'realEstateDeveloper']);
+        $project->load([
+            'projectManager',
+            'department',
+            'mapPins',
+            'realEstateDeveloper.activeContract',
+            'buildingFloors.units.paymentPlans',
+        ]);
 
         $project->setRelation(
             'sales',
@@ -98,7 +117,15 @@ class CrmProjectController extends Controller
             'occupancy' => $project->occupancy_percent,
         ];
 
-        return view('crm.projects.show', compact('project', 'stats'));
+        $buildingSummary = app(ProjectUnitGeneratorService::class)->buildingSummary($project);
+
+        return view('crm.projects.show', [
+            'project' => $project,
+            'stats' => $stats,
+            'buildingSummary' => $buildingSummary,
+            'pendingChange' => $this->approval->pendingForProject($project),
+            'requiresApproval' => $this->approval->requiresApproval(Auth::user()),
+        ]);
     }
 
     public function edit(Project $project)
@@ -110,6 +137,7 @@ class CrmProjectController extends Controller
         return view('crm.projects.edit', [
             'project' => $project,
             'users' => $this->projects->formUsers(),
+            'requiresApproval' => $this->approval->requiresApproval(Auth::user()),
         ]);
     }
 
@@ -117,6 +145,13 @@ class CrmProjectController extends Controller
     {
         $user = Auth::user();
         abort_unless($this->projects->canUpdate($user, $project), 403);
+
+        if ($this->approval->requiresApproval($user)) {
+            $this->approval->submitUpdate($request, $project, $user);
+
+            return redirect()->route('crm.projects.approvals.index')
+                ->with('success', 'تم إرسال طلب التعديل — بانتظار موافقة الإدارة العليا.');
+        }
 
         $data = $this->projects->validate($request, $project);
         $data = $this->projects->normalize($data, $request, $user);
@@ -136,8 +171,17 @@ class CrmProjectController extends Controller
 
     public function destroy(Project $project)
     {
+        $user = Auth::user();
+
         try {
-            $this->projects->deleteProject($project, Auth::user());
+            if ($this->approval->requiresApproval($user)) {
+                $this->approval->submitDelete($project, $user);
+
+                return redirect()->route('crm.projects.approvals.index')
+                    ->with('success', 'تم إرسال طلب الحذف — بانتظار موافقة الإدارة العليا.');
+            }
+
+            $this->projects->deleteProject($project, $user);
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
             if ($e->getStatusCode() === 422) {
                 return redirect()->back()->with('error', $e->getMessage());

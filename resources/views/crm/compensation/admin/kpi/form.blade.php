@@ -29,7 +29,7 @@
 
 <form method="POST"
       action="{{ $template ? route('crm.compensation.kpi.update', $template) : route('crm.compensation.kpi.store') }}"
-      class="max-w-6xl mx-auto font-tajawal space-y-6"
+      class="font-tajawal space-y-6"
       x-data="kpiTemplateForm({
           targetRole: @js($initialRole),
           rows: @js($initialItems),

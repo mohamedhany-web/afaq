@@ -39,6 +39,8 @@
 <?php endif; ?>
 <?php echo $__env->make('projects.partials.map-display', compact('project', 'themeColor'), array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
+<?php echo $__env->make('crm.projects.partials.building-units', compact('project', 'themeColor', 'buildingSummary'), array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+
 <div class="mb-6">
     <?php echo $__env->make('projects.partials.ownership-summary', compact('project', 'themeColor'), array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 </div>
@@ -73,17 +75,27 @@
         <?php if(session('error')): ?>
         <div class="mx-5 sm:mx-6 mt-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-tajawal"><?php echo e(session('error')); ?></div>
         <?php endif; ?>
+        <?php if(!empty($pendingChange)): ?>
+        <div class="mx-5 sm:mx-6 mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm font-tajawal">
+            يوجد طلب <strong><?php echo e($pendingChange->actionLabel()); ?></strong> بانتظار موافقة الإدارة.
+            <a href="<?php echo e(route('crm.projects.approvals.show', $pendingChange)); ?>" class="font-bold mr-1" style="color:<?php echo e($themeColor); ?>">عرض الطلب</a>
+        </div>
+        <?php endif; ?>
         <div class="px-5 sm:px-6 py-4 border-t border-gray-100 flex flex-col gap-2">
             <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('edit-projects')): ?>
+            <?php if(empty($pendingChange)): ?>
             <a href="<?php echo e(route('crm.projects.edit', $project)); ?>" class="inline-flex justify-center w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-white font-tajawal"
-               style="background: linear-gradient(135deg, <?php echo e($themeColor); ?> 0%, <?php echo e($themeColor); ?>dd 100%);">تعديل المشروع</a>
+               style="background: linear-gradient(135deg, <?php echo e($themeColor); ?> 0%, <?php echo e($themeColor); ?>dd 100%);"><?php echo e(($requiresApproval ?? false) ? 'طلب تعديل' : 'تعديل المشروع'); ?></a>
+            <?php endif; ?>
             <?php endif; ?>
             <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('delete', $project)): ?>
+            <?php if(empty($pendingChange)): ?>
             <form action="<?php echo e(route('crm.projects.destroy', $project)); ?>" method="POST"
-                  onsubmit="return confirm('حذف هذا المشروع؟ لا يمكن التراجع.')">
+                  onsubmit="return confirm('<?php echo e(($requiresApproval ?? false) ? 'إرسال طلب حذف للإدارة العليا؟' : 'حذف هذا المشروع؟ لا يمكن التراجع.'); ?>')">
                 <?php echo csrf_field(); ?> <?php echo method_field('DELETE'); ?>
-                <button type="submit" class="w-full px-4 py-2.5 rounded-xl text-sm font-semibold bg-red-50 text-red-600 hover:bg-red-100 font-tajawal">حذف المشروع</button>
+                <button type="submit" class="w-full px-4 py-2.5 rounded-xl text-sm font-semibold bg-red-50 text-red-600 hover:bg-red-100 font-tajawal"><?php echo e(($requiresApproval ?? false) ? 'طلب حذف المشروع' : 'حذف المشروع'); ?></button>
             </form>
+            <?php endif; ?>
             <?php elseif(!$project->isDeletable()): ?>
             <p class="text-xs text-center text-gray-400 font-tajawal py-1">لا يمكن الحذف — المشروع مرتبط بصفقات أو يحتوي وحدات مباعة</p>
             <?php endif; ?>

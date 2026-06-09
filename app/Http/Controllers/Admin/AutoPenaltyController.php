@@ -12,7 +12,11 @@ class AutoPenaltyController extends Controller
 {
     public function index(AutoPenaltyService $penalties)
     {
-        $rules = AutoPenaltyRule::query()->orderBy('department_code')->orderBy('source_type')->get();
+        $rules = AutoPenaltyRule::query()
+            ->withCount('logs')
+            ->orderBy('department_code')
+            ->orderBy('source_type')
+            ->get();
         $recentLogs = AutoPenaltyLog::query()
             ->with(['user:id,name', 'rule:id,name,department_code'])
             ->latest('applied_at')

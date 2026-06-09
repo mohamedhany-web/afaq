@@ -62,4 +62,38 @@
         @if($sale->notes)<p class="mt-4 text-sm text-gray-600 p-4 bg-gray-50 rounded-xl">{{ $sale->notes }}</p>@endif
     </div>
 </div>
+
+@if($sale->stage === 'closed_won' || $sale->company_commission_amount)
+@php $money = fn ($v) => \App\Helpers\SettingsHelper::formatMoney($v); @endphp
+<div class="mt-6 bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+    <div class="px-5 sm:px-6 py-4 border-b font-bold font-tajawal flex justify-between" style="background:linear-gradient(135deg,{{ $themeColor }}08 0%,{{ $themeColor }}03 100%);">
+        <span>عمولة الوكيل (Freelance Scheme)</span>
+        @if($sale->commission_collected)<span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 font-semibold">محصّلة</span>@else<span class="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-800 font-semibold">معلّقة</span>@endif
+    </div>
+    <div class="p-5 sm:p-6 grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm font-tajawal">
+        <div><span class="text-xs text-gray-500 block">نوع العملية</span><strong>{{ $sale->transactionTypeLabel() }}</strong></div>
+        <div><span class="text-xs text-gray-500 block">عمولة الشركة</span><strong>{{ $money($sale->company_commission_amount ?? 0) }}</strong></div>
+        <div><span class="text-xs text-gray-500 block">حصة الوكلاء</span><strong>{{ $money($commissionPreview['agent_total'] ?? 0) }}</strong></div>
+        <div><span class="text-xs text-gray-500 block">باقي الشركة</span><strong>{{ $money($commissionPreview['company_retained'] ?? 0) }}</strong></div>
+    </div>
+    @if(!empty($commissionPreview['splits']))
+    <div class="border-t divide-y">
+        @foreach($commissionPreview['splits'] as $split)
+        @php $u = \App\Models\User::find($split['user_id']); @endphp
+        <div class="px-5 py-3 flex justify-between text-sm font-tajawal">
+            <span>{{ $u?->name ?? 'وكيل' }} <span class="text-xs text-gray-400">({{ $split['agent_role'] }})</span></span>
+            <span class="font-bold">{{ $money($split['amount']) }} <span class="text-xs text-gray-500">({{ $split['percent'] }}%)</span></span>
+        </div>
+        @endforeach
+    </div>
+    @endif
+    @if(!$sale->commission_collected && auth()->user()?->hasRole(['super_admin','admin','sales_manager']))
+    <div class="p-4 border-t">
+        <form method="POST" action="{{ route('crm.pipeline.commission-collected', $sale) }}">@csrf
+            <button type="submit" class="px-4 py-2 rounded-xl text-white text-sm font-semibold font-tajawal" style="background:{{ $themeColor }}">تسجيل تحصيل عمولة الشركة</button>
+        </form>
+    </div>
+    @endif
+</div>
+@endif
 @endsection

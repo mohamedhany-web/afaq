@@ -29,11 +29,14 @@ class MarketingActivityController extends Controller
         $date = $request->filled('date') ? Carbon::parse($request->date) : now();
         $view = $request->get('view', 'week');
 
-        $base = $scope->activitiesQuery()->with(['assignee:id,name', 'campaign:id,name']);
+        $base = $scope->activitiesQuery()->with(['assignee:id,name', 'campaign:id,name', 'plan:id,title,month,year']);
 
         if ($view === 'day') {
             $start = $date->copy()->startOfDay();
             $end = $date->copy()->endOfDay();
+        } elseif ($view === 'month') {
+            $start = $date->copy()->startOfMonth();
+            $end = $date->copy()->endOfMonth();
         } else {
             $start = $date->copy()->startOfWeek();
             $end = $date->copy()->endOfWeek();
@@ -42,6 +45,7 @@ class MarketingActivityController extends Controller
         $activities = (clone $base)
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->when($request->type, fn ($q) => $q->where('type', $request->type))
+            ->when($request->marketing_plan_id, fn ($q) => $q->where('marketing_plan_id', $request->marketing_plan_id))
             ->when($request->assigned_to && $scope->isManagerScope(), fn ($q) => $q->where('assigned_to', $request->assigned_to))
             ->whereBetween('due_at', [$start, $end])
             ->orderBy('due_at')
@@ -54,12 +58,31 @@ class MarketingActivityController extends Controller
             'recurring' => (clone $base)->pending()->where('recurrence', '!=', 'none')->count(),
         ];
 
+        $monthCalendar = [];
+        if ($view === 'month') {
+            $grouped = (clone $base)
+                ->when($request->marketing_plan_id, fn ($q) => $q->where('marketing_plan_id', $request->marketing_plan_id))
+                ->when($request->assigned_to && $scope->isManagerScope(), fn ($q) => $q->where('assigned_to', $request->assigned_to))
+                ->whereBetween('due_at', [$start, $end])
+                ->with(['assignee:id,name'])
+                ->orderBy('due_at')
+                ->get()
+                ->groupBy(fn ($a) => $a->due_at?->format('j'));
+
+            for ($d = 1; $d <= $end->day; $d++) {
+                $monthCalendar[$d] = $grouped->get((string) $d, collect());
+            }
+        }
+
         return view('marketing.activities.index', [
             'activities' => $activities,
             'stats' => $stats,
             'date' => $date,
             'view' => $view,
+            'monthCalendar' => $monthCalendar,
             'assignableUsers' => $scope->isManagerScope() ? $scope->assignableUsers() : [],
+            'plans' => $scope->plansQuery()->orderByDesc('year')->orderByDesc('month')->limit(12)->get(['id', 'title', 'month', 'year']),
+            'isManager' => $scope->isManagerScope(),
         ]);
     }
 
@@ -149,6 +172,8 @@ class MarketingActivityController extends Controller
             'priorities' => config('marketing.priorities'),
             'recurrences' => config('marketing.recurrence'),
             'prefillCampaign' => $request?->get('campaign_id'),
+            'prefillPlan' => $request?->get('marketing_plan_id'),
+            'plans' => $scope->plansQuery()->orderByDesc('year')->orderByDesc('month')->get(['id', 'title', 'month', 'year']),
         ];
     }
 
@@ -161,6 +186,7 @@ class MarketingActivityController extends Controller
             'status' => 'required|in:' . implode(',', array_keys(config('marketing.activity_statuses'))),
             'priority' => 'required|in:' . implode(',', array_keys(config('marketing.priorities'))),
             'campaign_id' => 'nullable|exists:marketing_campaigns,id',
+            'marketing_plan_id' => 'nullable|exists:marketing_plans,id',
             'assigned_to' => 'nullable|exists:users,id',
             'due_at' => 'nullable|date',
             'recurrence' => 'required|in:' . implode(',', array_keys(config('marketing.recurrence'))),

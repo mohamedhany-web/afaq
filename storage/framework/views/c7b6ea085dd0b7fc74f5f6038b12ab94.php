@@ -1,7 +1,8 @@
 
 <a href="<?php echo e(route('marketing.dashboard')); ?>" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium <?php echo e(request()->routeIs('marketing.dashboard') ? 'active' : ''); ?>">لوحة التسويق</a>
 <a href="<?php echo e(route('marketing.campaigns.index')); ?>" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium <?php echo e(request()->routeIs('marketing.campaigns.*') ? 'active' : ''); ?>">الحملات</a>
-<a href="<?php echo e(route('marketing.activities.index')); ?>" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium <?php echo e(request()->routeIs('marketing.activities.*') ? 'active' : ''); ?>">الجدول الدوري</a>
+<a href="<?php echo e(route('marketing.plans.index')); ?>" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium <?php echo e(request()->routeIs('marketing.plans.*') ? 'active' : ''); ?>">خطة التسويق الشهرية</a>
+<a href="<?php echo e(route('marketing.activities.index')); ?>" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium <?php echo e(request()->routeIs('marketing.activities.*') ? 'active' : ''); ?>">مهام الفريق</a>
 <a href="<?php echo e(route('marketing.leads.index')); ?>" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium <?php echo e(request()->routeIs('marketing.leads.*') ? 'active' : ''); ?>">العملاء المحتملون</a>
 <a href="<?php echo e(route('marketing.reports.index')); ?>" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium <?php echo e(request()->routeIs('marketing.reports.*') ? 'active' : ''); ?>">التقارير الدورية</a>
 <a href="<?php echo e(route('marketing.analytics.index')); ?>" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium <?php echo e(request()->routeIs('marketing.analytics.*') ? 'active' : ''); ?>">تحليلات الأداء</a>

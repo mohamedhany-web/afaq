@@ -1,6 +1,19 @@
 @php
-    $details = $project->ownership_details ?? [];
     $type = $project->ownership_type ?? 'developer_third_party';
+    $contract = $type === 'developer_third_party' ? $project->realEstateDeveloper?->activeContract : null;
+    $details = $project->ownership_details ?? [];
+    if ($contract) {
+        $details = array_filter([
+            'contract_ref' => $contract->contract_ref,
+            'commission_percent' => $contract->commission_percent,
+            'exclusivity' => $contract->exclusivity,
+            'exclusivity_until' => optional($contract->exclusivity_until)->format('Y-m-d'),
+            'contact_person' => $contract->contact_person,
+            'contact_phone' => $contract->contact_phone,
+            'listing_terms' => $contract->listing_terms,
+            'developer_notes' => $contract->notes,
+        ], fn ($v) => $v !== null && $v !== '');
+    }
     $labels = [
         'internal_entity' => 'الجهة الداخلية',
         'acquisition_date' => 'تاريخ الاستحواذ',

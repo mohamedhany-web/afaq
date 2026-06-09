@@ -12,9 +12,11 @@ document.addEventListener('alpine:init', () => {
         loading: false,
         searchUrl: config.searchUrl,
         required: !!config.required,
+        allowCreate: config.allowCreate !== false,
         dropdownStyle: 'display: none;',
 
         get canUseNew() {
+            if (!this.allowCreate) return false;
             const term = this.query.trim();
             if (term.length < 2) return false;
             return !this.results.some(r => r.name.toLowerCase() === term.toLowerCase());

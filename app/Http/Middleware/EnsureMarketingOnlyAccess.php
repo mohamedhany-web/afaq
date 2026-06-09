@@ -27,6 +27,7 @@ class EnsureMarketingOnlyAccess
             'notifications',
             'messages',
             'attendances',
+            'leaves',
         ];
 
         $path = trim($request->path(), '/');
@@ -37,7 +38,7 @@ class EnsureMarketingOnlyAccess
             }
         }
 
-        if ($request->routeIs('logout', 'profile.*', 'verification.*', 'notifications.*', 'messages.*', 'attendances.*', 'dashboard')) {
+        if ($request->routeIs('logout', 'profile.*', 'verification.*', 'notifications.*', 'messages.*', 'attendances.*', 'leaves.*', 'dashboard')) {
             return $next($request);
         }
 

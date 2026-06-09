@@ -40,6 +40,8 @@
     $marketingLeadsCount = $isMarketing && $employee->user
         ? \App\Models\Client::where('created_by', $employee->user->id)->count()
         : 0;
+
+    $scheduleService = app(\App\Services\EmployeeScheduleService::class);
 @endphp
 
 @php
@@ -201,6 +203,30 @@
                     <dd class="{{ $fieldValue }}">{{ $employee->address }}</dd>
                 </div>
                 @endif
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+            <div class="{{ $sectionHeader }}" style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">
+                جدول الدوام والإجازات
+            </div>
+            <div class="p-5 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                <div>
+                    <dt class="{{ $fieldLabel }}">دوام يومي</dt>
+                    <dd class="{{ $fieldValue }}" dir="ltr">{{ $scheduleService->scheduleLabel($employee) }}</dd>
+                </div>
+                <div>
+                    <dt class="{{ $fieldLabel }}">ساعات العمل</dt>
+                    <dd class="{{ $fieldValue }}">{{ $scheduleService->requiredDailyHours($employee) }} ساعة</dd>
+                </div>
+                <div>
+                    <dt class="{{ $fieldLabel }}">إجازة أسبوعية</dt>
+                    <dd class="{{ $fieldValue }}">{{ $scheduleService->offDaysLabel($employee) }}</dd>
+                </div>
+                <div>
+                    <dt class="{{ $fieldLabel }}">سماح التأخير</dt>
+                    <dd class="{{ $fieldValue }}">{{ $scheduleService->lateGraceMinutes($employee) }} دقيقة</dd>
+                </div>
             </div>
         </div>
 

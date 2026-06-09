@@ -41,6 +41,7 @@ use App\Http\Controllers\ClientWebsiteIssueController;
 use App\Http\Controllers\ClientMeetingRequestController;
 use App\Http\Controllers\ClientAuthController;
 use App\Http\Controllers\Admin\ClientAccountController;
+use App\Http\Controllers\Admin\RealEstateDeveloperController;
 use App\Http\Controllers\Admin\ClientWebsiteIssueController as AdminClientWebsiteIssueController;
 use App\Http\Controllers\Admin\ClientMeetingRequestController as AdminClientMeetingRequestController;
 use App\Http\Controllers\Admin\ClientSharedDocumentController as AdminClientSharedDocumentController;
@@ -158,6 +159,8 @@ Route::prefix('client')->name('client.')->group(function () {
     Route::post('login', [ClientAuthController::class, 'login'])->name('login.submit');
     Route::post('logout', [ClientAuthController::class, 'logout'])->name('logout');
 });
+
+require __DIR__.'/developer.php';
 
 Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
     ->middleware(['auth', 'verified', 'verified.code', 'redirect.crm'])
@@ -362,6 +365,18 @@ Route::middleware(['auth', 'verified', 'verified.code', 'crm.only', 'marketing.o
         Route::get('/{clientAccount}/edit', [ClientAccountController::class, 'edit'])->name('edit')->middleware('permission:edit-clients');
         Route::put('/{clientAccount}', [ClientAccountController::class, 'update'])->name('update')->middleware('permission:edit-clients');
         Route::delete('/{clientAccount}', [ClientAccountController::class, 'destroy'])->name('destroy')->middleware('permission:delete-clients');
+    });
+
+    Route::prefix('admin/developers')->name('admin.developers.')->middleware('permission:view-developers')->group(function () {
+        Route::get('/', [RealEstateDeveloperController::class, 'index'])->name('index');
+        Route::get('/create', [RealEstateDeveloperController::class, 'create'])->name('create')->middleware('permission:manage-developers');
+        Route::post('/', [RealEstateDeveloperController::class, 'store'])->name('store')->middleware('permission:manage-developers');
+        Route::get('/{developer}', [RealEstateDeveloperController::class, 'show'])->name('show');
+        Route::get('/{developer}/edit', [RealEstateDeveloperController::class, 'edit'])->name('edit')->middleware('permission:manage-developers');
+        Route::put('/{developer}', [RealEstateDeveloperController::class, 'update'])->name('update')->middleware('permission:manage-developers');
+        Route::delete('/{developer}', [RealEstateDeveloperController::class, 'destroy'])->name('destroy')->middleware('permission:manage-developers');
+        Route::post('/{developer}/toggle-portal', [RealEstateDeveloperController::class, 'togglePortal'])->name('toggle-portal')->middleware('permission:manage-developers');
+        Route::post('/{developer}/accounts/{account}/password', [RealEstateDeveloperController::class, 'resetAccountPassword'])->name('accounts.password')->middleware('permission:manage-developers');
     });
     
     // Sales & Marketing - Sales

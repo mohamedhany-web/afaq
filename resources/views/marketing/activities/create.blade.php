@@ -18,6 +18,9 @@
         <div><label class="{{ $label }}">الأولوية</label><select name="priority" class="{{ $input }}">@foreach($priorities as $k=>$l)<option value="{{ $k }}">{{ $l }}</option>@endforeach</select></div>
         <div><label class="{{ $label }}">الحالة</label><select name="status" class="{{ $input }}">@foreach($statuses as $k=>$l)<option value="{{ $k }}">{{ $l }}</option>@endforeach</select></div>
         <div><label class="{{ $label }}">الحملة</label><select name="campaign_id" class="{{ $input }}"><option value="">—</option>@foreach($campaigns as $c)<option value="{{ $c->id }}" @selected(old('campaign_id', $prefillCampaign) == $c->id)>{{ $c->name }}</option>@endforeach</select></div>
+        @if(!empty($plans) && count($plans))
+        <div><label class="{{ $label }}">خطة الشهر</label><select name="marketing_plan_id" class="{{ $input }}"><option value="">—</option>@foreach($plans as $p)<option value="{{ $p->id }}" @selected(old('marketing_plan_id', $prefillPlan) == $p->id)>{{ $p->title }}</option>@endforeach</select></div>
+        @endif
         <div><label class="{{ $label }}">المسؤول</label><select name="assigned_to" class="{{ $input }}"><option value="">أنا</option>@foreach($assignableUsers as $u)<option value="{{ $u->id }}">{{ $u->name }}</option>@endforeach</select></div>
         <div><label class="{{ $label }}">موعد التنفيذ</label><input type="datetime-local" name="due_at" class="{{ $input }}" value="{{ old('due_at') }}"></div>
         <div><label class="{{ $label }}">التكرار الدوري</label><select name="recurrence" class="{{ $input }}">@foreach($recurrences as $k=>$l)<option value="{{ $k }}">{{ $l }}</option>@endforeach</select></div>

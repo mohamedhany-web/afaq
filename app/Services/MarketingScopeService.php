@@ -6,6 +6,7 @@ use App\Models\Client;
 use App\Models\Employee;
 use App\Models\MarketingActivity;
 use App\Models\MarketingCampaign;
+use App\Models\MarketingPlan;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -138,5 +139,29 @@ class MarketingScopeService
             ->orderBy('name')
             ->get(['id', 'name'])
             ->all();
+    }
+
+    public function plansQuery(): Builder
+    {
+        $query = MarketingPlan::query();
+
+        if ($this->isAdminScope()) {
+            return $query;
+        }
+
+        if ($this->isManagerScope()) {
+            $teamIds = $this->teamUserIds();
+
+            return $query->where(function ($q) use ($teamIds) {
+                $q->whereIn('manager_id', $teamIds)
+                    ->orWhere('created_by', $this->user->id)
+                    ->orWhereHas('activities', fn ($a) => $a->whereIn('assigned_to', $teamIds));
+            });
+        }
+
+        return $query->where(function ($q) {
+            $q->whereHas('activities', fn ($a) => $a->where('assigned_to', $this->user->id))
+                ->orWhere('status', MarketingPlan::STATUS_ACTIVE);
+        });
     }
 }

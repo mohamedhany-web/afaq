@@ -100,6 +100,7 @@ class RoleHelper
             'create-projects' => 'إنشاء مشاريع',
             'edit-projects' => 'تعديل مشاريع',
             'delete-projects' => 'حذف مشاريع',
+            'approve-project-changes' => 'الموافقة على طلبات المشاريع',
             
             // Task Management
             'view-all-tasks' => 'عرض جميع المهام',

@@ -24,6 +24,10 @@ class Employee extends Model
         'hire_date',
         'salary',
         'daily_hours',
+        'work_start_time',
+        'work_end_time',
+        'weekly_off_days',
+        'late_grace_minutes',
         'employment_type',
         'status',
     ];
@@ -32,6 +36,8 @@ class Employee extends Model
         'hire_date' => 'date',
         'salary' => 'decimal:2',
         'daily_hours' => 'decimal:1',
+        'weekly_off_days' => 'array',
+        'late_grace_minutes' => 'integer',
     ];
 
     public function user(): BelongsTo

@@ -1,4 +1,3 @@
-
 <?php $__env->startSection('page-title', 'لوحة مدير المبيعات'); ?>
 
 <?php $__env->startSection('content'); ?>

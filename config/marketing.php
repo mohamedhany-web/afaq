@@ -55,6 +55,13 @@ return [
         'monthly' => 'شهري',
     ],
 
+    'plan_statuses' => [
+        'draft' => 'مسودة',
+        'active' => 'نشطة',
+        'completed' => 'مكتملة',
+        'archived' => 'مؤرشفة',
+    ],
+
     'lead_sources' => [
         'campaign' => 'حملة تسويقية',
         'social' => 'وسائل التواصل',

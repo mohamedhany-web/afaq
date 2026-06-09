@@ -30,6 +30,27 @@
 <?php endif; ?>
 <?php endif; ?>
 
+<?php if($activePlan): ?>
+<div class="mb-6 p-5 rounded-2xl border border-gray-200 bg-white shadow-lg font-tajawal">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <p class="text-xs font-bold text-gray-500 mb-1">خطة الشهر النشطة</p>
+            <p class="font-bold text-gray-900"><?php echo e($activePlan->title); ?></p>
+            <p class="text-sm text-gray-600 mt-1"><?php echo e($activePlan->periodLabel()); ?> — <?php echo e($activePlan->completed_activities_count); ?>/<?php echo e($activePlan->activities_count); ?> مهمة مكتملة</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="<?php echo e(route('marketing.plans.show', $activePlan)); ?>" class="px-4 py-2 rounded-xl text-white text-sm font-semibold" style="background:<?php echo e($themeColor); ?>">عرض الخطة</a>
+            <a href="<?php echo e(route('marketing.activities.index', ['view' => 'month', 'marketing_plan_id' => $activePlan->id])); ?>" class="px-4 py-2 rounded-xl border text-sm font-semibold">جدول الشهر</a>
+        </div>
+    </div>
+</div>
+<?php elseif($isManager): ?>
+<div class="mb-6 p-4 rounded-xl bg-purple-50 border border-purple-200 text-sm font-tajawal">
+    لا توجد خطة تسويق نشطة لهذا الشهر.
+    <a href="<?php echo e(route('marketing.plans.create')); ?>" class="font-bold text-purple-700 mr-2">إنشاء خطة</a>
+</div>
+<?php endif; ?>
+
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
     <?php echo $__env->make('crm.partials.stat-card', ['label' => 'حملات نشطة', 'value' => $k['active_campaigns'], 'accent' => 'purple', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 4h10m-10 0a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V10a2 2 0 00-2-2" />'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
     <?php echo $__env->make('crm.partials.stat-card', ['label' => 'Leads الشهر', 'value' => $k['leads_month'], 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>

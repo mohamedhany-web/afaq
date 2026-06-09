@@ -45,6 +45,11 @@ return [
             'driver' => 'session',
             'provider' => 'client_accounts',
         ],
+
+        'developer' => [
+            'driver' => 'session',
+            'provider' => 'developer_accounts',
+        ],
     ],
 
     /*
@@ -73,6 +78,11 @@ return [
         'client_accounts' => [
             'driver' => 'eloquent',
             'model' => App\Models\ClientAccount::class,
+        ],
+
+        'developer_accounts' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\DeveloperAccount::class,
         ],
 
         // 'users' => [
@@ -110,6 +120,13 @@ return [
 
         'clients' => [
             'provider' => 'client_accounts',
+            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+
+        'developers' => [
+            'provider' => 'developer_accounts',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
             'expire' => 60,
             'throttle' => 60,

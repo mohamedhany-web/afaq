@@ -16,11 +16,14 @@ class DeveloperSearchController extends Controller
             return response()->json(['developers' => []]);
         }
 
-        $developers = RealEstateDeveloper::query()
-            ->where('name', 'like', '%' . $term . '%')
-            ->orderBy('name')
-            ->limit(25)
-            ->get(['id', 'name', 'phone', 'email']);
+        $query = RealEstateDeveloper::query()
+            ->where('name', 'like', '%' . $term . '%');
+
+        if ($request->boolean('contracted')) {
+            $query->contracted();
+        }
+
+        $developers = $query->orderBy('name')->limit(25)->get(['id', 'name', 'phone', 'email']);
 
         return response()->json([
             'developers' => $developers->map(fn (RealEstateDeveloper $d) => [

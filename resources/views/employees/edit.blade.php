@@ -130,16 +130,11 @@
 
     <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full">
         <div class="{{ $sectionHeader }}" style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">بيانات التوظيف</div>
-        <div class="p-5 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div class="p-5 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             <div>
                 <label class="{{ $label }}">الراتب (ج.م) *</label>
                 <input type="number" name="salary" value="{{ old('salary', $employee->salary) }}" required min="0" step="0.01" class="{{ $input }}">
                 @error('salary')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
-            </div>
-            <div>
-                <label class="{{ $label }}">ساعات العمل *</label>
-                <input type="number" name="daily_hours" value="{{ old('daily_hours', $employee->daily_hours ?? 8) }}" required min="1" max="12" class="{{ $input }}">
-                @error('daily_hours')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
             </div>
             <div>
                 <label class="{{ $label }}">تاريخ التوظيف</label>
@@ -155,6 +150,8 @@
             </div>
         </div>
     </div>
+
+    @include('employees.partials.work-schedule-fields', ['employee' => $employee])
 
     <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full">
         <div class="{{ $sectionHeader }}" style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">جهة اتصال الطوارئ</div>

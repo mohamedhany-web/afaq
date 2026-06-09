@@ -26,13 +26,16 @@ class RolePermissionSeeder extends Seeder
             'view-employees', 'create-employees', 'edit-employees', 'delete-employees',
             
             // إدارة المشاريع
-            'view-all-projects', 'view-own-projects', 'create-projects', 'edit-projects', 'delete-projects',
+            'view-all-projects', 'view-own-projects', 'create-projects', 'edit-projects', 'delete-projects', 'approve-project-changes',
             
             // إدارة المهام
             'view-all-tasks', 'view-own-tasks', 'create-tasks', 'edit-tasks', 'delete-tasks',
             
             // إدارة العملاء
             'view-clients', 'create-clients', 'edit-clients', 'delete-clients',
+
+            // المطورون العقاريون والتعاقدات
+            'view-developers', 'manage-developers',
             
             // إدارة المبيعات
             'view-sales', 'create-sales', 'edit-sales', 'delete-sales',
@@ -114,8 +117,9 @@ class RolePermissionSeeder extends Seeder
         $admin->syncPermissions([
             'view-users', 'create-users', 'edit-users',
             'view-employees', 'create-employees', 'edit-employees',
-            'view-all-projects', 'create-projects', 'edit-projects',
+            'view-all-projects', 'create-projects', 'edit-projects', 'delete-projects', 'approve-project-changes',
             'view-clients', 'create-clients', 'edit-clients', 'delete-clients',
+            'view-developers', 'manage-developers',
             'view-sales', 'create-sales', 'edit-sales', 'delete-sales',
             'view-finance', 'create-finance', 'edit-finance',
             'view-attendance', 'create-attendance', 'edit-attendance',
@@ -155,6 +159,7 @@ class RolePermissionSeeder extends Seeder
             'view-own-projects', 'view-own-tasks', 'edit-tasks',
             'view-clients',
             'view-bugs', 'create-bugs',
+            'view-leaves', 'create-leaves',
             'view-dashboard',
             'view-training', 'view-meetings'
         ]);
@@ -190,9 +195,10 @@ class RolePermissionSeeder extends Seeder
         $salesManagerPerms = [
             'view-clients', 'create-clients', 'edit-clients',
             'view-sales', 'create-sales', 'edit-sales',
-            'view-all-projects', 'create-projects', 'edit-projects',
+            'view-all-projects', 'create-projects', 'edit-projects', 'delete-projects',
             'view-employees',
             'view-attendance', 'create-attendance',
+            'view-leaves', 'create-leaves', 'approve-leaves',
             'view-reports', 'generate-reports', 'export-reports',
             'view-dashboard', 'view-analytics',
             'view-training', 'view-meetings',
@@ -207,8 +213,9 @@ class RolePermissionSeeder extends Seeder
         $salesRep->syncPermissions([
             'view-clients', 'create-clients', 'edit-clients',
             'view-sales', 'create-sales', 'edit-sales',
-            'view-all-projects', 'create-projects', 'edit-projects',
+            'view-all-projects', 'create-projects', 'edit-projects', 'delete-projects',
             'view-attendance', 'create-attendance',
+            'view-leaves', 'create-leaves',
             'view-dashboard',
             'view-training', 'view-meetings',
         ]);
@@ -221,9 +228,10 @@ class RolePermissionSeeder extends Seeder
             'view-clients', 'create-clients', 'edit-clients',
             'view-all-projects',
             'view-employees',
+            'view-attendance', 'create-attendance',
+            'view-leaves', 'create-leaves', 'approve-leaves',
             'view-reports', 'generate-reports', 'export-reports',
             'view-dashboard', 'view-analytics',
-            'view-attendance', 'create-attendance',
             'view-training', 'view-meetings',
         ];
 
@@ -237,6 +245,7 @@ class RolePermissionSeeder extends Seeder
                 'view-all-projects',
                 'view-dashboard',
                 'view-attendance', 'create-attendance',
+                'view-leaves', 'create-leaves',
                 'view-training', 'view-meetings',
             ]);
 

@@ -14,30 +14,20 @@
 </style>
 
 @section('content')
+@include('accounting.partials.context')
+@include('crm.partials.page-header', [
+    'title' => 'دليل الحسابات',
+    'subtitle' => 'شجرة الحسابات المحاسبية والهيكل التنظيمي',
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />',
+])
+@include('accounting.partials.nav')
+
+<div class="flex flex-wrap gap-3 mb-6 font-tajawal">
+    <button onclick="exportAccounts()" class="px-4 py-2 rounded-xl border text-sm font-semibold hover:bg-gray-50 border-gray-200 text-gray-700">تصدير</button>
+    <button onclick="openCreateAccountModal()" class="px-5 py-2.5 rounded-xl text-white text-sm font-semibold" style="background:linear-gradient(135deg,{{ $themeColor }} 0%,{{ $themeColor }}dd 100%);">إضافة حساب</button>
+</div>
+
 <div class="w-full">
-    <!-- Page Header -->
-    <div class="mb-8">
-        <div class="flex items-center justify-between mb-4">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">دليل الحسابات</h1>
-                <p class="text-gray-600">إدارة شجرة الحسابات المحاسبية والهيكل التنظيمي للحسابات</p>
-            </div>
-            <div class="flex items-center gap-3">
-                <button onclick="exportAccounts()" class="bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition-all duration-200 flex items-center shadow-sm">
-                    <svg class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    تصدير
-                </button>
-                <button onclick="openCreateAccountModal()" class="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all duration-200 flex items-center shadow-sm">
-                    <svg class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    إضافة حساب جديد
-                </button>
-            </div>
-        </div>
-    </div>
 
     <!-- Quick Stats -->
     <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
@@ -197,7 +187,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="text-sm font-bold {{ ($type === 'asset' || $type === 'expense') ? 'text-green-600' : 'text-blue-600' }}">
-                                {{ number_format($account->balance) }} <span class="text-xs text-gray-500">ج.م</span>
+                                {{ $money($account->balance) }}
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">

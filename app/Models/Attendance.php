@@ -14,6 +14,8 @@ class Attendance extends Model
         'employee_id',
         'date',
         'check_in',
+        'scheduled_check_in_at',
+        'late_minutes',
         'check_out',
         'break_start',
         'break_end',
@@ -34,6 +36,8 @@ class Attendance extends Model
     protected $casts = [
         'date' => 'date',
         'check_in' => 'datetime',
+        'scheduled_check_in_at' => 'datetime',
+        'late_minutes' => 'integer',
         'check_out' => 'datetime',
         'scheduled_checkout_at' => 'datetime',
         'auto_checkout' => 'boolean',
