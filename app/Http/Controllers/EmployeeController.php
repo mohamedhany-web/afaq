@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
+use App\Models\Sale;
 use App\Models\User;
 use App\Services\CrmEmployeeService;
 use App\Services\CrmScopeService;
@@ -258,6 +259,11 @@ class EmployeeController extends Controller
 
         $marketingOnly = $request->boolean('marketing_only') || EmployeeRoleService::isMarketingEmployee($employee);
         $roleMeta = EmployeeRoleService::resolve($employee);
+        $isMarketing = $marketingOnly || ($roleMeta['module'] ?? '') === 'marketing';
+        $salesCount = $isMarketing ? 0 : $employee->sales()->count();
+        $salesValue = $isMarketing ? 0 : Sale::sumAmount(
+            fn ($q) => $q->where('assigned_to', $employee->user_id)
+        );
 
         return view('employees.show', [
             'employee' => $employee,
@@ -265,6 +271,8 @@ class EmployeeController extends Controller
             'salesOnly' => $request->boolean('sales_only'),
             'marketingOnly' => $marketingOnly,
             'roleMeta' => $roleMeta,
+            'salesCount' => $salesCount,
+            'salesValue' => $salesValue,
             'canEdit' => $user->can('edit-employees'),
             'canDelete' => $user->can('delete-employees'),
         ]);

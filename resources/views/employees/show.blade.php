@@ -36,7 +36,10 @@
     ];
     $status = $employee->status ?? 'active';
 
-    $salesCount = $isMarketing ? 0 : $employee->sales()->count();
+    $salesCount = $salesCount ?? ($isMarketing ? 0 : $employee->sales()->count());
+    $salesValue = $salesValue ?? ($isMarketing ? 0 : \App\Models\Sale::sumAmount(
+        fn ($q) => $q->where('assigned_to', $employee->user_id)
+    ));
     $marketingLeadsCount = $isMarketing && $employee->user
         ? \App\Models\Client::where('created_by', $employee->user->id)->count()
         : 0;
@@ -292,7 +295,7 @@
                  style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">
                 <span>صفقات المبيعات</span>
                 <span class="text-xs font-semibold font-tajawal px-3 py-1 rounded-lg" style="background: {{ $themeColor }}15; color: {{ $themeColor }};">
-                    {{ number_format($salesValue) }} ج.م إجمالي
+                    {{ number_format($salesValue ?? 0) }} ج.م إجمالي
                 </span>
             </div>
             <div class="p-5 sm:p-6">
