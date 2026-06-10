@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AutoPenaltyLog;
 use App\Models\AutoPenaltyRule;
 use App\Models\Attendance;
+use App\Models\AttendanceAbsenceReview;
 use App\Models\Compensation\CompAdjustment;
 use App\Models\Compensation\CompDeductionRule;
 use App\Models\CrmFollowUp;
@@ -368,6 +369,10 @@ class AutoPenaltyService
                         continue;
                     }
 
+                    if (!$this->absencePenaltyAllowed($employee->id, $date)) {
+                        continue;
+                    }
+
                     $candidates->push([
                         'user' => $user,
                         'source_type' => 'attendance_no_start',
@@ -421,7 +426,18 @@ class AutoPenaltyService
             })
             ->filter()
             ->filter(fn ($c) => !$this->workCalendar->shouldSkipCompliancePenalty($c['user'], Carbon::parse($date)))
-            ->filter(fn ($c) => !$this->workDay->isExempt($c['user']));
+            ->filter(fn ($c) => !$this->workDay->isExempt($c['user']))
+            ->filter(fn ($c) => $this->absencePenaltyAllowed($c['user']->employee->id, Carbon::parse($date)));
+    }
+
+    protected function absencePenaltyAllowed(int $employeeId, Carbon $date): bool
+    {
+        $review = AttendanceAbsenceReview::query()
+            ->where('employee_id', $employeeId)
+            ->whereDate('review_date', $date->toDateString())
+            ->first();
+
+        return $review && $review->isConfirmedAbsent();
     }
 
     protected function kpiMonthlyCandidates(AutoPenaltyRule $rule): Collection

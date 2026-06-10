@@ -2,67 +2,87 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\Employee;
 use App\Models\Department;
+use App\Models\Employee;
+use App\Models\User;
+use App\Services\CrmEmployeeService;
+use App\Services\CrmRoleCatalogService;
+use App\Services\MarketingEmployeeService;
+use App\Services\OperationsEmployeeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Spatie\Permission\Models\Role;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
-
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with(['employee', 'roles'])->paginate(15);
-        $roles = Role::all();
-        
-        return view('users.index', compact('users', 'roles'));
+        $query = User::query()
+            ->with(['employee.department', 'roles'])
+            ->when($request->search, function ($q) use ($request) {
+                $s = '%' . $request->search . '%';
+                $q->where(function ($sub) use ($s) {
+                    $sub->where('name', 'like', $s)->orWhere('email', 'like', $s);
+                });
+            })
+            ->when($request->role, fn ($q) => $q->role($request->role))
+            ->when($request->status === 'verified', fn ($q) => $q->whereNotNull('email_verified_at'))
+            ->when($request->status === 'pending', fn ($q) => $q->whereNull('email_verified_at'))
+            ->when($request->status === 'with_employee', fn ($q) => $q->whereHas('employee'))
+            ->when($request->status === 'without_employee', fn ($q) => $q->whereDoesntHave('employee'))
+            ->latest();
+
+        $stats = [
+            'total' => User::count(),
+            'verified' => User::whereNotNull('email_verified_at')->count(),
+            'with_employee' => User::whereHas('employee')->count(),
+            'admins' => User::role(['super_admin', 'admin'])->count(),
+        ];
+
+        $users = $query->paginate(15)->withQueryString();
+        $assignableRoles = $this->assignableRolesForActor();
+
+        return view('users.index', compact('users', 'stats', 'assignableRoles'));
     }
 
     public function create()
     {
-        if (!auth()->user()->can('create-users')) {
-            abort(403, 'غير مصرح لك بإنشاء مستخدمين');
-        }
+        $this->authorizeCreate();
 
-        $roles = Role::all();
-        $departments = Department::where('is_active', true)->get();
-        
-        return view('users.create', compact('roles', 'departments'));
+        return view('users.create', [
+            'assignableRoles' => $this->assignableRolesForActor(),
+            'departments' => Department::where('is_active', true)->orderBy('name')->get(),
+        ]);
     }
 
     public function store(Request $request)
     {
-        if (!auth()->user()->can('create-users')) {
-            abort(403, 'غير مصرح لك بإنشاء مستخدمين');
-        }
+        $this->authorizeCreate();
+
+        $assignable = $this->assignableRoleNames();
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'roles' => 'required|array',
-            'roles.*' => 'exists:roles,name',
-            // Employee data
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'department_id' => 'required|exists:departments,id',
-            'position' => 'required|string|max:255',
-            'salary' => 'required|numeric|min:0',
-            'hire_date' => 'required|date',
-            'employment_type' => 'required|in:full_time,part_time,contract,intern',
+            'role' => ['required', 'string', Rule::in($assignable)],
+            'create_employee' => 'nullable|boolean',
+            'first_name' => 'required_if:create_employee,1|nullable|string|max:255',
+            'last_name' => 'required_if:create_employee,1|nullable|string|max:255',
+            'phone' => 'required_if:create_employee,1|nullable|string|max:20',
+            'department_id' => 'nullable|exists:departments,id',
+            'position' => 'nullable|string|max:255',
+            'salary' => 'nullable|numeric|min:0',
+            'hire_date' => 'nullable|date',
+            'employment_type' => 'nullable|in:full_time,part_time,contract,intern',
         ]);
 
         if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
+            return redirect()->back()->withErrors($validator)->withInput();
         }
 
         try {
-            // Create user
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -70,41 +90,39 @@ class UserController extends Controller
                 'email_verified_at' => now(),
             ]);
 
-            // Assign roles
-            $user->assignRole($request->roles);
+            CrmRoleCatalogService::assignRoleToUser($user, $request->role);
 
-            // Generate employee ID automatically
-            $employeeId = Employee::generateEmployeeIdBySettings();
-            
-            // Create employee
-            Employee::create([
-                'user_id' => $user->id,
-                'employee_id' => $employeeId,
-                'first_name' => $request->first_name,
-                'last_name' => $request->last_name,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'department_id' => $request->department_id,
-                'position' => $request->position,
-                'salary' => $request->salary,
-                'hire_date' => $request->hire_date,
-                'employment_type' => $request->employment_type,
-                'status' => 'active',
-                'daily_hours' => $request->input('daily_hours', config('work_day.default_daily_hours', 8)),
-            ]);
+            $employeeId = null;
+            if ($request->boolean('create_employee')) {
+                $departmentId = $request->department_id ?: $this->defaultDepartmentIdForRole($request->role);
 
-            // Set custom permissions
-            if ($request->has('custom_permissions')) {
-                foreach ($request->custom_permissions as $permissionKey) {
-                    $user->setCustomPermission($permissionKey, true);
-                }
+                $employee = Employee::create([
+                    'user_id' => $user->id,
+                    'employee_id' => Employee::generateEmployeeIdBySettings(),
+                    'first_name' => $request->first_name,
+                    'last_name' => $request->last_name,
+                    'email' => $request->email,
+                    'phone' => $request->phone,
+                    'department_id' => $departmentId,
+                    'position' => $request->position ?: CrmRoleCatalogService::roleLabel($request->role),
+                    'salary' => $request->salary ?? 0,
+                    'hire_date' => $request->hire_date ?? now()->toDateString(),
+                    'employment_type' => $request->employment_type ?? 'full_time',
+                    'status' => 'active',
+                    'daily_hours' => config('work_day.default_daily_hours', 8),
+                    'reports_to_user_id' => app(\App\Services\OrganizationalHierarchyService::class)
+                        ->defaultReportsToUserId(Department::find($departmentId)?->code),
+                ]);
+                $employeeId = $employee->employee_id;
             }
 
-            return redirect()->route('users.index')
-                ->with('success', "تم إنشاء المستخدم بنجاح. الرقم التوظيفي: $employeeId");
+            $message = 'تم إنشاء المستخدم بنجاح';
+            if ($employeeId) {
+                $message .= " — الرقم التوظيفي: {$employeeId}";
+            }
 
-        } catch (\Exception $e) {
-            // If employee creation fails, delete the user
+            return redirect()->route('users.index')->with('success', $message);
+        } catch (\Throwable $e) {
             if (isset($user)) {
                 $user->delete();
             }
@@ -118,43 +136,49 @@ class UserController extends Controller
     public function show(User $user)
     {
         $user->load(['employee.department', 'roles']);
-        
-        return view('users.show', compact('user'));
+
+        $displayRole = CrmRoleCatalogService::resolveUserDisplayRole($user);
+
+        return view('users.show', [
+            'user' => $user,
+            'displayRole' => $displayRole,
+        ]);
     }
 
     public function edit(User $user)
     {
         if (!auth()->user()->can('edit-users')) {
-            abort(403, 'غير مصرح لك بتعديل المستخدمين');
+            abort(403);
         }
 
-        $roles = Role::all();
-        $departments = Department::where('is_active', true)->get();
-        $user->load(['employee', 'roles']);
-        
-        return view('users.edit', compact('user', 'roles', 'departments'));
+        $user->load(['employee.department', 'roles']);
+
+        return view('users.edit', [
+            'user' => $user,
+            'assignableRoles' => $this->assignableRolesForActor(),
+            'departments' => Department::where('is_active', true)->orderBy('name')->get(),
+            'currentRole' => CrmRoleCatalogService::resolveUserDisplayRole($user),
+        ]);
     }
 
     public function update(Request $request, User $user)
     {
         if (!auth()->user()->can('edit-users')) {
-            abort(403, 'غير مصرح لك بتعديل المستخدمين');
+            abort(403);
         }
+
+        $assignable = $this->assignableRoleNames();
+
         $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'roles' => 'required|array',
-            'roles.*' => 'exists:roles,name',
-            'custom_permissions' => 'nullable|array',
-            'custom_permissions.*' => 'string',
+            'role' => ['required', 'string', Rule::in($assignable)],
         ];
 
-        // Add password validation only if password is provided
         if ($request->filled('password')) {
             $rules['password'] = 'required|string|min:8|confirmed';
         }
 
-        // Add employee data validation only if employee exists
         if ($user->employee) {
             $rules = array_merge($rules, [
                 'first_name' => 'required|string|max:255',
@@ -171,28 +195,25 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
+            return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        // Update user basic data
+        if ($user->hasRole('super_admin') && $request->role !== 'super_admin' && !auth()->user()->hasRole('super_admin')) {
+            return redirect()->back()->with('error', 'لا يمكن تغيير دور مدير النظام الأعلى.');
+        }
+
         $userData = [
             'name' => $request->name,
             'email' => $request->email,
         ];
 
-        // Update password if provided
         if ($request->filled('password')) {
             $userData['password'] = Hash::make($request->password);
         }
 
         $user->update($userData);
+        CrmRoleCatalogService::assignRoleToUser($user, $request->role);
 
-        // Sync roles
-        $user->syncRoles($request->roles);
-
-        // Update employee data if exists
         if ($user->employee) {
             $user->employee->update([
                 'first_name' => $request->first_name,
@@ -207,63 +228,60 @@ class UserController extends Controller
             ]);
         }
 
-        // Clear existing custom permissions and set new ones
-        \App\Models\UserPermission::where('user_id', $user->id)->delete();
-        
-        if ($request->has('custom_permissions')) {
-            foreach ($request->custom_permissions as $permissionKey) {
-                $user->setCustomPermission($permissionKey, true);
-            }
-        }
-
-        return redirect()->route('users.index')
-            ->with('success', 'تم تحديث المستخدم بنجاح');
+        return redirect()->route('users.index')->with('success', 'تم تحديث المستخدم بنجاح');
     }
 
     public function destroy(User $user)
     {
         if (!auth()->user()->can('delete-users')) {
-            abort(403, 'غير مصرح لك بحذف المستخدمين');
+            abort(403);
         }
 
         if ($user->hasRole('super_admin')) {
-            return redirect()->back()
-                ->with('error', 'لا يمكن حذف مدير النظام الأعلى');
+            return redirect()->back()->with('error', 'لا يمكن حذف مدير النظام الأعلى');
+        }
+
+        if ((int) $user->id === (int) auth()->id()) {
+            return redirect()->back()->with('error', 'لا يمكنك حذف حسابك الحالي');
         }
 
         $user->delete();
 
-        return redirect()->route('users.index')
-            ->with('success', 'تم حذف المستخدم بنجاح');
+        return redirect()->route('users.index')->with('success', 'تم حذف المستخدم بنجاح');
     }
 
-    public function assignRole(Request $request, User $user)
+    protected function authorizeCreate(): void
     {
-        $request->validate([
-            'role' => 'required|exists:roles,name'
-        ]);
-
-        if (!$user->hasRole($request->role)) {
-            $user->assignRole($request->role);
-            
-            return redirect()->back()
-                ->with('success', 'تم تعيين الدور بنجاح');
+        if (!auth()->user()->can('create-users')) {
+            abort(403, 'غير مصرح لك بإنشاء مستخدمين');
         }
-
-        return redirect()->back()
-            ->with('warning', 'المستخدم لديه هذا الدور بالفعل');
     }
 
-    public function removeRole(User $user, Role $role)
+    /** @return list<string> */
+    protected function assignableRoleNames(): array
     {
-        if ($role->name === 'super_admin') {
-            return redirect()->back()
-                ->with('error', 'لا يمكن إزالة دور مدير النظام الأعلى');
+        $roles = config('crm_roles.assignable_roles', []);
+
+        if (!auth()->user()->hasRole('super_admin')) {
+            $roles = array_values(array_diff($roles, ['super_admin']));
         }
 
-        $user->removeRole($role);
+        return $roles;
+    }
 
-        return redirect()->back()
-            ->with('success', 'تم إزالة الدور بنجاح');
+    protected function assignableRolesForActor()
+    {
+        return CrmRoleCatalogService::assignableRoles()
+            ->filter(fn ($role) => in_array($role->name, $this->assignableRoleNames(), true));
+    }
+
+    protected function defaultDepartmentIdForRole(string $role): int
+    {
+        return match ($role) {
+            'sales_manager', 'sales_team_leader', 'sales_rep' => CrmEmployeeService::salesDepartment()->id,
+            'marketing_manager', 'marketing_rep' => MarketingEmployeeService::marketingDepartment()->id,
+            'operation_manager' => OperationsEmployeeService::operationsDepartment()->id,
+            default => CrmEmployeeService::salesDepartment()->id,
+        };
     }
 }

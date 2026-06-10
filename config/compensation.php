@@ -10,11 +10,13 @@ return [
         'quarterly' => 'ربع سنوي',
     ],
 
-    'target_roles' => ['rep', 'manager'],
+    'target_roles' => ['rep', 'team_leader', 'manager', 'operation_manager'],
 
     'target_role_labels' => [
         'rep' => 'مندوب مبيعات',
+        'team_leader' => 'قائد فريق مبيعات',
         'manager' => 'مدير مبيعات',
+        'operation_manager' => 'مدير عمليات',
     ],
 
     'commission_models' => [
@@ -84,5 +86,62 @@ return [
         ['slug' => 'follow_up_compliance', 'weight' => 15, 'target_value' => 85],
         ['slug' => 'team_productivity', 'weight' => 10, 'target_value' => 100],
         ['slug' => 'team_retention', 'weight' => 5, 'target_value' => 95],
+    ],
+
+    'team_leader_kpi_slugs' => [
+        'team_revenue' => 'إيراد الفريق',
+        'team_target_achievement' => 'تحقيق التارجت %',
+        'team_closing_rate' => 'معدل إغلاق الفريق %',
+        'follow_up_compliance' => 'التزام المتابعات %',
+        'lead_leakage_rate' => 'العملاء المفقودون %',
+        'team_attendance_rate' => 'التزام الحضور %',
+        'crm_compliance' => 'التزام CRM %',
+        'pipeline_accuracy' => 'دقة Pipeline %',
+        'closed_deals' => 'صفقات مغلقة',
+        'reservation_value' => 'قيمة الحجوزات',
+        'team_productivity' => 'إنتاجية الفريق',
+        'training_completion_rate' => 'اكتمال التدريب %',
+    ],
+
+    'team_leader_kpi_defaults' => [
+        ['slug' => 'team_revenue', 'weight' => 20, 'target_value' => 3000000],
+        ['slug' => 'team_target_achievement', 'weight' => 20, 'target_value' => 100],
+        ['slug' => 'team_closing_rate', 'weight' => 15, 'target_value' => 30],
+        ['slug' => 'follow_up_compliance', 'weight' => 15, 'target_value' => 95],
+        ['slug' => 'lead_leakage_rate', 'weight' => 10, 'target_value' => 2],
+        ['slug' => 'crm_compliance', 'weight' => 10, 'target_value' => 95],
+        ['slug' => 'pipeline_accuracy', 'weight' => 5, 'target_value' => 95],
+        ['slug' => 'team_attendance_rate', 'weight' => 5, 'target_value' => 95],
+    ],
+
+    'operation_manager_kpi_slugs' => [
+        'contact_rate' => 'نسبة التواصل %',
+        'lead_distribution_time' => 'زمن توزيع العميل (د)',
+        'lead_leakage_rate' => 'نسبة العملاء المفقودين %',
+        'crm_compliance_rate' => 'التزام CRM %',
+        'pipeline_update_rate' => 'تحديث Pipeline %',
+        'lead_to_meeting_conversion' => 'تحويل لمعاينة %',
+        'reservation_to_contract_conversion' => 'تحويل لتعاقد %',
+        'inventory_accuracy' => 'دقة المخزون %',
+        'follow_up_compliance' => 'التزام المتابعات %',
+        'report_delivery_time' => 'التزام التقارير %',
+        'projects_on_track_pct' => 'مشاريع على المسار %',
+        'team_attendance_pct' => 'حضور الفريق %',
+        'operational_efficiency' => 'كفاءة تشغيلية %',
+    ],
+
+    'operation_manager_kpi_defaults' => [
+        ['slug' => 'contact_rate', 'weight' => 10, 'target_value' => 100],
+        ['slug' => 'lead_distribution_time', 'weight' => 8, 'target_value' => 100],
+        ['slug' => 'lead_leakage_rate', 'weight' => 8, 'target_value' => 100],
+        ['slug' => 'crm_compliance_rate', 'weight' => 10, 'target_value' => 100],
+        ['slug' => 'pipeline_update_rate', 'weight' => 8, 'target_value' => 100],
+        ['slug' => 'lead_to_meeting_conversion', 'weight' => 10, 'target_value' => 100],
+        ['slug' => 'reservation_to_contract_conversion', 'weight' => 10, 'target_value' => 100],
+        ['slug' => 'inventory_accuracy', 'weight' => 8, 'target_value' => 100],
+        ['slug' => 'follow_up_compliance', 'weight' => 8, 'target_value' => 100],
+        ['slug' => 'report_delivery_time', 'weight' => 8, 'target_value' => 100],
+        ['slug' => 'projects_on_track_pct', 'weight' => 6, 'target_value' => 100],
+        ['slug' => 'team_attendance_pct', 'weight' => 6, 'target_value' => 100],
     ],
 ];

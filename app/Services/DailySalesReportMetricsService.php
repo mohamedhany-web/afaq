@@ -172,16 +172,6 @@ class DailySalesReportMetricsService
 
     protected function clientsForUser(User $user): Builder
     {
-        $employeeId = $user->employee?->id;
-
-        return Client::query()->where(function ($q) use ($user, $employeeId) {
-            $q->where('created_by', $user->id);
-
-            if ($employeeId) {
-                $q->orWhere('assigned_to', $employeeId);
-            }
-
-            $q->orWhereHas('sales', fn ($s) => $s->where('assigned_to', $user->id));
-        });
+        return CrmScopeService::for($user)->clientsQuery();
     }
 }

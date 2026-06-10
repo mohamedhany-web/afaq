@@ -200,7 +200,8 @@ class CrmFollowUpService
 
         if ($scope->hasFullAccess()) {
             return User::role(array_merge(
-                CrmEmployeeService::LEGACY_MANAGER_ROLES,
+                CrmEmployeeService::LEGACY_DEPARTMENT_HEAD_ROLES,
+                CrmEmployeeService::LEGACY_TEAM_LEADER_ROLES,
                 CrmEmployeeService::LEGACY_EMPLOYEE_ROLES
             ))->orderBy('name')->get()->all();
         }

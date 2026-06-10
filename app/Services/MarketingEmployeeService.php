@@ -44,8 +44,10 @@ class MarketingEmployeeService
         $strip = array_merge(
             self::LEGACY_MANAGER_ROLES,
             self::LEGACY_REP_ROLES,
-            CrmEmployeeService::LEGACY_MANAGER_ROLES,
+            CrmEmployeeService::LEGACY_DEPARTMENT_HEAD_ROLES,
+            CrmEmployeeService::LEGACY_TEAM_LEADER_ROLES,
             CrmEmployeeService::LEGACY_EMPLOYEE_ROLES,
+            OperationsEmployeeService::LEGACY_MANAGER_ROLES,
             ['manager', 'employee'],
         );
 

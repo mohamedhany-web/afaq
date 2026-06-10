@@ -21,7 +21,7 @@ class CompPayrollPeriod extends Model
         return $this->hasMany(CompPayrollRun::class, 'period_id');
     }
 
-    public function label(): string
+    public function getLabelAttribute(): string
     {
         return sprintf('%04d-%02d', $this->year, $this->month);
     }

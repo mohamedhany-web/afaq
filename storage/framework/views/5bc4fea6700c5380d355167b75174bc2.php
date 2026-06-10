@@ -1,0 +1,374 @@
+<?php $__env->startSection('page-title', 'الحضور والانصراف'); ?>
+
+<?php $__env->startSection('content'); ?>
+<?php
+    $themeColor = \App\Helpers\SettingsHelper::getThemeColor();
+    $dateValue = $selectedDate->toDateString();
+?>
+
+<?php echo $__env->make('crm.partials.page-header', [
+    'title' => 'الحضور والانصراف',
+    'subtitle' => $isToday
+        ? 'متابعة يومية كاملة — ' . $selectedDate->translatedFormat('l j F Y')
+        : 'سجل يوم ' . $selectedDate->translatedFormat('l j F Y'),
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+
+
+<?php if(($canClockIn ?? false) && $isToday): ?>
+<div class="mb-6 flex flex-wrap items-center justify-between gap-4 font-tajawal">
+    <div>
+        <?php if(!$todayAttendance || !$todayAttendance->check_in): ?>
+        <button id="startDayBtn" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold shadow-md hover:shadow-lg transition-all" style="background:linear-gradient(135deg,#16a34a,#15803d)">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            بدء يوم العمل
+        </button>
+        <?php elseif(!$todayAttendance->check_out): ?>
+        <div class="relative" id="timerControlDropdown">
+            <button id="timerControlBtn" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold shadow-md" style="background:linear-gradient(135deg,<?php echo e($themeColor); ?>,<?php echo e($themeColor); ?>dd)">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span id="timerControlText">إدارة اليوم</span>
+            </button>
+            <div id="timerControlMenu" class="hidden absolute top-full right-0 mt-2 w-52 bg-white rounded-xl shadow-xl border z-50 py-2">
+                <button id="startBreakBtn" class="w-full text-right px-4 py-3 text-sm hover:bg-gray-50 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-amber-500"></span> بدء الاستراحة
+                </button>
+                <button id="endBreakBtn" class="hidden w-full text-right px-4 py-3 text-sm hover:bg-gray-50 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span> انتهاء الاستراحة
+                </button>
+                <hr class="my-1">
+                <button id="checkOutBtn" class="w-full text-right px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-red-500"></span> إنهاء يوم العمل
+                </button>
+            </div>
+        </div>
+        <?php else: ?>
+        <div class="px-5 py-3 rounded-xl bg-green-50 border border-green-200 text-green-800 font-bold">
+            اكتمل يومك — <?php echo e($todayAttendance->total_hours); ?> ساعة
+        </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<?php if($todayAttendance && $todayAttendance->check_in && !$todayAttendance->check_out): ?>
+<div class="mb-6 bg-white rounded-2xl border p-5 sm:p-6 font-tajawal" id="workTimeCard">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h3 class="font-bold text-gray-900 mb-1">وقت العمل الحالي</h3>
+            <p class="text-sm text-gray-500">بدأت في <?php echo e($todayAttendance->check_in->format('H:i')); ?></p>
+            <div id="breakStatus" class="hidden mt-2 text-sm text-amber-700 font-semibold">في الاستراحة منذ: <span id="breakStartTime"></span></div>
+        </div>
+        <div class="text-center">
+            <div id="workTimer" class="text-4xl font-bold tabular-nums" style="color:<?php echo e($themeColor); ?>">00:00:00</div>
+            <p class="text-xs text-gray-500 mt-1">ساعات العمل الفعلية</p>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+<?php endif; ?>
+
+
+<div class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-6">
+    <?php echo $__env->make('crm.partials.stat-card', ['label' => 'إجمالي الموظفين', 'value' => $stats['total_employees'], 'accent' => 'theme', 'compact' => true], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+    <?php echo $__env->make('crm.partials.stat-card', ['label' => 'حاضرون / سجّلوا', 'value' => $stats['present_today'], 'accent' => 'green', 'compact' => true], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+    <?php echo $__env->make('crm.partials.stat-card', ['label' => 'غائبون', 'value' => $stats['absent_today'], 'accent' => 'red', 'compact' => true], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+    <?php echo $__env->make('crm.partials.stat-card', ['label' => 'متأخرون', 'value' => $stats['late_today'], 'accent' => 'amber', 'compact' => true], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+    <?php if($isToday): ?>
+    <?php echo $__env->make('crm.partials.stat-card', ['label' => 'يعملون الآن', 'value' => $stats['working_now'], 'accent' => 'blue', 'compact' => true], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+    <?php endif; ?>
+    <?php echo $__env->make('crm.partials.stat-card', ['label' => 'معدل الحضور', 'value' => $stats['attendance_rate'] . '%', 'accent' => 'purple', 'compact' => true], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+</div>
+
+
+<?php if($canViewRoster): ?>
+<div class="bg-white rounded-2xl border p-4 sm:p-5 mb-6 font-tajawal">
+    <form method="GET" class="flex flex-wrap gap-3 items-end">
+        <div>
+            <label class="block text-xs font-bold text-gray-500 mb-1">التاريخ</label>
+            <input type="date" name="date" value="<?php echo e($dateValue); ?>" class="border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm">
+        </div>
+        <?php if($canViewAll && $departments->isNotEmpty()): ?>
+        <div class="w-full sm:w-44">
+            <label class="block text-xs font-bold text-gray-500 mb-1">القسم</label>
+            <select name="department_id" class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm">
+                <option value="">كل الأقسام</option>
+                <?php $__currentLoopData = $departments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $dept): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <option value="<?php echo e($dept->id); ?>" <?php if(request('department_id') == $dept->id): echo 'selected'; endif; ?>><?php echo e($dept->name); ?></option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </select>
+        </div>
+        <?php endif; ?>
+        <?php if($employeesList->count() > 1): ?>
+        <div class="w-full sm:w-48">
+            <label class="block text-xs font-bold text-gray-500 mb-1">الموظف</label>
+            <select name="employee_id" class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm">
+                <option value="">الكل</option>
+                <?php $__currentLoopData = $employeesList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $emp): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <option value="<?php echo e($emp->id); ?>" <?php if(request('employee_id') == $emp->id): echo 'selected'; endif; ?>><?php echo e($emp->first_name); ?> <?php echo e($emp->last_name); ?></option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </select>
+        </div>
+        <?php endif; ?>
+        <div class="w-full sm:w-40">
+            <label class="block text-xs font-bold text-gray-500 mb-1">الحالة</label>
+            <select name="status" class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm">
+                <option value="">الكل</option>
+                <option value="present" <?php if(request('status') === 'present'): echo 'selected'; endif; ?>>مكتمل</option>
+                <option value="working" <?php if(request('status') === 'working'): echo 'selected'; endif; ?>>يعمل الآن</option>
+                <option value="on_break" <?php if(request('status') === 'on_break'): echo 'selected'; endif; ?>>في استراحة</option>
+                <option value="late" <?php if(request('status') === 'late'): echo 'selected'; endif; ?>>متأخر</option>
+                <option value="absent" <?php if(request('status') === 'absent'): echo 'selected'; endif; ?>>غائب</option>
+                <option value="on_leave" <?php if(request('status') === 'on_leave'): echo 'selected'; endif; ?>>في إجازة</option>
+                <option value="off_day" <?php if(request('status') === 'off_day'): echo 'selected'; endif; ?>>إجازة أسبوعية</option>
+                <option value="half_day" <?php if(request('status') === 'half_day'): echo 'selected'; endif; ?>>ناقص</option>
+            </select>
+        </div>
+        <button type="submit" class="px-5 py-2.5 rounded-xl text-white text-sm font-bold" style="background:<?php echo e($themeColor); ?>">عرض</button>
+        <?php if(request()->hasAny(['department_id','employee_id','status']) || request('date') !== now()->toDateString()): ?>
+        <a href="<?php echo e(route('attendances.index')); ?>" class="px-5 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 text-sm font-bold">اليوم</a>
+        <?php endif; ?>
+    </form>
+</div>
+<?php endif; ?>
+
+
+<div class="bg-white rounded-2xl shadow-lg border overflow-hidden mb-6 font-tajawal">
+    <div class="px-5 py-4 border-b flex flex-wrap items-center justify-between gap-2">
+        <h2 class="font-bold text-gray-900">
+            <?php if($scopeMode === 'self'): ?>
+                حضوري — <?php echo e($selectedDate->format('Y/m/d')); ?>
+
+            <?php else: ?>
+                سجل الحضور اليومي — <?php echo e($roster->count()); ?> موظف
+            <?php endif; ?>
+        </h2>
+        <?php if($stats['on_leave'] > 0 || $stats['off_day'] > 0): ?>
+        <p class="text-xs text-gray-500">
+            <?php if($stats['on_leave'] > 0): ?><?php echo e($stats['on_leave']); ?> في إجازة <?php endif; ?>
+            <?php if($stats['off_day'] > 0): ?> · <?php echo e($stats['off_day']); ?> إجازة أسبوعية <?php endif; ?>
+        </p>
+        <?php endif; ?>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[1000px]">
+            <thead class="bg-gray-50 border-b">
+                <tr>
+                    <th class="p-3 text-right font-bold">الموظف</th>
+                    <th class="p-3 text-right font-bold">القسم</th>
+                    <th class="p-3 text-right font-bold">الدوام المقرر</th>
+                    <th class="p-3 text-right font-bold">الحضور</th>
+                    <th class="p-3 text-right font-bold">الانصراف</th>
+                    <th class="p-3 text-right font-bold">الاستراحة</th>
+                    <th class="p-3 text-right font-bold">الساعات</th>
+                    <th class="p-3 text-right font-bold">الحالة</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+            <?php $__empty_1 = true; $__currentLoopData = $roster; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+            <?php
+                $emp = $row['employee'];
+                $att = $row['attendance'];
+                $fullName = trim($emp->first_name . ' ' . $emp->last_name);
+            ?>
+            <tr class="hover:bg-gray-50/80">
+                <td class="p-3">
+                    <p class="font-semibold text-gray-900"><?php echo e($fullName); ?></p>
+                    <p class="text-xs text-gray-500"><?php echo e($emp->position); ?></p>
+                </td>
+                <td class="p-3 text-xs text-gray-600"><?php echo e($emp->department?->name ?? '—'); ?></td>
+                <td class="p-3 text-xs font-mono" dir="ltr"><?php echo e($row['scheduled_in']); ?> — <?php echo e($row['scheduled_out']); ?></td>
+                <td class="p-3">
+                    <?php if($att?->check_in): ?>
+                    <span class="font-mono font-semibold" dir="ltr"><?php echo e($att->check_in->format('H:i')); ?></span>
+                    <?php if($row['is_late']): ?>
+                    <span class="block text-xs text-orange-600">+<?php echo e($row['late_minutes']); ?> د</span>
+                    <?php endif; ?>
+                    <?php else: ?>
+                    <span class="text-gray-400">—</span>
+                    <?php endif; ?>
+                </td>
+                <td class="p-3">
+                    <?php if($att?->check_out): ?>
+                    <span class="font-mono font-semibold" dir="ltr"><?php echo e($att->check_out->format('H:i')); ?></span>
+                    <?php if($row['is_early']): ?>
+                    <span class="block text-xs text-red-600">مبكر</span>
+                    <?php endif; ?>
+                    <?php elseif($att?->check_in): ?>
+                    <span class="text-xs text-blue-600 font-semibold">لم ينصرف</span>
+                    <?php else: ?>
+                    <span class="text-gray-400">—</span>
+                    <?php endif; ?>
+                </td>
+                <td class="p-3 text-xs text-gray-600">
+                    <?php if($att?->break_duration_minutes): ?>
+                    <?php echo e($att->break_duration_minutes); ?> د
+                    <?php elseif($att?->current_status === 'on_break'): ?>
+                    <span class="text-amber-600 font-semibold">جارية</span>
+                    <?php else: ?>
+                    —
+                    <?php endif; ?>
+                </td>
+                <td class="p-3">
+                    <?php if($att?->total_hours): ?>
+                    <span class="font-bold"><?php echo e($att->total_hours); ?>h</span>
+                    <?php elseif($att?->check_in && !$att->check_out): ?>
+                    <span class="text-xs text-blue-600">جاري</span>
+                    <?php else: ?>
+                    <span class="text-gray-400">—</span>
+                    <?php endif; ?>
+                </td>
+                <td class="p-3">
+                    <?php echo $__env->make('attendances.partials.status-badge', ['label' => $row['status_label'], 'color' => $row['status_color']], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+                </td>
+            </tr>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+            <tr>
+                <td colspan="8" class="p-12 text-center text-gray-500">لا توجد سجلات للعرض</td>
+            </tr>
+            <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+<?php if($employee && $personalHistory->isNotEmpty()): ?>
+<div class="bg-white rounded-2xl border overflow-hidden font-tajawal">
+    <div class="px-5 py-4 border-b font-bold text-gray-900">سجلي الشخصي — آخر <?php echo e($personalHistory->count()); ?> يوم</div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="p-3 text-right">التاريخ</th>
+                    <th class="p-3 text-right">الحضور</th>
+                    <th class="p-3 text-right">الانصراف</th>
+                    <th class="p-3 text-right">الساعات</th>
+                    <th class="p-3 text-right">الحالة</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+            <?php $__currentLoopData = $personalHistory; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $att): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <tr>
+                <td class="p-3"><?php echo e($att->date->format('Y/m/d')); ?></td>
+                <td class="p-3 font-mono" dir="ltr"><?php echo e($att->check_in?->format('H:i') ?? '—'); ?></td>
+                <td class="p-3 font-mono" dir="ltr"><?php echo e($att->check_out?->format('H:i') ?? '—'); ?></td>
+                <td class="p-3"><?php echo e($att->total_hours ? $att->total_hours . 'h' : '—'); ?></td>
+                <td class="p-3">
+                    <?php
+                        $statusMap = ['present'=>'مكتمل','late'=>'متأخر','half_day'=>'ناقص','absent'=>'غائب'];
+                        $statusColors = ['present'=>'green','late'=>'orange','half_day'=>'red','absent'=>'gray'];
+                    ?>
+                    <?php echo $__env->make('attendances.partials.status-badge', [
+                        'label' => $statusMap[$att->status] ?? $att->status,
+                        'color' => $statusColors[$att->status] ?? 'gray',
+                    ], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+                </td>
+            </tr>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+<?php endif; ?>
+
+<?php if(($canClockIn ?? false) && $isToday): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const startDayBtn = document.getElementById('startDayBtn');
+    if (startDayBtn) startDayBtn.addEventListener('click', e => { e.preventDefault(); checkIn(); });
+
+    const timerControlBtn = document.getElementById('timerControlBtn');
+    const timerControlMenu = document.getElementById('timerControlMenu');
+    if (timerControlBtn && timerControlMenu) {
+        timerControlBtn.addEventListener('click', e => { e.stopPropagation(); timerControlMenu.classList.toggle('hidden'); });
+        document.addEventListener('click', () => timerControlMenu.classList.add('hidden'));
+    }
+
+    document.getElementById('checkOutBtn')?.addEventListener('click', checkOut);
+    document.getElementById('startBreakBtn')?.addEventListener('click', startBreak);
+    document.getElementById('endBreakBtn')?.addEventListener('click', endBreak);
+
+    const workTimer = document.getElementById('workTimer');
+    if (workTimer) startWorkTimer();
+
+    function csrfHeaders() {
+        const token = document.querySelector('meta[name="csrf-token"]');
+        return {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': token?.getAttribute('content'),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+        };
+    }
+
+    function checkIn() {
+        fetch('<?php echo e(route("attendances.check-in")); ?>', { method: 'POST', headers: csrfHeaders() })
+            .then(r => r.json()).then(data => {
+                if (data?.success) { notify(data.message, 'success'); setTimeout(() => location.reload(), 800); }
+                else notify(data?.error || 'خطأ', 'error');
+            }).catch(() => notify('خطأ في تسجيل الحضور', 'error'));
+    }
+
+    function checkOut() {
+        fetch('<?php echo e(route("attendances.check-out")); ?>', { method: 'POST', headers: csrfHeaders() })
+            .then(r => r.json()).then(data => {
+                if (data?.success) { notify(data.message, 'success'); setTimeout(() => location.reload(), 800); }
+                else notify(data?.error || 'خطأ', 'error');
+            }).catch(() => notify('خطأ في الانصراف', 'error'));
+    }
+
+    function startBreak() {
+        fetch('<?php echo e(route("attendances.start-break")); ?>', { method: 'POST', headers: csrfHeaders() })
+            .then(r => r.json()).then(data => {
+                if (data?.success) { notify(data.message, 'success'); updateBreakUI(true, data.break_start_time); }
+                else notify(data?.error || 'خطأ', 'error');
+            });
+    }
+
+    function endBreak() {
+        fetch('<?php echo e(route("attendances.end-break")); ?>', { method: 'POST', headers: csrfHeaders() })
+            .then(r => r.json()).then(data => {
+                if (data?.success) { notify(data.message, 'success'); updateBreakUI(false); }
+                else notify(data?.error || 'خطأ', 'error');
+            });
+    }
+
+    function updateBreakUI(onBreak, breakStart = null) {
+        document.getElementById('breakStatus')?.classList.toggle('hidden', !onBreak);
+        document.getElementById('startBreakBtn')?.classList.toggle('hidden', onBreak);
+        document.getElementById('endBreakBtn')?.classList.toggle('hidden', !onBreak);
+        document.getElementById('timerControlText').textContent = onBreak ? 'في الاستراحة' : 'إدارة اليوم';
+        if (breakStart) document.getElementById('breakStartTime').textContent = breakStart;
+    }
+
+    let workTimerInterval = null;
+    function startWorkTimer() {
+        if (workTimerInterval) clearInterval(workTimerInterval);
+        function tick() {
+            fetch('<?php echo e(route("attendances.current-work-time")); ?>')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.work_time) workTimer.textContent = data.work_time;
+                    if (data.current_status === 'on_break') updateBreakUI(true, data.break_start_time);
+                    else if (data.current_status === 'working') updateBreakUI(false);
+                    if (data.current_status === 'completed' && workTimerInterval) clearInterval(workTimerInterval);
+                });
+        }
+        tick();
+        workTimerInterval = setInterval(tick, 1000);
+    }
+
+    function notify(message, type) {
+        const colors = { success: 'bg-green-600', error: 'bg-red-600', info: 'bg-blue-600' };
+        const el = document.createElement('div');
+        el.className = `fixed top-4 left-4 ${colors[type] || colors.info} text-white px-5 py-3 rounded-xl shadow-lg z-50 text-sm font-bold`;
+        el.textContent = message;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 3000);
+    }
+});
+</script>
+<?php endif; ?>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\afaq\resources\views/attendances/index.blade.php ENDPATH**/ ?>

@@ -10,6 +10,7 @@ use App\Models\Compensation\CompKpiItem;
 use App\Models\Compensation\CompKpiTemplate;
 use App\Models\User;
 use App\Services\CrmEmployeeService;
+use App\Services\OperationsEmployeeService;
 use Illuminate\Database\Seeder;
 
 class CompensationModuleSeeder extends Seeder
@@ -61,6 +62,50 @@ class CompensationModuleSeeder extends Seeder
         ];
 
         $this->seedItems($mgrTemplate, $mgrItems);
+
+        $tlTemplate = CompKpiTemplate::firstOrCreate(
+            ['name' => 'KPI قائد فريق مبيعات — شهري'],
+            [
+                'description' => 'مؤشرات أداء قائد فريق المبيعات — إيراد، تحويل، متابعات، CRM',
+                'target_role' => 'team_leader',
+                'evaluation_period' => 'monthly',
+                'is_active' => true,
+            ],
+        );
+
+        $tlItems = array_map(
+            fn ($item) => [
+                'slug' => $item['slug'],
+                'name' => config('compensation.team_leader_kpi_slugs.' . $item['slug'], $item['slug']),
+                'weight' => $item['weight'],
+                'target' => $item['target_value'],
+            ],
+            config('compensation.team_leader_kpi_defaults', []),
+        );
+
+        $this->seedItems($tlTemplate, $tlItems);
+
+        $opsTemplate = CompKpiTemplate::firstOrCreate(
+            ['name' => 'KPI مدير عمليات — شهري'],
+            [
+                'description' => 'مؤشرات أداء مدير العمليات — leads، CRM، مخزون، فريق، تقارير',
+                'target_role' => 'operation_manager',
+                'evaluation_period' => 'monthly',
+                'is_active' => true,
+            ],
+        );
+
+        $opsItems = array_map(
+            fn ($item) => [
+                'slug' => $item['slug'],
+                'name' => config('compensation.operation_manager_kpi_slugs.' . $item['slug'], $item['slug']),
+                'weight' => $item['weight'],
+                'target' => $item['target_value'],
+            ],
+            config('compensation.operation_manager_kpi_defaults', []),
+        );
+
+        $this->seedItems($opsTemplate, $opsItems);
 
         $pctPlan = CompCommissionPlan::firstOrCreate(
             ['name' => 'عمولة نسبة من الصفقة'],
@@ -136,18 +181,28 @@ class CompensationModuleSeeder extends Seeder
         }
 
         $users = User::role(array_merge(
-            CrmEmployeeService::LEGACY_MANAGER_ROLES,
+            CrmEmployeeService::LEGACY_DEPARTMENT_HEAD_ROLES,
+            CrmEmployeeService::LEGACY_TEAM_LEADER_ROLES,
+            OperationsEmployeeService::LEGACY_MANAGER_ROLES,
             CrmEmployeeService::LEGACY_EMPLOYEE_ROLES,
         ))->get();
 
         foreach ($users as $user) {
-            $isManager = $user->hasAnyRole(CrmEmployeeService::LEGACY_MANAGER_ROLES);
+            $isOpsManager = $user->hasAnyRole(OperationsEmployeeService::LEGACY_MANAGER_ROLES);
+            $isSalesDeptManager = $user->hasAnyRole(CrmEmployeeService::LEGACY_DEPARTMENT_HEAD_ROLES);
+            $isTeamLeader = $user->hasAnyRole(CrmEmployeeService::LEGACY_TEAM_LEADER_ROLES);
+            $kpiTemplateId = $isOpsManager
+                ? $opsTemplate->id
+                : ($isSalesDeptManager
+                    ? $mgrTemplate->id
+                    : ($isTeamLeader ? $tlTemplate->id : $repTemplate->id));
+
             CompEmployeeProfile::firstOrCreate(
                 ['user_id' => $user->id],
                 [
                     'base_salary' => $user->employee?->salary ?? 8000,
-                    'kpi_template_id' => $isManager ? $mgrTemplate->id : $repTemplate->id,
-                    'commission_plan_id' => $isManager ? null : $pctPlan->id,
+                    'kpi_template_id' => $kpiTemplateId,
+                    'commission_plan_id' => ($isSalesDeptManager || $isTeamLeader || $isOpsManager) ? null : $pctPlan->id,
                     'is_active' => true,
                     'effective_from' => now()->startOfMonth()->toDateString(),
                 ],

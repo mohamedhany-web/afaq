@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('page-title', ($marketingOnly ?? false) ? 'موظفو التسويق' : 'موظفو المبيعات')
+@section('page-title', ($operationsOnly ?? false) ? 'مديرو العمليات' : (($marketingOnly ?? false) ? 'موظفو التسويق' : 'موظفو المبيعات'))
 
 @section('content')
 @php
@@ -8,6 +8,7 @@
     $indexUrl = route('employees.index', array_filter([
         'sales_only' => ($salesOnly ?? false) ? 1 : null,
         'marketing_only' => ($marketingOnly ?? false) ? 1 : null,
+        'operations_only' => ($operationsOnly ?? false) ? 1 : null,
         'search' => request('search'),
         'status' => request('status'),
         'crm_role' => request('crm_role'),
@@ -21,28 +22,37 @@
 @endphp
 
 @include('crm.partials.page-header', [
-    'title' => ($marketingOnly ?? false) ? 'موظفو التسويق' : 'موظفو المبيعات',
-    'subtitle' => ($salesDepartment->name ?? (($marketingOnly ?? false) ? 'التسويق' : 'المبيعات')) . ' — ' . (($marketingOnly ?? false) ? 'إدارة فريق التسويق والحملات' : 'إدارة مندوبي ومديري المبيعات العقارية'),
+    'title' => ($operationsOnly ?? false) ? 'مديرو العمليات' : (($marketingOnly ?? false) ? 'موظفو التسويق' : 'موظفو المبيعات'),
+    'subtitle' => ($operationsOnly ?? false)
+        ? 'قسم العمليات — حسابات مديري التشغيل والمتابعة المركزية'
+        : (($salesDepartment->name ?? (($marketingOnly ?? false) ? 'التسويق' : 'المبيعات')) . ' — ' . (($marketingOnly ?? false) ? 'إدارة فريق التسويق والحملات' : 'إدارة مندوبي ومديري المبيعات العقارية')),
     'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />',
     'actionUrl' => $canCreate ? route('employees.create', array_filter([
         'sales_only' => ($salesOnly ?? false) ? 1 : null,
         'marketing_only' => ($marketingOnly ?? false) ? 1 : null,
+        'operations_only' => ($operationsOnly ?? false) ? 1 : null,
     ])) : null,
     'actionLabel' => 'موظف جديد',
     'actionIcon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />',
 ])
 
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'إجمالي الموظفين', 'value' => $stats['total'], 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />'])
-    @include('crm.partials.stat-card', ['label' => 'نشطون', 'value' => $stats['active'], 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />'])
-    @include('crm.partials.stat-card', ['label' => ($marketingOnly ?? false) ? 'مديرو تسويق' : 'مديرو مبيعات', 'value' => $stats['managers'], 'accent' => 'purple', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />'])
-    @include('crm.partials.stat-card', ['label' => ($marketingOnly ?? false) ? 'موظفو تسويق' : 'مندوبو مبيعات', 'value' => $stats['agents'], 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />'])
+<div class="grid grid-cols-2 lg:grid-cols-{{ ($operationsOnly ?? false) || ($marketingOnly ?? false) ? '4' : '5' }} gap-3 sm:gap-4 mb-6">
+    @include('crm.partials.stat-card', ['label' => 'إجمالي الموظفين', 'value' => $stats['total'], 'accent' => 'theme', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'نشطون', 'value' => $stats['active'], 'accent' => 'green', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => ($operationsOnly ?? false) ? 'مديرو عمليات' : (($marketingOnly ?? false) ? 'مديرو تسويق' : 'مديرو مبيعات'), 'value' => $stats['managers'], 'accent' => 'purple', 'compact' => true])
+    @if(!($operationsOnly ?? false) && !($marketingOnly ?? false))
+    @include('crm.partials.stat-card', ['label' => 'قادة فرق', 'value' => $stats['team_leaders'] ?? 0, 'accent' => 'blue', 'compact' => true])
+    @endif
+    @if(!($operationsOnly ?? false))
+    @include('crm.partials.stat-card', ['label' => ($marketingOnly ?? false) ? 'موظفو تسويق' : 'مندوبو مبيعات', 'value' => $stats['agents'], 'accent' => 'amber', 'compact' => true])
+    @endif
 </div>
 
 <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-5 mb-6">
     <form method="GET" class="flex flex-col lg:flex-row gap-3 lg:items-end">
         @if($salesOnly ?? false)<input type="hidden" name="sales_only" value="1">@endif
         @if($marketingOnly ?? false)<input type="hidden" name="marketing_only" value="1">@endif
+        @if($operationsOnly ?? false)<input type="hidden" name="operations_only" value="1">@endif
         <div class="flex-1">
             <label class="block text-xs font-bold text-gray-500 mb-1.5 font-tajawal">بحث</label>
             <input type="text" name="search" value="{{ request('search') }}" placeholder="الاسم، الرقم، البريد، أو الهاتف..."
@@ -71,7 +81,7 @@
             <button type="submit" class="px-5 py-2.5 rounded-xl text-white text-sm font-semibold font-tajawal shadow-sm"
                     style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">تطبيق</button>
             @if(request()->hasAny(['search', 'status', 'crm_role']))
-            <a href="{{ route('employees.index', array_filter(['sales_only' => ($salesOnly ?? false) ? 1 : null, 'marketing_only' => ($marketingOnly ?? false) ? 1 : null])) }}" class="px-5 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 font-tajawal">مسح</a>
+            <a href="{{ route('employees.index', array_filter(['sales_only' => ($salesOnly ?? false) ? 1 : null, 'marketing_only' => ($marketingOnly ?? false) ? 1 : null, 'operations_only' => ($operationsOnly ?? false) ? 1 : null])) }}" class="px-5 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 font-tajawal">مسح</a>
             @endif
         </div>
     </form>
@@ -108,6 +118,7 @@
                     $query = array_filter([
                         'sales_only' => ($salesOnly ?? false) ? 1 : null,
                         'marketing_only' => ($marketingOnly ?? false) ? 1 : null,
+                        'operations_only' => ($operationsOnly ?? false) ? 1 : null,
                     ]);
                 @endphp
                 <tr class="hover:bg-gray-50/80 transition-colors">
@@ -159,7 +170,7 @@
                     <td colspan="7" class="p-12 text-center">
                         <p class="text-gray-400 font-tajawal mb-4">لا يوجد موظفون مطابقون</p>
                         @if($canCreate)
-                        <a href="{{ route('employees.create', array_filter(['sales_only' => ($salesOnly ?? false) ? 1 : null, 'marketing_only' => ($marketingOnly ?? false) ? 1 : null])) }}"
+                        <a href="{{ route('employees.create', array_filter(['sales_only' => ($salesOnly ?? false) ? 1 : null, 'marketing_only' => ($marketingOnly ?? false) ? 1 : null, 'operations_only' => ($operationsOnly ?? false) ? 1 : null])) }}"
                            class="inline-flex px-5 py-2.5 rounded-xl text-white text-sm font-semibold font-tajawal"
                            style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">إضافة موظف</a>
                         @endif
@@ -183,6 +194,7 @@
         $query = array_filter([
             'sales_only' => ($salesOnly ?? false) ? 1 : null,
             'marketing_only' => ($marketingOnly ?? false) ? 1 : null,
+            'operations_only' => ($operationsOnly ?? false) ? 1 : null,
         ]);
         $mobileRole = \App\Services\EmployeeRoleService::resolve($employee);
     @endphp

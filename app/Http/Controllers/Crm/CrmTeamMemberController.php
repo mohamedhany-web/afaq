@@ -29,8 +29,11 @@ class CrmTeamMemberController extends Controller
 
         $clients = $scope->clientsQuery()
             ->where(function ($q) use ($member) {
-                $q->where('assigned_to', $member->employee?->id)
-                    ->orWhereHas('sales', fn ($s) => $s->where('assigned_to', $member->id));
+                $q->where('created_by', $member->id);
+
+                if ($member->employee?->id) {
+                    $q->orWhere('assigned_to', $member->employee->id);
+                }
             })
             ->withCount('sales')
             ->latest()

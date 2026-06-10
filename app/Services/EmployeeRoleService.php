@@ -9,6 +9,7 @@ class EmployeeRoleService
     public const MODULE_HR = 'hr';
     public const MODULE_CRM = 'crm';
     public const MODULE_MARKETING = 'marketing';
+    public const MODULE_OPERATIONS = 'operations';
 
     public static function moduleForEmployee(Employee $employee): string
     {
@@ -17,6 +18,7 @@ class EmployeeRoleService
         return match ($code) {
             'MKT' => self::MODULE_MARKETING,
             'SAL' => self::MODULE_CRM,
+            'OPS' => self::MODULE_OPERATIONS,
             default => self::MODULE_HR,
         };
     }
@@ -29,6 +31,11 @@ class EmployeeRoleService
     public static function isSalesEmployee(Employee $employee): bool
     {
         return self::moduleForEmployee($employee) === self::MODULE_CRM;
+    }
+
+    public static function isOperationsEmployee(Employee $employee): bool
+    {
+        return self::moduleForEmployee($employee) === self::MODULE_OPERATIONS;
     }
 
     /** @return array{key: string, label: string, module: string} */
@@ -49,6 +56,16 @@ class EmployeeRoleService
                 'key' => $key,
                 'label' => MarketingEmployeeService::ROLE_LABELS[$key] ?? 'موظف تسويق',
                 'module' => self::MODULE_MARKETING,
+            ];
+        }
+
+        if (self::isOperationsEmployee($employee)) {
+            $key = OperationsEmployeeService::currentOperationsRole($employee->user);
+
+            return [
+                'key' => $key,
+                'label' => OperationsEmployeeService::ROLE_LABELS[$key] ?? 'مدير عمليات',
+                'module' => self::MODULE_OPERATIONS,
             ];
         }
 
@@ -75,6 +92,8 @@ class EmployeeRoleService
     {
         if ($departmentCode === 'MKT') {
             MarketingEmployeeService::assignMarketingRole($user, $roleKey);
+        } elseif ($departmentCode === 'OPS') {
+            OperationsEmployeeService::assignOperationsRole($user, $roleKey);
         } elseif ($departmentCode === 'SAL') {
             CrmEmployeeService::assignSalesRole($user, $roleKey);
         }
@@ -84,6 +103,7 @@ class EmployeeRoleService
     {
         return match ($departmentCode) {
             'MKT' => MarketingEmployeeService::ROLE_LABELS,
+            'OPS' => OperationsEmployeeService::ROLE_LABELS,
             'SAL' => CrmEmployeeService::ROLE_LABELS,
             default => CrmEmployeeService::ROLE_LABELS,
         };

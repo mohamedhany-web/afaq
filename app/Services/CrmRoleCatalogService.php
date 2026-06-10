@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Helpers\RoleHelper;
 use App\Services\MarketingEmployeeService;
+use App\Services\OperationsEmployeeService;
 use Illuminate\Support\Collection;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -101,7 +102,7 @@ class CrmRoleCatalogService
 
     public static function resolveUserDisplayRole(\App\Models\User $user): ?string
     {
-        $priority = ['super_admin', 'admin', 'sales_manager', 'manager', 'marketing_manager', 'sales_rep', 'sales_agent', 'marketing_rep', 'employee', 'hr', 'client'];
+        $priority = ['super_admin', 'admin', 'sales_manager', 'manager', 'sales_team_leader', 'marketing_manager', 'operation_manager', 'sales_rep', 'sales_agent', 'marketing_rep', 'employee', 'hr', 'client'];
 
         foreach ($priority as $name) {
             if ($user->hasRole($name)) {
@@ -118,18 +119,24 @@ class CrmRoleCatalogService
 
         if (in_array($roleName, ['sales_manager', 'manager'], true)) {
             CrmEmployeeService::assignSalesRole($user, CrmEmployeeService::ROLE_MANAGER);
+        } elseif (in_array($roleName, ['sales_team_leader'], true)) {
+            CrmEmployeeService::assignSalesRole($user, CrmEmployeeService::ROLE_TEAM_LEADER);
         } elseif (in_array($roleName, ['sales_rep', 'sales_agent', 'employee'], true)) {
             CrmEmployeeService::assignSalesRole($user, CrmEmployeeService::ROLE_EMPLOYEE);
         } elseif (in_array($roleName, ['marketing_manager'], true)) {
             MarketingEmployeeService::assignMarketingRole($user, MarketingEmployeeService::ROLE_MANAGER);
         } elseif (in_array($roleName, ['marketing_rep'], true)) {
             MarketingEmployeeService::assignMarketingRole($user, MarketingEmployeeService::ROLE_REP);
+        } elseif (in_array($roleName, ['operation_manager'], true)) {
+            OperationsEmployeeService::assignOperationsRole($user);
         } else {
             $strip = array_merge(
-                CrmEmployeeService::LEGACY_MANAGER_ROLES,
+                CrmEmployeeService::LEGACY_DEPARTMENT_HEAD_ROLES,
+                CrmEmployeeService::LEGACY_TEAM_LEADER_ROLES,
                 CrmEmployeeService::LEGACY_EMPLOYEE_ROLES,
                 MarketingEmployeeService::LEGACY_MANAGER_ROLES,
                 MarketingEmployeeService::LEGACY_REP_ROLES,
+                OperationsEmployeeService::LEGACY_MANAGER_ROLES,
                 ['manager', 'employee'],
             );
             foreach (array_unique($strip) as $name) {

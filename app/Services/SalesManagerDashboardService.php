@@ -536,10 +536,13 @@ class SalesManagerDashboardService
         if ($user->hasRole('sales_manager')) {
             return 'مدير مبيعات';
         }
+        if ($user->hasRole('sales_team_leader')) {
+            return 'قائد فريق مبيعات';
+        }
         if ($user->hasRole('manager')) {
-            return 'مدير فريق';
+            return 'مدير مبيعات';
         }
 
-        return 'مدير المبيعات';
+        return 'قائد فريق مبيعات';
     }
 }

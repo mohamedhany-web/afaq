@@ -168,6 +168,7 @@ Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'inde
 
 require __DIR__.'/crm.php';
 require __DIR__.'/marketing.php';
+require __DIR__.'/operations.php';
 
 // Profile routes
 Route::middleware(['auth', 'verified', 'verified.code'])->group(function () {
@@ -179,7 +180,7 @@ Route::middleware(['auth', 'verified', 'verified.code'])->group(function () {
 });
 
 // All authenticated routes
-Route::middleware(['auth', 'verified', 'verified.code', 'crm.only', 'marketing.only'])->group(function () {
+Route::middleware(['auth', 'verified', 'verified.code', 'crm.only', 'marketing.only', 'operations.only'])->group(function () {
     // =========================
     // Client Portal (بوابة العميل)
     // =========================

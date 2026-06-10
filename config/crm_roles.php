@@ -8,9 +8,11 @@ return [
         'super_admin',
         'admin',
         'sales_manager',
+        'sales_team_leader',
         'sales_rep',
         'marketing_manager',
         'marketing_rep',
+        'operation_manager',
         'hr',
         'client',
     ],
@@ -38,11 +40,18 @@ return [
         ],
         'sales_manager' => [
             'label' => 'مدير مبيعات',
-            'description' => 'إدارة فريق المبيعات، المسار، التقارير وتحليلات الأداء',
+            'description' => 'إدارة قسم المبيعات، جميع الفرق، الخطط الاستراتيجية والإيرادات',
             'color' => '#0ea5e9',
             'workspace' => 'crm_manager',
             'assignable' => true,
             'legacy_names' => ['manager'],
+        ],
+        'sales_team_leader' => [
+            'label' => 'قائد فريق مبيعات',
+            'description' => 'قيادة فريق يومياً، توزيع العملاء، متابعة الأداء، التدريب والإغلاق',
+            'color' => '#0284c7',
+            'workspace' => 'crm_team_leader',
+            'assignable' => true,
         ],
         'sales_rep' => [
             'label' => 'موظف مبيعات',
@@ -64,6 +73,13 @@ return [
             'description' => 'تنفيذ الحملات، المحتوى، وجمع العملاء المحتملين',
             'color' => '#a855f7',
             'workspace' => 'marketing_rep',
+            'assignable' => true,
+        ],
+        'operation_manager' => [
+            'label' => 'مدير عمليات',
+            'description' => 'إدارة التشغيل، المشاريع، المطورين، التقارير الدورية ومؤشرات الأداء',
+            'color' => '#059669',
+            'workspace' => 'operations_manager',
             'assignable' => true,
         ],
         'hr' => [
@@ -133,6 +149,14 @@ return [
             'label' => 'التسويق',
             'permissions' => [
                 'view-marketing', 'create-marketing', 'edit-marketing', 'delete-marketing', 'manage-marketing',
+            ],
+        ],
+        'operations' => [
+            'label' => 'العمليات',
+            'permissions' => [
+                'view-all-projects', 'create-projects', 'edit-projects', 'approve-project-changes',
+                'view-developers', 'manage-developers',
+                'view-all-tasks', 'create-tasks', 'edit-tasks',
             ],
         ],
         'other' => [

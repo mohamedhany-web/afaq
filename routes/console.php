@@ -14,4 +14,6 @@ Schedule::command('crm:task-maintenance')->everyFiveMinutes();
 Schedule::command('marketing:process-recurrence')->hourly();
 Schedule::command('penalties:apply-overdue')->hourly(); // حضور، تقارير، مهام، KPI شهري
 Schedule::command('attendance:auto-checkout')->everyMinute();
+Schedule::command('attendance:flag-absences')->dailyAt('18:30');
+Schedule::command('attendance:flag-absences')->dailyAt('12:00');
 Schedule::command('notifications:prune-read')->dailyAt('03:00');

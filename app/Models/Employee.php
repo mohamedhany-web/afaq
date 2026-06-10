@@ -12,6 +12,7 @@ class Employee extends Model
         'user_id',
         'employee_id',
         'department_id',
+        'reports_to_user_id',
         'first_name',
         'last_name',
         'email',
@@ -50,9 +51,19 @@ class Employee extends Model
         return $this->belongsTo(Department::class);
     }
 
+    public function reportsTo(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reports_to_user_id');
+    }
+
     public function sales(): HasMany
     {
         return $this->hasMany(Sale::class, 'assigned_to', 'user_id');
+    }
+
+    public function clients(): HasMany
+    {
+        return $this->hasMany(Client::class, 'assigned_to');
     }
 
     public function attendances(): HasMany

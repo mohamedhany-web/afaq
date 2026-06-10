@@ -35,6 +35,7 @@
           rows: @js($initialItems),
           repCatalog: @js($repCatalog),
           managerCatalog: @js($managerCatalog),
+          operationsCatalog: @js($operationsCatalog),
           employees: @js($employees->map(fn ($e) => ['id' => $e->id, 'name' => $e->name])->values()),
           assignmentMode: @js(old('apply_assignment', 'none')),
           themeColor: @js($themeColor),
@@ -269,6 +270,7 @@ function kpiTemplateForm(config) {
         rows: config.rows.length ? config.rows : [],
         repCatalog: config.repCatalog,
         managerCatalog: config.managerCatalog,
+        operationsCatalog: config.operationsCatalog,
         employees: config.employees,
         assignmentMode: config.assignmentMode,
         themeColor: config.themeColor,
@@ -281,6 +283,7 @@ function kpiTemplateForm(config) {
         },
 
         get availableCatalog() {
+            if (this.targetRole === 'operation_manager') return this.operationsCatalog;
             return this.targetRole === 'manager' ? this.managerCatalog : this.repCatalog;
         },
         get weightTotal() {

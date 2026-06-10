@@ -395,7 +395,7 @@ class SystemReportDataService
             ],
             'rows' => $runs->map(fn (CompPayrollRun $r) => [
                 'employee' => $r->user?->name ?? '—',
-                'period' => $r->period ? $r->period->label() : '—',
+                'period' => $r->period ? $r->period->label : '—',
                 'status' => $r->status,
                 'net_pay' => $r->net_pay,
                 'kpi_score' => $r->kpi_score,

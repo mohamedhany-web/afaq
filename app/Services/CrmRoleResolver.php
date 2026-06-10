@@ -8,6 +8,7 @@ class CrmRoleResolver
 {
     public const WORKSPACE_ADMIN = 'admin';
     public const WORKSPACE_MANAGER = 'manager';
+    public const WORKSPACE_TEAM_LEADER = 'team_leader';
     public const WORKSPACE_REP = 'rep';
 
     public function __construct(protected User $user) {}
@@ -22,13 +23,29 @@ class CrmRoleResolver
         return $this->user->hasRole(['super_admin', 'admin']);
     }
 
-    public function isManager(): bool
+    /** مدير قسم المبيعات — عدة فرق */
+    public function isDepartmentManager(): bool
     {
         if ($this->isAdmin()) {
             return false;
         }
 
-        return $this->user->isSalesManager();
+        return $this->user->isSalesDepartmentManager();
+    }
+
+    /** قائد فريق — فريق واحد */
+    public function isTeamLeader(): bool
+    {
+        if ($this->isAdmin() || $this->isDepartmentManager()) {
+            return false;
+        }
+
+        return $this->user->isSalesTeamLeader();
+    }
+
+    public function isManager(): bool
+    {
+        return $this->isDepartmentManager() || $this->isTeamLeader();
     }
 
     public function isRep(): bool
@@ -45,15 +62,19 @@ class CrmRoleResolver
             && !$this->isManager();
     }
 
-    /** admin | manager | rep */
+    /** admin | manager | team_leader | rep */
     public function workspace(): string
     {
         if ($this->isAdmin()) {
             return self::WORKSPACE_ADMIN;
         }
 
-        if ($this->isManager()) {
+        if ($this->isDepartmentManager()) {
             return self::WORKSPACE_MANAGER;
+        }
+
+        if ($this->isTeamLeader()) {
+            return self::WORKSPACE_TEAM_LEADER;
         }
 
         return self::WORKSPACE_REP;

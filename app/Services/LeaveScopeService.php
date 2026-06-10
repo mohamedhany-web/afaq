@@ -73,7 +73,9 @@ class LeaveScopeService
     /** @return int[] */
     public function managedUserIds(): array
     {
-        if ($this->user->isSalesManager() || $this->user->hasRole(CrmEmployeeService::LEGACY_MANAGER_ROLES)) {
+        if ($this->user->isSalesManager()
+            || $this->user->hasRole(CrmEmployeeService::LEGACY_DEPARTMENT_HEAD_ROLES)
+            || $this->user->hasRole(CrmEmployeeService::LEGACY_TEAM_LEADER_ROLES)) {
             return CrmScopeService::for($this->user)->managedTeamMemberUserIds();
         }
 

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Attendance;
 use App\Models\Employee;
 use Carbon\Carbon;
+use App\Services\AttendanceScopeService;
 use App\Services\AutoPenaltyService;
 use App\Services\EmployeeScheduleService;
 use App\Services\WorkDayService;
@@ -22,59 +23,212 @@ class AttendanceController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $today = Carbon::today();
         $currentUser = Auth::user();
-        
-        // Get user's employee record
-        $employee = Employee::where('user_id', $currentUser->id)->first();
-        
-        // Get today's attendance for current user
+        $scope = AttendanceScopeService::for($currentUser);
+        $employee = $scope->employee();
+        $selectedDate = Carbon::parse($request->input('date', Carbon::today()->toDateString()))->startOfDay();
+        $isToday = $selectedDate->isToday();
+
+        $employeesQuery = $scope->visibleEmployeesQuery()
+            ->when($request->department_id, fn ($q) => $q->where('department_id', $request->department_id))
+            ->when($request->employee_id, fn ($q) => $q->where('id', $request->employee_id))
+            ->orderBy('first_name')
+            ->orderBy('last_name');
+
+        $visibleEmployees = $employeesQuery->get();
+        $employeeIds = $visibleEmployees->pluck('id');
+
+        $attendancesByEmployee = Attendance::query()
+            ->whereDate('date', $selectedDate)
+            ->whereIn('employee_id', $employeeIds)
+            ->get()
+            ->keyBy('employee_id');
+
+        $roster = $visibleEmployees->map(function (Employee $emp) use ($attendancesByEmployee, $selectedDate) {
+            $attendance = $attendancesByEmployee->get($emp->id);
+            $row = $this->buildRosterRow($emp, $attendance, $selectedDate);
+
+            return $row;
+        });
+
+        if ($request->filled('status')) {
+            $roster = $roster->filter(fn ($row) => $row['filter_key'] === $request->status)->values();
+        }
+
+        $stats = $this->buildRosterStats($visibleEmployees, $attendancesByEmployee, $selectedDate);
+
         $todayAttendance = null;
+        if ($employee && $isToday) {
+            $todayAttendance = $attendancesByEmployee->get($employee->id);
+        }
+
+        $personalHistory = collect();
         if ($employee) {
-            $todayAttendance = Attendance::where('employee_id', $employee->id)
-                ->whereDate('date', $today)
-                ->first();
-        }
-        
-        // Get attendance statistics for today
-        $stats = $this->getAttendanceStats($today);
-        
-        // Get recent attendance records for current user
-        $recentAttendances = collect();
-        if ($employee) {
-            $recentAttendances = Attendance::where('employee_id', $employee->id)
-                ->orderBy('date', 'desc')
-                ->limit(10)
-                ->with('employee')
+            $personalHistory = Attendance::where('employee_id', $employee->id)
+                ->whereDate('date', '<=', $selectedDate)
+                ->orderByDesc('date')
+                ->limit(14)
                 ->get();
         }
-        
-        // Get all employees for admin view
-        $employees = collect();
-        if ($currentUser->hasRole(['admin', 'hr', 'super_admin'])) {
-            $employees = Employee::with(['user', 'department'])
-                ->where('status', 'active')
-                ->get();
+
+        return view('attendances.index', [
+            'employee' => $employee,
+            'canClockIn' => $this->workDay->requiresWorkDayButton($currentUser),
+            'todayAttendance' => $todayAttendance,
+            'selectedDate' => $selectedDate,
+            'isToday' => $isToday,
+            'stats' => $stats,
+            'roster' => $roster,
+            'personalHistory' => $personalHistory,
+            'departments' => $scope->departmentsForFilter(),
+            'employeesList' => $visibleEmployees,
+            'canViewRoster' => $scope->canViewRoster(),
+            'canViewAll' => $scope->canViewAllEmployees(),
+            'scopeMode' => $scope->mode(),
+        ]);
+    }
+
+    /** @return array<string, mixed> */
+    protected function buildRosterRow(Employee $employee, ?Attendance $attendance, Carbon $date): array
+    {
+        $isOffDay = $this->schedule->isWeeklyOffDay($employee, $date);
+        $onLeave = $this->workDay->hasApprovedLeaveOnDate($employee, $date);
+        $scheduledIn = $this->schedule->workStartTime($employee);
+        $scheduledOut = $this->schedule->workEndTime($employee);
+
+        $filterKey = 'absent';
+        $statusLabel = 'غائب';
+        $statusColor = 'red';
+
+        if ($onLeave) {
+            $filterKey = 'on_leave';
+            $statusLabel = 'في إجازة';
+            $statusColor = 'blue';
+        } elseif ($isOffDay) {
+            $filterKey = 'off_day';
+            $statusLabel = 'إجازة أسبوعية';
+            $statusColor = 'gray';
+        } elseif ($attendance?->check_in) {
+            if (!$attendance->check_out) {
+                if ($attendance->current_status === 'on_break') {
+                    $filterKey = 'on_break';
+                    $statusLabel = 'في استراحة';
+                    $statusColor = 'amber';
+                } else {
+                    $filterKey = 'working';
+                    $statusLabel = 'يعمل الآن';
+                    $statusColor = 'green';
+                }
+            } elseif ($attendance->status === 'late' || ($attendance->late_minutes ?? 0) > 0) {
+                $filterKey = 'late';
+                $statusLabel = 'متأخر';
+                $statusColor = 'orange';
+            } elseif ($attendance->status === 'half_day') {
+                $filterKey = 'half_day';
+                $statusLabel = 'ناقص';
+                $statusColor = 'red';
+            } else {
+                $filterKey = 'present';
+                $statusLabel = 'مكتمل';
+                $statusColor = 'green';
+            }
         }
-        
-        // Get all attendance records for today (for admin view)
-        $allTodayAttendances = collect();
-        if ($currentUser->hasRole(['admin', 'hr', 'super_admin'])) {
-            $allTodayAttendances = Attendance::whereDate('date', $today)
-                ->with(['employee.user', 'employee.department'])
-                ->get();
+
+        $isLate = $attendance?->check_in
+            ? $this->schedule->isLate($employee, Carbon::parse($attendance->check_in), $date)
+            : false;
+        $lateMinutes = $attendance?->check_in
+            ? ($attendance->late_minutes ?? $this->schedule->lateMinutes($employee, Carbon::parse($attendance->check_in), $date))
+            : 0;
+        $isEarly = $attendance?->check_out
+            ? $this->schedule->isEarlyDeparture($employee, Carbon::parse($attendance->check_out), $date)
+            : false;
+
+        return [
+            'employee' => $employee,
+            'attendance' => $attendance,
+            'filter_key' => $filterKey,
+            'status_label' => $statusLabel,
+            'status_color' => $statusColor,
+            'scheduled_in' => $scheduledIn,
+            'scheduled_out' => $scheduledOut,
+            'is_late' => $isLate,
+            'late_minutes' => $lateMinutes,
+            'is_early' => $isEarly,
+            'on_leave' => $onLeave,
+            'is_off_day' => $isOffDay,
+        ];
+    }
+
+    /** @return array<string, int|float> */
+    protected function buildRosterStats($employees, $attendancesByEmployee, Carbon $date): array
+    {
+        $total = $employees->count();
+        $present = 0;
+        $late = 0;
+        $absent = 0;
+        $working = 0;
+        $onBreak = 0;
+        $onLeave = 0;
+        $offDay = 0;
+        $completed = 0;
+        $totalHours = 0;
+        $hoursCount = 0;
+
+        foreach ($employees as $emp) {
+            $row = $this->buildRosterRow($emp, $attendancesByEmployee->get($emp->id), $date);
+            $key = $row['filter_key'];
+
+            if ($key === 'on_leave') {
+                $onLeave++;
+            } elseif ($key === 'off_day') {
+                $offDay++;
+            } elseif ($key === 'working') {
+                $working++;
+                $present++;
+            } elseif ($key === 'on_break') {
+                $onBreak++;
+                $present++;
+            } elseif ($key === 'absent') {
+                $absent++;
+            } else {
+                $present++;
+                $completed++;
+            }
+
+            if ($key === 'late' || ($row['is_late'] && $row['attendance']?->check_in)) {
+                $late++;
+            }
+
+            $att = $row['attendance'];
+            if ($att?->total_hours) {
+                $totalHours += (float) $att->total_hours;
+                $hoursCount++;
+            }
         }
-        
-        return view('attendances.index', compact(
-            'todayAttendance',
-            'stats',
-            'recentAttendances',
-            'employees',
-            'allTodayAttendances',
-            'employee'
-        ));
+
+        $expected = max(0, $total - $offDay - $onLeave);
+        $attendanceRate = $expected > 0 ? round(($present / $expected) * 100, 1) : 0;
+
+        return [
+            'total_employees' => $total,
+            'present_today' => $present,
+            'absent_today' => $absent,
+            'late_today' => $late,
+            'working_now' => $working,
+            'on_break' => $onBreak,
+            'on_leave' => $onLeave,
+            'off_day' => $offDay,
+            'completed' => $completed,
+            'early_departures' => $employees->filter(function ($emp) use ($attendancesByEmployee, $date) {
+                $att = $attendancesByEmployee->get($emp->id);
+                return $att?->check_out && $this->schedule->isEarlyDeparture($emp, Carbon::parse($att->check_out), $date);
+            })->count(),
+            'average_hours' => $hoursCount > 0 ? round($totalHours / $hoursCount, 1) : 0,
+            'attendance_rate' => $attendanceRate,
+        ];
     }
     
     /**

@@ -9,8 +9,12 @@ use App\Models\Project;
 use App\Models\DailySalesReport;
 use App\Models\DepartmentReport;
 use App\Models\MarketingPeriodReport;
+use App\Models\AttendanceAbsenceReview;
+use App\Models\OperationsPeriodReport;
 use App\Policies\DailySalesReportPolicy;
 use App\Policies\MarketingPeriodReportPolicy;
+use App\Policies\AttendanceAbsenceReviewPolicy;
+use App\Policies\OperationsPeriodReportPolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\DepartmentReportPolicy;
 
@@ -26,6 +30,8 @@ class AuthServiceProvider extends ServiceProvider
         DepartmentReport::class => DepartmentReportPolicy::class,
         DailySalesReport::class => DailySalesReportPolicy::class,
         MarketingPeriodReport::class => MarketingPeriodReportPolicy::class,
+        OperationsPeriodReport::class => OperationsPeriodReportPolicy::class,
+        AttendanceAbsenceReview::class => AttendanceAbsenceReviewPolicy::class,
     ];
 
     /**

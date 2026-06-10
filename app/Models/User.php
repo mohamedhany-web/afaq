@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Services\CrmEmployeeService;
 use App\Services\MarketingEmployeeService;
+use App\Services\OperationsEmployeeService;
 use Illuminate\Contracts\Auth\Access\Gate;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -285,7 +286,8 @@ class User extends Authenticatable
         }
 
         return $this->hasRole(array_merge(
-            CrmEmployeeService::LEGACY_MANAGER_ROLES,
+            CrmEmployeeService::LEGACY_DEPARTMENT_HEAD_ROLES,
+            CrmEmployeeService::LEGACY_TEAM_LEADER_ROLES,
             CrmEmployeeService::LEGACY_EMPLOYEE_ROLES
         ));
     }
@@ -293,20 +295,35 @@ class User extends Authenticatable
     public function isSalesAgentOnly(): bool
     {
         return $this->hasRole(CrmEmployeeService::LEGACY_EMPLOYEE_ROLES)
-            && !$this->hasRole(array_merge(['super_admin', 'admin'], CrmEmployeeService::LEGACY_MANAGER_ROLES));
+            && !$this->hasRole(array_merge(
+                ['super_admin', 'admin'],
+                CrmEmployeeService::LEGACY_DEPARTMENT_HEAD_ROLES,
+                CrmEmployeeService::LEGACY_TEAM_LEADER_ROLES,
+            ));
+    }
+
+    public function isSalesDepartmentManager(): bool
+    {
+        return $this->hasRole(CrmEmployeeService::LEGACY_DEPARTMENT_HEAD_ROLES);
+    }
+
+    public function isSalesTeamLeader(): bool
+    {
+        return $this->hasRole(CrmEmployeeService::LEGACY_TEAM_LEADER_ROLES)
+            || ($this->managedSalesTeams()->exists() && !$this->isSalesDepartmentManager());
     }
 
     public function isSalesManager(): bool
     {
-        return $this->hasRole(CrmEmployeeService::LEGACY_MANAGER_ROLES)
-            || $this->managedSalesTeams()->exists();
+        return $this->isSalesDepartmentManager() || $this->isSalesTeamLeader();
     }
 
     public function canAccessCrm(): bool
     {
         return $this->hasRole(array_merge(
             ['super_admin', 'admin'],
-            CrmEmployeeService::LEGACY_MANAGER_ROLES,
+            CrmEmployeeService::LEGACY_DEPARTMENT_HEAD_ROLES,
+            CrmEmployeeService::LEGACY_TEAM_LEADER_ROLES,
             CrmEmployeeService::LEGACY_EMPLOYEE_ROLES
         ));
     }
@@ -342,10 +359,43 @@ class User extends Authenticatable
         ));
     }
 
+    public function usesOperationsWorkspace(): bool
+    {
+        if ($this->hasRole(['super_admin', 'admin'])) {
+            return false;
+        }
+
+        return $this->hasRole(OperationsEmployeeService::LEGACY_MANAGER_ROLES);
+    }
+
+    public function isOperationsOnlyUser(): bool
+    {
+        return $this->usesOperationsWorkspace()
+            && !$this->usesCrmWorkspace()
+            && !$this->usesMarketingWorkspace();
+    }
+
+    public function isOperationsManager(): bool
+    {
+        return $this->hasRole(OperationsEmployeeService::LEGACY_MANAGER_ROLES);
+    }
+
+    public function canAccessOperations(): bool
+    {
+        return $this->hasRole(array_merge(
+            ['super_admin', 'admin'],
+            OperationsEmployeeService::LEGACY_MANAGER_ROLES
+        ));
+    }
+
     public function homeRoute(): string
     {
         if ($this->isMarketingOnlyUser()) {
             return route('marketing.dashboard');
+        }
+
+        if ($this->isOperationsOnlyUser()) {
+            return route('operations.dashboard');
         }
 
         if ($this->usesCrmWorkspace()) {

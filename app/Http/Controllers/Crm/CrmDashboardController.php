@@ -14,7 +14,7 @@ class CrmDashboardController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->isSalesManager() && ! $user->hasRole(['super_admin', 'admin'])) {
+        if (($user->isSalesDepartmentManager() || $user->isSalesTeamLeader()) && ! $user->hasRole(['super_admin', 'admin'])) {
             return view('crm.dashboard-manager', SalesManagerDashboardService::build($user));
         }
 

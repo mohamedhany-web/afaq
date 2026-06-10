@@ -9,6 +9,7 @@ use App\Models\Compensation\CompKpiTemplate;
 use App\Models\User;
 use App\Services\Compensation\CompensationAuditService;
 use App\Services\CrmEmployeeService;
+use App\Services\OperationsEmployeeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -24,10 +25,8 @@ class CompKpiTemplateController extends Controller
             ->latest()
             ->get();
 
-        $employees = User::role(array_merge(
-            CrmEmployeeService::LEGACY_MANAGER_ROLES,
-            CrmEmployeeService::LEGACY_EMPLOYEE_ROLES,
-        ))->orderBy('name')->get(['id', 'name']);
+        $employees = User::role($this->compensationRoleNames())
+            ->orderBy('name')->get(['id', 'name']);
 
         return view('crm.compensation.admin.kpi.index', compact('templates', 'employees'));
     }
@@ -119,6 +118,7 @@ class CompKpiTemplateController extends Controller
     {
         $repSlugs = config('compensation.rep_kpi_slugs', []);
         $mgrSlugs = config('compensation.manager_kpi_slugs', []);
+        $opsSlugs = config('compensation.operation_manager_kpi_slugs', []);
 
         $buildCatalog = fn (array $slugs, array $defaults) => collect($defaults)->map(function ($row) use ($slugs) {
             $slug = $row['slug'];
@@ -131,10 +131,8 @@ class CompKpiTemplateController extends Controller
             ];
         })->values()->all();
 
-        $employees = User::role(array_merge(
-            CrmEmployeeService::LEGACY_MANAGER_ROLES,
-            CrmEmployeeService::LEGACY_EMPLOYEE_ROLES,
-        ))->orderBy('name')->get(['id', 'name']);
+        $employees = User::role($this->compensationRoleNames())
+            ->orderBy('name')->get(['id', 'name']);
 
         $assignedCount = $template
             ? CompEmployeeProfile::where('kpi_template_id', $template->id)->count()
@@ -145,6 +143,7 @@ class CompKpiTemplateController extends Controller
             'role' => $role,
             'repCatalog' => $buildCatalog($repSlugs, config('compensation.rep_kpi_defaults', [])),
             'managerCatalog' => $buildCatalog($mgrSlugs, config('compensation.manager_kpi_defaults', [])),
+            'operationsCatalog' => $buildCatalog($opsSlugs, config('compensation.operation_manager_kpi_defaults', [])),
             'periodLabels' => config('compensation.evaluation_period_labels', []),
             'roleLabels' => config('compensation.target_role_labels', []),
             'employees' => $employees,
@@ -169,9 +168,12 @@ class CompKpiTemplateController extends Controller
 
     protected function applyTemplateToRole(CompKpiTemplate $template): int
     {
-        $roles = $template->target_role === 'manager'
-            ? CrmEmployeeService::LEGACY_MANAGER_ROLES
-            : CrmEmployeeService::LEGACY_EMPLOYEE_ROLES;
+        $roles = match ($template->target_role) {
+            'manager' => CrmEmployeeService::LEGACY_DEPARTMENT_HEAD_ROLES,
+            'team_leader' => CrmEmployeeService::LEGACY_TEAM_LEADER_ROLES,
+            'operation_manager' => OperationsEmployeeService::LEGACY_MANAGER_ROLES,
+            default => CrmEmployeeService::LEGACY_EMPLOYEE_ROLES,
+        };
 
         $userIds = User::role($roles)->pluck('id');
 
@@ -235,7 +237,7 @@ class CompKpiTemplateController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'target_role' => 'required|in:rep,manager',
+            'target_role' => 'required|in:rep,team_leader,manager,operation_manager',
             'evaluation_period' => 'required|in:daily,weekly,monthly,quarterly',
             'items' => 'required|array|min:1',
             'items.*.slug' => 'required|string|max:64',
@@ -265,5 +267,16 @@ class CompKpiTemplateController extends Controller
         if (!Auth::user()->hasRole(['super_admin', 'admin'])) {
             abort(403);
         }
+    }
+
+    /** @return string[] */
+    protected function compensationRoleNames(): array
+    {
+        return array_merge(
+            CrmEmployeeService::LEGACY_DEPARTMENT_HEAD_ROLES,
+            CrmEmployeeService::LEGACY_TEAM_LEADER_ROLES,
+            CrmEmployeeService::LEGACY_EMPLOYEE_ROLES,
+            OperationsEmployeeService::LEGACY_MANAGER_ROLES,
+        );
     }
 }

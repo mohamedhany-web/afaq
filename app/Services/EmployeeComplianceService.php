@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Attendance;
+use App\Models\AttendanceAbsenceReview;
 use App\Models\AutoPenaltyLog;
 use App\Models\Compensation\CompAdjustment;
 use App\Models\CrmFollowUp;
@@ -155,9 +156,26 @@ class EmployeeComplianceService
         })->count();
 
         $onLeave = $this->calendar->periodSummary($user, $start, $end)['leave_days'];
-        $absent = max(0, $expected - $present);
 
-        $compliance = min(100, round((($present - ($late * 0.5) - ($shortHours * 0.5)) / $expected) * 100, 1));
+        $confirmedAbsent = AttendanceAbsenceReview::query()
+            ->where('employee_id', $employee->id)
+            ->whereIn('status', [
+                AttendanceAbsenceReview::STATUS_CONFIRMED_ABSENT,
+                AttendanceAbsenceReview::STATUS_AUTO_CONFIRMED,
+            ])
+            ->whereBetween('review_date', [$start->toDateString(), $end->toDateString()])
+            ->count();
+
+        $excused = AttendanceAbsenceReview::query()
+            ->where('employee_id', $employee->id)
+            ->where('status', AttendanceAbsenceReview::STATUS_EXCUSED)
+            ->whereBetween('review_date', [$start->toDateString(), $end->toDateString()])
+            ->count();
+
+        $absent = $confirmedAbsent;
+        $presentAdjusted = $present + $excused;
+
+        $compliance = min(100, round((($presentAdjusted - ($late * 0.5) - ($shortHours * 0.5) - ($absent * 1.0)) / $expected) * 100, 1));
 
         return [
             'present' => $present,

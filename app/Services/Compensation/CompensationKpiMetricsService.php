@@ -6,10 +6,16 @@ use App\Models\Client;
 use App\Models\Compensation\CompPayrollPeriod;
 use App\Models\CrmFollowUp;
 use App\Models\DailySalesReport;
+use App\Models\OperationsPeriodReport;
+use App\Models\Project;
+use App\Models\RealEstateDeveloper;
 use App\Models\Sale;
 use App\Models\User;
+use App\Models\Attendance;
+use App\Models\Employee;
 use App\Services\CrmScopeService;
 use App\Services\EmployeeComplianceService;
+use App\Services\Operations\OperationsKpiService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -34,8 +40,16 @@ class CompensationKpiMetricsService
         $end = $period->ends_at->copy()->endOfDay();
         $userId = $user->id;
 
+        if ($targetRole === 'operation_manager') {
+            return $this->collectOperationsManagerMetrics($user, $start, $end);
+        }
+
         if ($targetRole === 'manager') {
             return $this->collectManagerMetrics($user, $start, $end);
+        }
+
+        if ($targetRole === 'team_leader') {
+            return $this->collectTeamLeaderMetrics($user, $start, $end);
         }
 
         return $this->collectRepMetrics($user, $start, $end);
@@ -187,5 +201,102 @@ class CompensationKpiMetricsService
             'team_productivity' => $productivity,
             'team_retention' => $teamRetention,
         ];
+    }
+
+    protected function collectTeamLeaderMetrics(User $leader, Carbon $start, Carbon $end): array
+    {
+        $base = $this->collectManagerMetrics($leader, $start, $end);
+        $scope = CrmScopeService::for($leader);
+        $memberIds = collect($scope->managedTeamMemberUserIds())
+            ->filter(fn ($id) => (int) $id !== (int) $leader->id)
+            ->values();
+
+        if ($memberIds->isEmpty()) {
+            return array_merge($base, [
+                'team_closing_rate' => 0,
+                'lead_leakage_rate' => 0,
+                'crm_compliance' => 0,
+                'pipeline_accuracy' => 0,
+                'team_attendance_rate' => 0,
+                'closed_deals' => 0,
+                'reservation_value' => 0,
+                'training_completion_rate' => 100,
+            ]);
+        }
+
+        $closedCount = (int) $base['team_conversion_rate'] > 0
+            ? Sale::query()
+                ->whereIn('assigned_to', $memberIds)
+                ->where('stage', 'closed_won')
+                ->whereBetween('actual_close_date', [$start, $end])
+                ->count()
+            : 0;
+
+        $reservationValue = (float) Sale::query()
+            ->whereIn('assigned_to', $memberIds)
+            ->whereIn('stage', ['negotiation', 'closed_won'])
+            ->whereBetween('updated_at', [$start, $end])
+            ->selectRaw('COALESCE(SUM(COALESCE(actual_value, estimated_value)), 0) as t')
+            ->value('t');
+
+        $staleLeads = Client::query()
+            ->whereIn('created_by', $memberIds)
+            ->whereIn('lead_stage', ['lead', 'prospect'])
+            ->where('updated_at', '<', $start->copy()->subDays(7))
+            ->count();
+        $totalTeamLeads = Client::query()
+            ->whereIn('created_by', $memberIds)
+            ->whereBetween('created_at', [$start, $end])
+            ->count();
+        $leadLeakage = $totalTeamLeads > 0
+            ? round(($staleLeads / $totalTeamLeads) * 100, 2)
+            : 0;
+
+        $reportsExpected = max(1, $memberIds->count() * max(1, $start->diffInWeekdays($end)));
+        $reportsSubmitted = DailySalesReport::query()
+            ->whereIn('user_id', $memberIds)
+            ->where('status', 'submitted')
+            ->whereBetween('report_date', [$start->toDateString(), $end->toDateString()])
+            ->count();
+        $crmCompliance = min(100, round(($reportsSubmitted / $reportsExpected) * 100, 2));
+
+        $pipelineUpdated = Client::query()
+            ->whereIn('created_by', $memberIds)
+            ->whereBetween('updated_at', [$start, $end])
+            ->whereNotIn('lead_stage', ['lead'])
+            ->count();
+        $pipelineTotal = Client::query()
+            ->whereIn('created_by', $memberIds)
+            ->whereBetween('created_at', [$start, $end])
+            ->count();
+        $pipelineAccuracy = $pipelineTotal > 0
+            ? round(($pipelineUpdated / $pipelineTotal) * 100, 2)
+            : 100;
+
+        $attendanceDays = Attendance::query()
+            ->whereIn('employee_id', Employee::whereIn('user_id', $memberIds)->pluck('id'))
+            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->whereNotNull('check_in')
+            ->count();
+        $expectedAttendance = max(1, $memberIds->count() * max(1, $start->diffInWeekdays($end)));
+        $teamAttendance = min(100, round(($attendanceDays / $expectedAttendance) * 100, 2));
+
+        return array_merge($base, [
+            'team_closing_rate' => $base['team_conversion_rate'],
+            'lead_leakage_rate' => $leadLeakage,
+            'crm_compliance' => $crmCompliance,
+            'pipeline_accuracy' => $pipelineAccuracy,
+            'team_attendance_rate' => $teamAttendance,
+            'closed_deals' => $closedCount,
+            'reservation_value' => $reservationValue,
+            'training_completion_rate' => 100,
+        ]);
+    }
+
+    protected function collectOperationsManagerMetrics(User $user, Carbon $start, Carbon $end): array
+    {
+        $data = app(OperationsKpiService::class)->collect($start, $end, $user);
+
+        return $data['flat'];
     }
 }

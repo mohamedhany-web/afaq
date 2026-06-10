@@ -27,6 +27,15 @@ class DepartmentSeeder extends Seeder
             ]
         );
 
-        Department::whereNotIn('code', ['SAL', 'MKT'])->update(['is_active' => false]);
+        Department::updateOrCreate(
+            ['code' => 'OPS'],
+            [
+                'name' => 'العمليات',
+                'description' => 'قسم العمليات والتشغيل والمشاريع',
+                'is_active' => true,
+            ]
+        );
+
+        Department::whereNotIn('code', ['SAL', 'MKT', 'OPS'])->update(['is_active' => false]);
     }
 }

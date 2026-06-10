@@ -20,7 +20,8 @@ class CompEmployeeCompensationController extends Controller
 
         $profiles = CompEmployeeProfile::with(['user', 'kpiTemplate', 'commissionPlan'])->latest()->paginate(20);
         $users = User::role(array_merge(
-            CrmEmployeeService::LEGACY_MANAGER_ROLES,
+            CrmEmployeeService::LEGACY_DEPARTMENT_HEAD_ROLES,
+            CrmEmployeeService::LEGACY_TEAM_LEADER_ROLES,
             CrmEmployeeService::LEGACY_EMPLOYEE_ROLES
         ))->orderBy('name')->get(['id', 'name']);
 

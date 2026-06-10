@@ -31,14 +31,32 @@ class CrmScopeService
         return $this->user->hasRole(['super_admin', 'admin']);
     }
 
+    public function isDepartmentHeadScope(): bool
+    {
+        if ($this->hasFullAccess()) {
+            return false;
+        }
+
+        return $this->user->hasRole(CrmEmployeeService::LEGACY_DEPARTMENT_HEAD_ROLES);
+    }
+
+    public function isTeamLeaderScope(): bool
+    {
+        if ($this->hasFullAccess() || $this->isDepartmentHeadScope()) {
+            return false;
+        }
+
+        return $this->user->hasRole(CrmEmployeeService::LEGACY_TEAM_LEADER_ROLES)
+            || $this->user->managedSalesTeams()->exists();
+    }
+
     public function isManagerScope(): bool
     {
         if ($this->hasFullAccess()) {
             return false;
         }
 
-        return $this->user->hasRole(CrmEmployeeService::LEGACY_MANAGER_ROLES)
-            || $this->user->managedSalesTeams()->exists();
+        return $this->isDepartmentHeadScope() || $this->isTeamLeaderScope();
     }
 
     public function isRepScope(): bool
@@ -90,51 +108,47 @@ class CrmScopeService
             return $query;
         }
 
-        $adminIds = $this->adminUserIds();
-
         if ($this->isManagerScope()) {
             $memberUserIds = $this->managedTeamMemberUserIds();
             $memberEmployeeIds = Employee::whereIn('user_id', $memberUserIds)->pluck('id');
 
             $query->where(function ($q) use ($memberUserIds, $memberEmployeeIds, $includeSalesLink) {
-                $q->whereIn('created_by', $memberUserIds)
-                    ->orWhere(function ($q2) use ($memberEmployeeIds) {
-                        $q2->whereNull('created_by')->whereIn('assigned_to', $memberEmployeeIds);
-                    });
+                $q->whereIn('created_by', $memberUserIds);
+
+                if ($memberEmployeeIds->isNotEmpty()) {
+                    $q->orWhereIn('assigned_to', $memberEmployeeIds);
+                }
 
                 if ($includeSalesLink) {
                     $q->orWhereHas('sales', fn ($s) => $s->whereIn('assigned_to', $memberUserIds));
                 }
             });
 
-            return $this->excludeAdminCreatedClients($query, $adminIds);
+            return $query;
         }
 
         if ($this->isRepScope()) {
-            $query->where(function ($q) use ($includeSalesLink) {
-                $q->where('created_by', $this->user->id)
-                    ->orWhere('assigned_to', $this->user->employee?->id);
-
-                if ($includeSalesLink) {
-                    $q->orWhereHas('sales', fn ($s) => $s->where('assigned_to', $this->user->id));
-                }
-            });
-
-            return $this->excludeAdminCreatedClients($query, $adminIds);
+            return $this->applyRepClientVisibility($query);
         }
 
         return $query->whereRaw('1 = 0');
     }
 
-    protected function excludeAdminCreatedClients(Builder $query, array $adminIds): Builder
+    /**
+     * مندوب المبيعات يرى فقط:
+     * - العملاء/الـ leads التي أضافها بنفسه
+     * - العملاء المُرحَّلين إليه من الإدارة (assigned_to)
+     */
+    protected function applyRepClientVisibility(Builder $query): Builder
     {
-        if ($adminIds === []) {
-            return $query;
-        }
+        $employeeId = $this->user->employee?->id;
 
-        return $query->where(function ($q) use ($adminIds) {
-            $q->whereNull('created_by')
-                ->orWhereNotIn('created_by', $adminIds);
+        return $query->where(function ($q) use ($employeeId) {
+            $q->where('created_by', $this->user->id);
+
+            if ($employeeId) {
+                $q->orWhere('assigned_to', $employeeId);
+            }
         });
     }
 
@@ -160,6 +174,12 @@ class CrmScopeService
             return SalesTeam::query();
         }
 
+        if ($this->isDepartmentHeadScope()) {
+            $deptId = CrmEmployeeService::salesDepartment()->id;
+
+            return SalesTeam::query()->where('department_id', $deptId);
+        }
+
         return SalesTeam::where('manager_id', $this->user->id);
     }
 
@@ -172,6 +192,20 @@ class CrmScopeService
 
         if (!$this->isManagerScope()) {
             return [$this->user->id];
+        }
+
+        if ($this->isDepartmentHeadScope()) {
+            $salesDeptId = CrmEmployeeService::salesDepartment()->id;
+
+            return Employee::query()
+                ->where('department_id', $salesDeptId)
+                ->where('status', 'active')
+                ->whereNotNull('user_id')
+                ->pluck('user_id')
+                ->push($this->user->id)
+                ->unique()
+                ->values()
+                ->all();
         }
 
         $ids = collect([$this->user->id]);
@@ -286,11 +320,22 @@ class CrmScopeService
             return User::role(CrmEmployeeService::LEGACY_EMPLOYEE_ROLES)->pluck('id')->all();
         }
 
-        if ($this->isManagerScope()) {
+        if ($this->isDepartmentHeadScope()) {
             $salesDeptId = CrmEmployeeService::salesDepartment()->id;
 
             return User::role(CrmEmployeeService::LEGACY_EMPLOYEE_ROLES)
                 ->where('id', '!=', $this->user->id)
+                ->whereHas('employee', fn ($q) => $q->where('department_id', $salesDeptId))
+                ->pluck('id')
+                ->all();
+        }
+
+        if ($this->isTeamLeaderScope()) {
+            $salesDeptId = CrmEmployeeService::salesDepartment()->id;
+
+            return User::role(CrmEmployeeService::LEGACY_EMPLOYEE_ROLES)
+                ->where('id', '!=', $this->user->id)
+                ->whereDoesntHave('salesTeams')
                 ->whereHas('employee', fn ($q) => $q->where('department_id', $salesDeptId))
                 ->pluck('id')
                 ->all();

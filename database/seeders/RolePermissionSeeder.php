@@ -208,6 +208,20 @@ class RolePermissionSeeder extends Seeder
         Role::firstOrCreate(['name' => 'manager', 'guard_name' => 'web'])
             ->syncPermissions($salesManagerPerms);
 
+        $teamLeaderPerms = [
+            'view-clients', 'create-clients', 'edit-clients',
+            'view-sales', 'create-sales', 'edit-sales',
+            'view-all-projects', 'create-projects', 'edit-projects',
+            'view-employees',
+            'view-attendance', 'create-attendance',
+            'view-leaves', 'create-leaves', 'approve-leaves',
+            'view-reports', 'generate-reports',
+            'view-dashboard', 'view-analytics',
+            'view-training', 'view-meetings',
+        ];
+        Role::firstOrCreate(['name' => 'sales_team_leader', 'guard_name' => 'web'])
+            ->syncPermissions($teamLeaderPerms);
+
         // 8. موظف مبيعات (CRM)
         $salesRep = Role::firstOrCreate(['name' => 'sales_rep', 'guard_name' => 'web']);
         $salesRep->syncPermissions([
@@ -249,7 +263,25 @@ class RolePermissionSeeder extends Seeder
                 'view-training', 'view-meetings',
             ]);
 
-        // 8. دعم فني (Support)
+        // 8. مدير عمليات (Operations)
+        $operationManagerPerms = [
+            'view-all-projects', 'create-projects', 'edit-projects', 'approve-project-changes',
+            'view-all-tasks', 'create-tasks', 'edit-tasks',
+            'view-developers', 'manage-developers',
+            'view-clients',
+            'view-employees',
+            'view-attendance', 'create-attendance',
+            'view-leaves', 'create-leaves', 'approve-leaves',
+            'view-reports', 'generate-reports', 'export-reports',
+            'view-dashboard', 'view-analytics',
+            'view-departments',
+            'view-training', 'view-meetings',
+        ];
+
+        Role::firstOrCreate(['name' => 'operation_manager', 'guard_name' => 'web'])
+            ->syncPermissions($operationManagerPerms);
+
+        // 9. دعم فني (Support)
         $support = Role::firstOrCreate(['name' => 'support', 'guard_name' => 'web']);
         $support->syncPermissions([
             'view-clients',

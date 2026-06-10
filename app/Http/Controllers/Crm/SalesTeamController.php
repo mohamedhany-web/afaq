@@ -120,7 +120,7 @@ class SalesTeamController extends Controller
         $team->members()->sync($memberIds);
 
         User::find($data['manager_id'])?->tap(
-            fn (User $u) => CrmEmployeeService::assignSalesRole($u, CrmEmployeeService::ROLE_MANAGER)
+            fn (User $u) => CrmEmployeeService::assignSalesRole($u, CrmEmployeeService::ROLE_TEAM_LEADER)
         );
 
         return redirect()->route('crm.teams.show', $team)->with('success', 'تم إنشاء فريق المبيعات بنجاح');
@@ -213,7 +213,7 @@ class SalesTeamController extends Controller
 
         if ($team->wasChanged('manager_id')) {
             User::find($team->manager_id)?->tap(
-                fn (User $u) => CrmEmployeeService::assignSalesRole($u, CrmEmployeeService::ROLE_MANAGER)
+                fn (User $u) => CrmEmployeeService::assignSalesRole($u, CrmEmployeeService::ROLE_TEAM_LEADER)
             );
         }
 
@@ -243,7 +243,11 @@ class SalesTeamController extends Controller
         $isScopedManager = $this->isScopedManager($user);
 
         if ($this->canManageAllTeams($user)) {
-            $managers = User::role(array_merge(CrmEmployeeService::LEGACY_MANAGER_ROLES, ['super_admin', 'admin']))
+            $managers = User::role(array_merge(
+                CrmEmployeeService::LEGACY_DEPARTMENT_HEAD_ROLES,
+                CrmEmployeeService::LEGACY_TEAM_LEADER_ROLES,
+                ['super_admin', 'admin']
+            ))
                 ->orderBy('name')
                 ->get(['id', 'name', 'email']);
 
@@ -369,7 +373,7 @@ class SalesTeamController extends Controller
 
     protected function canManageTeam(User $user, SalesTeam $team): bool
     {
-        return $this->canManageAllTeams($user);
+        return $this->canManageAllTeams($user) || $this->ownsTeam($user, $team);
     }
 
     protected function canDeleteTeam(User $user, SalesTeam $team): bool

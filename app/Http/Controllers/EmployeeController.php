@@ -11,6 +11,9 @@ use App\Services\EmployeeRoleService;
 use App\Services\EmployeeScheduleService;
 use App\Services\MarketingEmployeeService;
 use App\Services\MarketingScopeService;
+use App\Services\OperationsEmployeeService;
+use App\Services\OperationsScopeService;
+use App\Services\OrganizationalHierarchyService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -19,22 +22,28 @@ class EmployeeController extends Controller
 {
     public function __construct(
         protected EmployeeScheduleService $schedule,
+        protected OrganizationalHierarchyService $hierarchy,
     ) {}
 
     public function index(Request $request)
     {
         $marketingOnly = $request->boolean('marketing_only');
-        $salesDepartment = $marketingOnly
-            ? MarketingEmployeeService::marketingDepartment()
-            : CrmEmployeeService::salesDepartment();
+        $operationsOnly = $request->boolean('operations_only');
+        $salesDepartment = $operationsOnly
+            ? OperationsEmployeeService::operationsDepartment()
+            : ($marketingOnly
+                ? MarketingEmployeeService::marketingDepartment()
+                : CrmEmployeeService::salesDepartment());
         $salesOnly = $request->boolean('sales_only');
         $user = auth()->user();
 
-        $query = ($marketingOnly
-            ? MarketingScopeService::for($user)->employeesQuery()
-            : ($salesOnly && $user->canAccessCrm()
-                ? CrmScopeService::for($user)->employeesQuery()
-                : Employee::query()->where('department_id', $salesDepartment->id)))
+        $query = ($operationsOnly
+            ? OperationsScopeService::for($user)->employeesQuery()
+            : ($marketingOnly
+                ? MarketingScopeService::for($user)->employeesQuery()
+                : ($salesOnly && $user->canAccessCrm()
+                    ? CrmScopeService::for($user)->employeesQuery()
+                    : Employee::query()->where('department_id', $salesDepartment->id))))
             ->with(['user.roles', 'department'])
             ->when($request->search, function ($q) use ($request) {
                 $search = $request->search;
@@ -53,26 +62,42 @@ class EmployeeController extends Controller
             ->when($marketingOnly && $request->crm_role === 'marketing_rep', function ($q) {
                 $q->whereHas('user.roles', fn ($r) => $r->whereIn('name', MarketingEmployeeService::LEGACY_REP_ROLES));
             })
-            ->when(!$marketingOnly && $request->crm_role === 'manager', function ($q) {
-                $q->whereHas('user.roles', fn ($r) => $r->whereIn('name', CrmEmployeeService::LEGACY_MANAGER_ROLES));
+            ->when($operationsOnly, function ($q) {
+                $q->whereHas('user.roles', fn ($r) => $r->whereIn('name', OperationsEmployeeService::LEGACY_MANAGER_ROLES));
             })
-            ->when(!$marketingOnly && $request->crm_role === 'employee', function ($q) {
+            ->when(!$operationsOnly && !$marketingOnly && $request->crm_role === 'manager', function ($q) {
+                $q->whereHas('user.roles', fn ($r) => $r->whereIn('name', CrmEmployeeService::LEGACY_DEPARTMENT_HEAD_ROLES));
+            })
+            ->when(!$operationsOnly && !$marketingOnly && $request->crm_role === 'team_leader', function ($q) {
+                $q->whereHas('user.roles', fn ($r) => $r->whereIn('name', CrmEmployeeService::LEGACY_TEAM_LEADER_ROLES));
+            })
+            ->when(!$operationsOnly && !$marketingOnly && $request->crm_role === 'employee', function ($q) {
                 $q->whereHas('user.roles', fn ($r) => $r->whereIn('name', CrmEmployeeService::LEGACY_EMPLOYEE_ROLES));
             });
 
         $statsBase = clone $query;
-        $managerRoles = $marketingOnly
-            ? MarketingEmployeeService::LEGACY_MANAGER_ROLES
-            : CrmEmployeeService::LEGACY_MANAGER_ROLES;
-        $repRoles = $marketingOnly
-            ? MarketingEmployeeService::LEGACY_REP_ROLES
-            : CrmEmployeeService::LEGACY_EMPLOYEE_ROLES;
+        if ($operationsOnly) {
+            $managerRoles = OperationsEmployeeService::LEGACY_MANAGER_ROLES;
+            $repRoles = [];
+        } elseif ($marketingOnly) {
+            $managerRoles = MarketingEmployeeService::LEGACY_MANAGER_ROLES;
+            $repRoles = MarketingEmployeeService::LEGACY_REP_ROLES;
+        } else {
+            $managerRoles = CrmEmployeeService::LEGACY_DEPARTMENT_HEAD_ROLES;
+            $teamLeaderRoles = CrmEmployeeService::LEGACY_TEAM_LEADER_ROLES;
+            $repRoles = CrmEmployeeService::LEGACY_EMPLOYEE_ROLES;
+        }
 
         $stats = [
             'total' => (clone $statsBase)->count(),
             'active' => (clone $statsBase)->where('status', 'active')->count(),
             'managers' => (clone $statsBase)->whereHas('user.roles', fn ($r) => $r->whereIn('name', $managerRoles))->count(),
-            'agents' => (clone $statsBase)->whereHas('user.roles', fn ($r) => $r->whereIn('name', $repRoles))->count(),
+            'team_leaders' => ($operationsOnly ?? false) || ($marketingOnly ?? false)
+                ? 0
+                : (clone $statsBase)->whereHas('user.roles', fn ($r) => $r->whereIn('name', $teamLeaderRoles ?? CrmEmployeeService::LEGACY_TEAM_LEADER_ROLES))->count(),
+            'agents' => $repRoles === []
+                ? 0
+                : (clone $statsBase)->whereHas('user.roles', fn ($r) => $r->whereIn('name', $repRoles))->count(),
         ];
 
         $employees = $query->orderByDesc('created_at')->paginate(12)->withQueryString();
@@ -82,11 +107,14 @@ class EmployeeController extends Controller
             'salesDepartment' => $salesDepartment,
             'stats' => $stats,
             'salesOnly' => $salesOnly,
-            'roleLabels' => $marketingOnly ? MarketingEmployeeService::ROLE_LABELS : CrmEmployeeService::ROLE_LABELS,
+            'roleLabels' => $operationsOnly
+                ? OperationsEmployeeService::ROLE_LABELS
+                : ($marketingOnly ? MarketingEmployeeService::ROLE_LABELS : CrmEmployeeService::ROLE_LABELS),
             'canCreate' => $user->can('create-employees'),
             'canEdit' => $user->can('edit-employees'),
             'canDelete' => $user->can('delete-employees'),
             'marketingOnly' => $marketingOnly,
+            'operationsOnly' => $operationsOnly,
         ]);
     }
 
@@ -97,15 +125,21 @@ class EmployeeController extends Controller
         }
 
         $marketingOnly = $request->boolean('marketing_only');
-        $salesDepartment = $marketingOnly
-            ? MarketingEmployeeService::marketingDepartment()
-            : CrmEmployeeService::salesDepartment();
+        $operationsOnly = $request->boolean('operations_only');
+        $salesDepartment = $operationsOnly
+            ? OperationsEmployeeService::operationsDepartment()
+            : ($marketingOnly
+                ? MarketingEmployeeService::marketingDepartment()
+                : CrmEmployeeService::salesDepartment());
         $users = User::doesntHave('employee')->orderBy('name')->get();
-        $roleLabels = $marketingOnly ? MarketingEmployeeService::ROLE_LABELS : CrmEmployeeService::ROLE_LABELS;
+        $roleLabels = $operationsOnly
+            ? OperationsEmployeeService::ROLE_LABELS
+            : ($marketingOnly ? MarketingEmployeeService::ROLE_LABELS : CrmEmployeeService::ROLE_LABELS);
 
         return view('employees.create', compact('salesDepartment', 'users', 'roleLabels', 'request') + [
             'salesOnly' => $request->boolean('sales_only'),
             'marketingOnly' => $marketingOnly,
+            'operationsOnly' => $operationsOnly,
         ]);
     }
 
@@ -116,9 +150,12 @@ class EmployeeController extends Controller
         }
 
         $marketingOnly = $request->boolean('marketing_only');
-        $allowedRoles = $marketingOnly
-            ? implode(',', [MarketingEmployeeService::ROLE_MANAGER, MarketingEmployeeService::ROLE_REP])
-            : 'manager,employee';
+        $operationsOnly = $request->boolean('operations_only');
+        $allowedRoles = $operationsOnly
+            ? OperationsEmployeeService::ROLE_MANAGER
+            : ($marketingOnly
+                ? implode(',', [MarketingEmployeeService::ROLE_MANAGER, MarketingEmployeeService::ROLE_REP])
+                : 'manager,team_leader,employee');
 
         $validator = Validator::make($request->all(), [
             'user_id' => 'nullable|exists:users,id',
@@ -178,7 +215,9 @@ class EmployeeController extends Controller
                     'email_verified_at' => now(),
                 ]);
 
-                if ($marketingOnly) {
+                if ($operationsOnly) {
+                    OperationsEmployeeService::assignOperationsRole($user);
+                } elseif ($marketingOnly) {
                     MarketingEmployeeService::assignMarketingRole($user, $request->crm_role);
                 } else {
                     CrmEmployeeService::assignSalesRole($user, $request->crm_role);
@@ -189,7 +228,9 @@ class EmployeeController extends Controller
             } elseif ($userId) {
                 $existingUser = User::find($userId);
                 if ($existingUser) {
-                    if ($marketingOnly) {
+                    if ($operationsOnly) {
+                        OperationsEmployeeService::assignOperationsRole($existingUser);
+                    } elseif ($marketingOnly) {
                         MarketingEmployeeService::assignMarketingRole($existingUser, $request->crm_role);
                     } else {
                         CrmEmployeeService::assignSalesRole($existingUser, $request->crm_role);
@@ -203,12 +244,16 @@ class EmployeeController extends Controller
                     ->withInput();
             }
 
-            $department = $marketingOnly
-                ? MarketingEmployeeService::marketingDepartment()
-                : CrmEmployeeService::salesDepartment();
-            $position = $request->position ?: ($marketingOnly
-                ? MarketingEmployeeService::positionForRole($request->crm_role)
-                : CrmEmployeeService::positionForRole($request->crm_role));
+            $department = $operationsOnly
+                ? OperationsEmployeeService::operationsDepartment()
+                : ($marketingOnly
+                    ? MarketingEmployeeService::marketingDepartment()
+                    : CrmEmployeeService::salesDepartment());
+            $position = $request->position ?: ($operationsOnly
+                ? OperationsEmployeeService::positionForRole($request->crm_role)
+                : ($marketingOnly
+                    ? MarketingEmployeeService::positionForRole($request->crm_role)
+                    : CrmEmployeeService::positionForRole($request->crm_role)));
 
             $employee = $this->createEmployeeRecord($request, $userId, $employeeEmail, $department, $position);
 
@@ -231,6 +276,9 @@ class EmployeeController extends Controller
             }
             if ($marketingOnly) {
                 $redirectParams['marketing_only'] = 1;
+            }
+            if ($operationsOnly) {
+                $redirectParams['operations_only'] = 1;
             }
 
             return redirect()->route('employees.show', $redirectParams)
@@ -311,7 +359,11 @@ class EmployeeController extends Controller
         $marketingOnly = $request->boolean('marketing_only') || EmployeeRoleService::isMarketingEmployee($employee);
         $allowedRoles = $marketingOnly
             ? implode(',', [MarketingEmployeeService::ROLE_MANAGER, MarketingEmployeeService::ROLE_REP])
-            : 'manager,employee';
+            : implode(',', [
+                CrmEmployeeService::ROLE_MANAGER,
+                CrmEmployeeService::ROLE_TEAM_LEADER,
+                CrmEmployeeService::ROLE_EMPLOYEE,
+            ]);
         $isSuperAdminUser = $employee->user?->hasRole('super_admin') ?? false;
 
         $validator = Validator::make($request->all(), [
@@ -432,8 +484,9 @@ class EmployeeController extends Controller
     {
         $salesDeptId = CrmEmployeeService::salesDepartment()->id;
         $marketingDeptId = MarketingEmployeeService::marketingDepartment()->id;
+        $opsDeptId = OperationsEmployeeService::operationsDepartment()->id;
 
-        if (!in_array((int) $employee->department_id, [(int) $salesDeptId, (int) $marketingDeptId], true)) {
+        if (!in_array((int) $employee->department_id, [(int) $salesDeptId, (int) $marketingDeptId, (int) $opsDeptId], true)) {
             abort(404);
         }
 
@@ -470,6 +523,7 @@ class EmployeeController extends Controller
             'email' => $employeeEmail,
             'phone' => $request->phone,
             'department_id' => $salesDepartment->id,
+            'reports_to_user_id' => $this->hierarchy->defaultReportsToUserId($salesDepartment->code),
             'position' => $position,
             'salary' => $request->salary,
             'daily_hours' => $request->daily_hours,

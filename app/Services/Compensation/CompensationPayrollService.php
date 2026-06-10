@@ -72,7 +72,7 @@ class CompensationPayrollService
         $net = $base + $commissionTotal + $bonuses - $deductions;
 
         $teamScore = null;
-        if ($profile->kpiTemplate?->target_role === 'manager') {
+        if (in_array($profile->kpiTemplate?->target_role, ['manager', 'team_leader'], true)) {
             $teamScore = $this->averageTeamKpi($user, $period);
         }
 
