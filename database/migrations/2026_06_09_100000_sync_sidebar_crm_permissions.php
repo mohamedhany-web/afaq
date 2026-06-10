@@ -10,28 +10,6 @@ return new class extends Migration
     {
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $permissionNames = [
-            'view-leaves',
-            'create-leaves',
-            'view-developers',
-            'manage-developers',
-        ];
-
-        foreach ($permissionNames as $name) {
-            Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
-        }
-
-        $leaveRoles = [
-            'sales_rep',
-            'sales_agent',
-            'sales_manager',
-            'manager',
-            'marketing_rep',
-            'marketing_manager',
-            'operation_manager',
-            'employee',
-        ];
-
         $operationManagerPerms = [
             'view-all-projects', 'create-projects', 'edit-projects', 'approve-project-changes',
             'view-all-tasks', 'create-tasks', 'edit-tasks',
@@ -42,6 +20,27 @@ return new class extends Migration
             'view-reports', 'generate-reports', 'export-reports',
             'view-dashboard', 'view-analytics',
             'view-departments', 'view-training', 'view-meetings',
+        ];
+
+        $permissionNames = array_values(array_unique(array_merge(
+            ['view-leaves', 'create-leaves', 'view-developers', 'manage-developers'],
+            $operationManagerPerms,
+        )));
+
+        foreach ($permissionNames as $name) {
+            Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
+        }
+
+        $leaveRoles = [
+            'sales_rep',
+            'sales_agent',
+            'sales_team_leader',
+            'sales_manager',
+            'manager',
+            'marketing_rep',
+            'marketing_manager',
+            'operation_manager',
+            'employee',
         ];
 
         foreach ($leaveRoles as $roleName) {
