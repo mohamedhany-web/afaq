@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('page-title', ($marketingOnly ?? false) ? 'إضافة موظف تسويق' : 'إضافة موظف مبيعات')
+@section('page-title', ($operationsOnly ?? false) ? 'إضافة مدير عمليات' : (($marketingOnly ?? false) ? 'إضافة موظف تسويق' : 'إضافة موظف مبيعات'))
 
 @section('content')
 @php
@@ -10,8 +10,8 @@
 @endphp
 
 @include('crm.partials.page-header', [
-    'title' => ($marketingOnly ?? false) ? 'إضافة موظف تسويق' : 'إضافة موظف مبيعات',
-    'subtitle' => ($marketingOnly ?? false) ? 'قسم التسويق — مدير تسويق أو موظف تسويق' : 'قسم المبيعات العقارية — اختر الدور: مدير مبيعات أو موظف مبيعات',
+    'title' => ($operationsOnly ?? false) ? 'إضافة مدير عمليات' : (($marketingOnly ?? false) ? 'إضافة موظف تسويق' : 'إضافة موظف مبيعات'),
+    'subtitle' => ($operationsOnly ?? false) ? 'قسم العمليات — مدير عمليات' : (($marketingOnly ?? false) ? 'قسم التسويق — مدير تسويق أو موظف تسويق' : 'قسم المبيعات العقارية — اختر الدور: مدير مبيعات أو موظف مبيعات'),
     'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />',
 ])
 
@@ -30,6 +30,7 @@
     @csrf
     @if($salesOnly ?? false)<input type="hidden" name="sales_only" value="1">@endif
     @if($marketingOnly ?? false)<input type="hidden" name="marketing_only" value="1">@endif
+    @if($operationsOnly ?? false)<input type="hidden" name="operations_only" value="1">@endif
 
     {{-- حساب الدخول --}}
     <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full">
@@ -117,18 +118,20 @@
     {{-- الدور والوظيفة --}}
     <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full">
         <div class="{{ $sectionHeader }}" style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">
-            الدور والوظيفة — قسم المبيعات
+            الدور والوظيفة — {{ ($operationsOnly ?? false) ? 'قسم العمليات' : (($marketingOnly ?? false) ? 'قسم التسويق' : 'قسم المبيعات') }}
         </div>
         <div class="p-5 sm:p-6 space-y-5">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 @foreach($roleLabels as $val => $labelText)
                 <label class="relative cursor-pointer block">
                     <input type="radio" name="crm_role" value="{{ $val }}" class="peer sr-only"
-                           @checked(old('crm_role', ($marketingOnly ?? false) ? 'marketing_rep' : 'employee') === $val) onchange="updateRoleHint()">
+                           @checked(old('crm_role', ($operationsOnly ?? false) ? 'operation_manager' : (($marketingOnly ?? false) ? 'marketing_rep' : 'employee')) === $val) onchange="updateRoleHint()">
                     <div class="role-card p-4 rounded-xl border-2 border-gray-200 transition-all text-center font-tajawal">
                         <div class="font-bold text-gray-900">{{ $labelText }}</div>
                         <div class="text-xs text-gray-500 mt-1">
-                            @if($marketingOnly ?? false)
+                            @if($operationsOnly ?? false)
+                                إدارة العمليات والمشاريع والتشغيل
+                            @elseif($marketingOnly ?? false)
                                 @if($val === 'marketing_manager') إدارة الحملات والفريق @else تنفيذ المهام وجمع Leads @endif
                             @elseif($val === 'manager')
                                 لوحة الفريق + إدارة فرق المبيعات
@@ -208,7 +211,7 @@
     </div>
 
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full pb-6">
-        <a href="{{ route('employees.index', ($salesOnly ?? false) ? ['sales_only' => 1] : []) }}" class="inline-flex items-center justify-center px-6 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 font-tajawal">
+        <a href="{{ route('employees.index', array_filter(['sales_only' => ($salesOnly ?? false) ? 1 : null, 'marketing_only' => ($marketingOnly ?? false) ? 1 : null, 'operations_only' => ($operationsOnly ?? false) ? 1 : null])) }}" class="inline-flex items-center justify-center px-6 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 font-tajawal">
             إلغاء والعودة للقائمة
         </a>
         <button type="submit" class="inline-flex items-center justify-center px-8 py-3 rounded-xl text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all font-tajawal"
@@ -257,7 +260,15 @@ function updateRoleHint() {
     const role = document.querySelector('input[name="crm_role"]:checked')?.value;
     const pos = document.getElementById('position');
     if (!pos.value && role) {
-        pos.placeholder = role === 'manager' ? 'مدير مبيعات' : 'موظف مبيعات';
+        const placeholders = {
+            operation_manager: 'مدير عمليات',
+            marketing_manager: 'مدير تسويق',
+            marketing_rep: 'موظف تسويق',
+            manager: 'مدير مبيعات',
+            team_leader: 'قائد فريق مبيعات',
+            employee: 'موظف مبيعات',
+        };
+        pos.placeholder = placeholders[role] || 'المنصب';
     }
 }
 

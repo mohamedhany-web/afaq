@@ -152,7 +152,7 @@ class EmployeeController extends Controller
         $marketingOnly = $request->boolean('marketing_only');
         $operationsOnly = $request->boolean('operations_only');
         $allowedRoles = $operationsOnly
-            ? OperationsEmployeeService::ROLE_MANAGER
+            ? implode(',', array_keys(OperationsEmployeeService::ROLE_LABELS))
             : ($marketingOnly
                 ? implode(',', [MarketingEmployeeService::ROLE_MANAGER, MarketingEmployeeService::ROLE_REP])
                 : 'manager,team_leader,employee');
