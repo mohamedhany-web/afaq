@@ -53,13 +53,16 @@
     <p class="text-[11px] text-gray-400 mt-1">{{ $allowCreate ? 'اختر من القائمة أو استخدم «اسم جديد» لإضافة مطور' : 'يظهر فقط المطورون المسجلون بتعاقد من لوحة الإدارة' }}</p>
 
     <template x-teleport="body">
-        <div x-ref="dropdownPanel" x-show="open && (results.length || canUseNew)" x-cloak
+        <div x-ref="dropdownPanel" x-show="open && (results.length || canUseNew || emptyMessage)" x-cloak
              :style="dropdownStyle" class="bg-white border border-gray-200 rounded-xl shadow-xl max-h-56 overflow-y-auto py-1">
             <template x-for="dev in results" :key="dev.id">
                 <button type="button" @click="select(dev)"
                         class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50 font-tajawal border-b border-gray-50 last:border-0"
                         x-text="dev.label"></button>
             </template>
+            <p x-show="emptyMessage && results.length === 0 && !canUseNew"
+               class="px-4 py-3 text-xs text-amber-800 bg-amber-50 font-tajawal leading-relaxed"
+               x-text="emptyMessage"></p>
             <button type="button" x-show="canUseNew" @click="useNewName()"
                     class="w-full text-right px-4 py-2.5 text-sm font-bold text-emerald-700 hover:bg-emerald-50 font-tajawal">
                 + استخدام اسم جديد: «<span x-text="query.trim()"></span>»

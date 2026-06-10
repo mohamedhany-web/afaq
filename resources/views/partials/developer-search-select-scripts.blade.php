@@ -8,6 +8,7 @@ document.addEventListener('alpine:init', () => {
         selectedLabel: config.selectedLabel || '',
         query: '',
         results: [],
+        emptyMessage: '',
         open: false,
         loading: false,
         searchUrl: config.searchUrl,
@@ -47,17 +48,22 @@ document.addEventListener('alpine:init', () => {
             if (term.length < 2) {
                 this.results = [];
                 this.open = false;
+                this.emptyMessage = 'اكتب حرفين على الأقل للبحث';
                 return;
             }
             this.loading = true;
             try {
                 const { data } = await window.axios.get(this.searchUrl + '?q=' + encodeURIComponent(term));
                 this.results = data.developers || [];
-                this.open = this.results.length > 0 || this.canUseNew;
+                this.emptyMessage = this.results.length === 0
+                    ? 'لا يوجد مطور بتعاقد نشط بهذا الاسم. تأكد من إضافته من إدارة المطورين وأن حالته «نشط» وحالة التعاقد «نشط».'
+                    : '';
+                this.open = this.results.length > 0 || this.canUseNew || !!this.emptyMessage;
                 if (this.open) this.$nextTick(() => this.positionDropdown());
             } catch (e) {
                 this.results = [];
-                this.open = this.canUseNew;
+                this.emptyMessage = 'تعذر تحميل نتائج البحث. حدّث الصفحة وحاول مرة أخرى.';
+                this.open = this.canUseNew || !!this.emptyMessage;
             } finally {
                 this.loading = false;
             }

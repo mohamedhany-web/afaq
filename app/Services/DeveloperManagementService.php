@@ -86,7 +86,8 @@ class DeveloperManagementService
                 'created_by' => $user->id,
             ]);
 
-            $this->syncContract($developer, $data, $user, true);
+            $this->syncContract($developer, $data, $user);
+            $this->ensureActiveContract($developer, $user);
             $this->syncPortalAccount($developer, $data, true);
 
             return $developer->fresh(['activeContract', 'accounts']);
@@ -110,7 +111,8 @@ class DeveloperManagementService
                 'portal_enabled' => (bool) ($data['portal_enabled'] ?? false),
             ]);
 
-            $this->syncContract($developer, $data, $user, false);
+            $this->syncContract($developer, $data, $user);
+            $this->ensureActiveContract($developer, $user);
             $this->syncPortalAccount($developer, $data, false);
 
             return $developer->fresh(['activeContract', 'accounts']);
@@ -118,8 +120,12 @@ class DeveloperManagementService
     }
 
     /** @param array<string, mixed> $data */
-    protected function syncContract(RealEstateDeveloper $developer, array $data, User $user, bool $isNew): void
+    protected function syncContract(RealEstateDeveloper $developer, array $data, User $user): void
     {
+        $contractStatus = filled($data['contract_status'] ?? null)
+            ? $data['contract_status']
+            : DeveloperContract::STATUS_ACTIVE;
+
         $contract = $developer->activeContract;
 
         $payload = [
@@ -133,8 +139,8 @@ class DeveloperManagementService
             'notes' => $data['contract_notes'] ?? null,
             'start_date' => $data['start_date'] ?? null,
             'end_date' => $data['end_date'] ?? null,
-            'status' => $data['contract_status'] ?? DeveloperContract::STATUS_ACTIVE,
-            'approved_at' => ($data['contract_status'] ?? DeveloperContract::STATUS_ACTIVE) === DeveloperContract::STATUS_ACTIVE ? now() : null,
+            'status' => $contractStatus,
+            'approved_at' => $contractStatus === DeveloperContract::STATUS_ACTIVE ? now() : null,
         ];
 
         if ($contract) {
@@ -147,6 +153,24 @@ class DeveloperManagementService
             'real_estate_developer_id' => $developer->id,
             'created_by' => $user->id,
         ]));
+    }
+
+    protected function ensureActiveContract(RealEstateDeveloper $developer, User $user): void
+    {
+        if ($developer->status !== RealEstateDeveloper::STATUS_ACTIVE) {
+            return;
+        }
+
+        if ($developer->contracts()->where('status', DeveloperContract::STATUS_ACTIVE)->exists()) {
+            return;
+        }
+
+        DeveloperContract::create([
+            'real_estate_developer_id' => $developer->id,
+            'status' => DeveloperContract::STATUS_ACTIVE,
+            'approved_at' => now(),
+            'created_by' => $user->id,
+        ]);
     }
 
     /** @param array<string, mixed> $data */
