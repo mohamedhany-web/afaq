@@ -112,6 +112,13 @@ class User extends Authenticatable
         }
 
         if ($arguments !== []) {
+<<<<<<< HEAD
+=======
+            if ($this->isPolicyArgument($arguments[0])) {
+                return app(Gate::class)->forUser($this)->check($abilities, $arguments);
+            }
+
+>>>>>>> 00b09a0 (solve eorr)
             if (count($arguments) === 1 && is_string($arguments[0])) {
                 return $this->checkNamedPermission($abilities, $arguments[0]);
             }
@@ -122,6 +129,31 @@ class User extends Authenticatable
         return $this->checkNamedPermission($abilities);
     }
 
+<<<<<<< HEAD
+=======
+    protected function isPolicyArgument(mixed $argument): bool
+    {
+        if (is_object($argument)) {
+            return true;
+        }
+
+        if (! is_string($argument)) {
+            return false;
+        }
+
+        if ($this->isAuthGuardName($argument)) {
+            return false;
+        }
+
+        return str_contains($argument, '\\') || class_exists($argument);
+    }
+
+    protected function isAuthGuardName(string $value): bool
+    {
+        return array_key_exists($value, config('auth.guards', []));
+    }
+
+>>>>>>> 00b09a0 (solve eorr)
     protected function checkNamedPermission(string $permissionKey, ?string $guard = null): bool
     {
         $customPermission = $this->customPermissions()
