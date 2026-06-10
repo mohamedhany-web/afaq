@@ -12,6 +12,7 @@ document.addEventListener('alpine:init', () => {
         open: false,
         loading: false,
         searchUrl: config.searchUrl,
+        contractedOnly: !!config.contractedOnly,
         required: !!config.required,
         allowCreate: config.allowCreate !== false,
         dropdownStyle: 'display: none;',
@@ -53,7 +54,12 @@ document.addEventListener('alpine:init', () => {
             }
             this.loading = true;
             try {
-                const { data } = await window.axios.get(this.searchUrl + '?q=' + encodeURIComponent(term));
+                const url = new URL(this.searchUrl, window.location.origin);
+                url.searchParams.set('q', term);
+                if (this.contractedOnly) {
+                    url.searchParams.set('contracted', '1');
+                }
+                const { data } = await window.axios.get(url.pathname + url.search);
                 this.results = data.developers || [];
                 this.emptyMessage = this.results.length === 0
                     ? 'لا يوجد مطور بتعاقد نشط بهذا الاسم. تأكد من إضافته من إدارة المطورين وأن حالته «نشط» وحالة التعاقد «نشط».'

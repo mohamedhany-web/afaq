@@ -16,7 +16,7 @@
         $prefill = \App\Models\RealEstateDeveloper::find($selectedId);
         $selectedLabel = $prefill?->name ?? '';
     }
-    $searchUrl = route('crm.developers.search', $contractedOnly ? ['contracted' => 1] : []);
+    $searchUrl = route('crm.developers.search');
 @endphp
 
 <div
@@ -26,6 +26,7 @@
         selectedName: @js($selectedName),
         selectedLabel: @js($selectedLabel),
         searchUrl: @js($searchUrl),
+        contractedOnly: @js((bool) $contractedOnly),
         required: @js((bool) $required),
         allowCreate: @js((bool) $allowCreate),
     })"

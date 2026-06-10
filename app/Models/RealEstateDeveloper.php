@@ -74,7 +74,10 @@ class RealEstateDeveloper extends Model
     public function scopeContracted($query)
     {
         return $query
-            ->where('status', self::STATUS_ACTIVE)
+            ->where(function ($q) {
+                $q->where('status', self::STATUS_ACTIVE)
+                    ->orWhereNull('status');
+            })
             ->whereHas('contracts', fn ($q) => $q->where('status', DeveloperContract::STATUS_ACTIVE));
     }
 
