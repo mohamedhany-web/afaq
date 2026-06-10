@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use App\Models\User;
 use App\Models\UserPermission;
 use App\Models\Client;
 use App\Models\Project;
@@ -49,6 +50,10 @@ class AuthServiceProvider extends ServiceProvider
 
         // التحقق من الصلاحيات المخصصة على مستوى المستخدم قبل صلاحيات الأدوار
         Gate::before(function ($user, string $ability, array $arguments = []) {
+            if ($arguments !== [] && User::isPolicyAuthorizationArgument($arguments[0] ?? null)) {
+                return null;
+            }
+
             if ($arguments !== [] && ! is_string($arguments[0] ?? null)) {
                 return null;
             }

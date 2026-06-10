@@ -25,7 +25,7 @@
         <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
         جدول المتابعات
     </a>
-    @if(auth()->user()?->can('viewAny', \App\Models\Project::class) || auth()->user()?->usesCrmWorkspace())
+    @if(auth()->user()?->can('view-all-projects') || auth()->user()?->can('view-own-projects'))
     <a href="{{ route('crm.projects.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('crm.projects.index') || request()->routeIs('crm.projects.show') || request()->routeIs('crm.projects.create') || request()->routeIs('crm.projects.edit') ? 'active' : '' }}">
         <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
         المشاريع العقارية
