@@ -49,7 +49,11 @@ class CrmProjectController extends Controller
             'ownership' => $this->projects->ownershipStats($base),
         ];
 
-        return view('crm.projects.index', compact('projects', 'stats'));
+        return view('crm.projects.index', [
+            'projects' => $projects,
+            'stats' => $stats,
+            'requiresApproval' => $this->approval->requiresApproval($user),
+        ]);
     }
 
     public function create()
@@ -169,13 +173,21 @@ class CrmProjectController extends Controller
             ->with('success', 'تم تحديث المشروع العقاري بنجاح');
     }
 
-    public function destroy(Project $project)
+    public function destroy(Request $request, Project $project)
     {
         $user = Auth::user();
+        abort_unless($this->projects->canDelete($user, $project), 403);
 
         try {
             if ($this->approval->requiresApproval($user)) {
-                $this->approval->submitDelete($project, $user);
+                $request->validate([
+                    'delete_reason' => 'required|string|min:10|max:1000',
+                ], [
+                    'delete_reason.required' => 'يجب كتابة سبب الحذف.',
+                    'delete_reason.min' => 'سبب الحذف يجب أن يكون 10 أحرف على الأقل.',
+                ]);
+
+                $this->approval->submitDelete($project, $user, $request->input('delete_reason'));
 
                 return redirect()->route('crm.projects.approvals.index')
                     ->with('success', 'تم إرسال طلب الحذف — بانتظار موافقة الإدارة العليا.');

@@ -16,7 +16,7 @@
     ];
     $dealsCount = $client->sales->count();
     $dealsValue = $client->sales->sum('estimated_value');
-    $canDelete = $client->sales->isEmpty() && $client->projects()->count() === 0;
+    $canDelete = auth()->user()?->can('delete', $client);
 @endphp
 
 @include('crm.partials.page-header', [
@@ -87,20 +87,41 @@
             </div>
             @endif
         </div>
+        @if(!empty($pendingChange))
+        <div class="mx-5 sm:mx-6 mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm font-tajawal">
+            يوجد طلب <strong>{{ $pendingChange->actionLabel() }}</strong> بانتظار موافقة الإدارة.
+            <a href="{{ route('crm.clients.approvals.show', $pendingChange) }}" class="font-bold mr-1" style="color:{{ $themeColor }}">عرض الطلب</a>
+        </div>
+        @endif
         <div class="px-5 sm:px-6 py-4 border-t border-gray-100 flex flex-wrap gap-2">
+            @can('update', $client)
+            @if(empty($pendingChange))
             <a href="{{ route('crm.clients.edit', $client) }}" class="px-4 py-2 rounded-xl text-sm font-semibold font-tajawal text-white"
-               style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">تعديل البيانات</a>
+               style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">{{ ($requiresApproval ?? false) ? 'طلب تعديل' : 'تعديل البيانات' }}</a>
+            @endif
+            @endcan
             <a href="{{ route('crm.pipeline.client', $client) }}" class="px-4 py-2 rounded-xl text-sm font-semibold font-tajawal border-2 font-medium"
                style="border-color: {{ $themeColor }}40; color: {{ $themeColor }};">فتح في المسار</a>
             <a href="{{ route('crm.pipeline.index') }}" class="px-4 py-2 rounded-xl text-sm font-semibold font-tajawal border-2 border-gray-200 text-gray-600 hover:bg-gray-50">قائمة المسار</a>
             <a href="{{ route('crm.clients.index') }}" class="px-4 py-2 rounded-xl text-sm font-semibold font-tajawal border-2 border-gray-200 text-gray-600 hover:bg-gray-50">كل العملاء</a>
-            @if($canDelete)
-            <form action="{{ route('crm.clients.destroy', $client) }}" method="POST" class="inline"
-                  onsubmit="return confirm('هل أنت متأكد من حذف هذا العميل؟')">
-                @csrf @method('DELETE')
-                <button type="submit" class="px-4 py-2 rounded-xl text-sm font-semibold font-tajawal bg-red-50 text-red-600 hover:bg-red-100">حذف العميل</button>
-            </form>
+            @can('delete', $client)
+            @if(empty($pendingChange))
+            <div class="w-full sm:w-auto sm:min-w-[220px]">
+                @if($requiresApproval ?? false)
+                    @include('crm.partials.delete-request-form', [
+                        'action' => route('crm.clients.destroy', $client),
+                        'label' => 'طلب حذف العميل',
+                    ])
+                @else
+                <form action="{{ route('crm.clients.destroy', $client) }}" method="POST"
+                      onsubmit="return confirm('هل أنت متأكد من حذف هذا العميل؟')">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="w-full px-4 py-2 rounded-xl text-sm font-semibold font-tajawal bg-red-50 text-red-600 hover:bg-red-100">حذف العميل</button>
+                </form>
+                @endif
+            </div>
             @endif
+            @endcan
         </div>
     </div>
 

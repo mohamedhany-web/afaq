@@ -5,17 +5,22 @@ namespace App\Http\Controllers\Crm;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Client;
-use App\Models\Employee;
 use App\Services\Crm\ClientImportService;
 use App\Services\Crm\ClientTimelineService;
+use App\Services\ClientApprovalService;
+use App\Services\ClientManagementService;
 use App\Services\CrmScopeService;
 use App\Support\CrmLostReasonRules;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 
 class CrmClientController extends Controller
 {
+    public function __construct(
+        protected ClientManagementService $clients,
+        protected ClientApprovalService $approval,
+    ) {}
+
     public function index(Request $request)
     {
         $baseQuery = CrmScopeService::for(Auth::user())->clientsQuery();
@@ -40,12 +45,20 @@ class CrmClientController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('crm.clients.index', compact('clients', 'stats'));
+        return view('crm.clients.index', [
+            'clients' => $clients,
+            'stats' => $stats,
+            'requiresApproval' => $this->approval->requiresApproval(Auth::user()),
+        ]);
     }
 
     public function create()
     {
-        return view('crm.clients.create');
+        abort_unless($this->clients->canCreate(Auth::user()), 403);
+
+        return view('crm.clients.create', [
+            'requiresApproval' => $this->approval->requiresApproval(Auth::user()),
+        ]);
     }
 
     public function importTemplate(ClientImportService $import)
@@ -55,6 +68,8 @@ class CrmClientController extends Controller
 
     public function import(Request $request, ClientImportService $import)
     {
+        abort_unless($this->clients->canCreate(Auth::user()), 403);
+
         $request->validate([
             'file' => 'required|file|mimes:csv,txt,xlsx,xls|max:10240',
             'duplicate_mode' => 'nullable|in:skip,update',
@@ -62,6 +77,12 @@ class CrmClientController extends Controller
             'file.required' => 'يرجى اختيار ملف Excel أو CSV.',
             'file.mimes' => 'الصيغ المدعومة: xlsx, xls, csv',
         ]);
+
+        if ($this->approval->requiresApproval(Auth::user())) {
+            return redirect()
+                ->route('crm.clients.create', ['tab' => 'import'])
+                ->with('error', 'استيراد العملاء يتطلب صلاحية الإدارة — استخدم الإدخال اليدوي لإرسال طلبات فردية.');
+        }
 
         $result = $import->import(
             $request->file('file'),
@@ -85,27 +106,20 @@ class CrmClientController extends Controller
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'required|string|max:50',
-            'company' => 'nullable|string|max:255',
-            'address' => 'nullable|string',
-            'notes' => 'nullable|string',
-            'client_type' => 'nullable|in:individual,company',
-            'status' => 'required|in:active,inactive,suspended,prospect',
-        ]);
+        $user = Auth::user();
+        abort_unless($this->clients->canCreate($user), 403);
 
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
+        if ($this->approval->requiresApproval($user)) {
+            $this->approval->submitCreate($request, $user);
+
+            return redirect()->route('crm.clients.approvals.index')
+                ->with('success', 'تم إرسال طلب إضافة العميل — بانتظار موافقة الإدارة.');
         }
 
-        $client = Client::create(array_merge(
-            $this->prepareClientData($validator->validated(), true),
-            ['lead_stage' => 'lead']
-        ));
+        $data = $this->clients->prepareData($this->clients->validate($request), $user, true);
+        $client = Client::create($data);
 
-        app(ClientTimelineService::class)->recordLeadCreated($client, Auth::user());
+        app(ClientTimelineService::class)->recordLeadCreated($client, $user);
 
         return redirect()->route('crm.clients.index')->with('success', 'تم إضافة العميل بنجاح');
     }
@@ -118,35 +132,40 @@ class CrmClientController extends Controller
         $timeline = app(ClientTimelineService::class)->buildForClient($client);
         $lostReasons = config('crm_intelligence.lost_reasons');
 
-        return view('crm.clients.show', compact('client', 'timeline', 'lostReasons'));
+        return view('crm.clients.show', [
+            'client' => $client,
+            'timeline' => $timeline,
+            'lostReasons' => $lostReasons,
+            'pendingChange' => $this->approval->pendingForClient($client),
+            'requiresApproval' => $this->approval->requiresApproval(Auth::user()),
+        ]);
     }
 
     public function edit(Client $client)
     {
         $this->authorizeClient($client);
-        return view('crm.clients.edit', compact('client'));
+        abort_unless($this->clients->canUpdate(Auth::user(), $client), 403);
+
+        return view('crm.clients.edit', [
+            'client' => $client,
+            'requiresApproval' => $this->approval->requiresApproval(Auth::user()),
+        ]);
     }
 
     public function update(Request $request, Client $client)
     {
+        $user = Auth::user();
         $this->authorizeClient($client);
+        abort_unless($this->clients->canUpdate($user, $client), 403);
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'required|string|max:50',
-            'company' => 'nullable|string|max:255',
-            'address' => 'nullable|string',
-            'notes' => 'nullable|string',
-            'client_type' => 'nullable|in:individual,company',
-            'status' => 'required|in:active,inactive,suspended,prospect',
-        ]);
+        if ($this->approval->requiresApproval($user)) {
+            $this->approval->submitUpdate($request, $client, $user);
 
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
+            return redirect()->route('crm.clients.approvals.index')
+                ->with('success', 'تم إرسال طلب التعديل — بانتظار موافقة الإدارة.');
         }
 
-        $client->update($this->prepareClientData($validator->validated()));
+        $client->update($this->clients->prepareData($this->clients->validate($request), $user, false));
 
         return redirect()->route('crm.clients.show', $client)->with('success', 'تم تحديث بيانات العميل');
     }
@@ -233,47 +252,29 @@ class CrmClientController extends Controller
             ->with('success', 'تم حفظ الموعد في جدول المتابعات');
     }
 
-    public function destroy(Client $client)
+    public function destroy(Request $request, Client $client)
     {
+        $user = Auth::user();
         $this->authorizeClient($client);
+        abort_unless($this->clients->canDelete($user, $client), 403);
 
-        if ($client->projects()->count() > 0 || $client->sales()->count() > 0) {
-            return redirect()->back()
-                ->with('error', 'لا يمكن حذف العميل لأنه مرتبط بصفقات أو مشاريع');
+        if ($this->approval->requiresApproval($user)) {
+            $request->validate([
+                'delete_reason' => 'required|string|min:10|max:1000',
+            ], [
+                'delete_reason.required' => 'يجب كتابة سبب الحذف.',
+                'delete_reason.min' => 'سبب الحذف يجب أن يكون 10 أحرف على الأقل.',
+            ]);
+
+            $this->approval->submitDelete($client, $user, $request->input('delete_reason'));
+
+            return redirect()->route('crm.clients.approvals.index')
+                ->with('success', 'تم إرسال طلب الحذف — بانتظار موافقة الإدارة.');
         }
 
-        $client->delete();
+        $this->clients->deleteClient($client);
 
         return redirect()->route('crm.clients.index')->with('success', 'تم حذف العميل بنجاح');
-    }
-
-    protected function prepareClientData(array $data, bool $isCreate = false): array
-    {
-        if (isset($data['company'])) {
-            $data['company_name'] = $data['company'];
-            unset($data['company']);
-        }
-
-        $data['client_type'] = match ($data['client_type'] ?? 'individual') {
-            'company' => 'small_business',
-            default => 'individual',
-        };
-
-        if ($isCreate) {
-            $scope = CrmScopeService::for(Auth::user());
-            $requested = isset($data['assigned_to']) ? (int) $data['assigned_to'] : null;
-            $allowed = $scope->assignableEmployeeIds();
-
-            if ($requested && in_array($requested, $allowed, true)) {
-                $data['assigned_to'] = $requested;
-            } else {
-                $data['assigned_to'] = Auth::user()->employee?->id;
-            }
-
-            $data['created_by'] = Auth::id();
-        }
-
-        return $data;
     }
 
     protected function authorizeClient(Client $client): void

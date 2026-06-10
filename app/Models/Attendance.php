@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Attendance extends Model
 {
@@ -55,6 +56,19 @@ class Attendance extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function checkoutReviews(): HasMany
+    {
+        return $this->hasMany(AttendanceCheckoutReview::class);
+    }
+
+    public function pendingCheckoutReview(): ?AttendanceCheckoutReview
+    {
+        return $this->checkoutReviews()
+            ->where('status', AttendanceCheckoutReview::STATUS_PENDING)
+            ->latest()
+            ->first();
     }
 
     /**

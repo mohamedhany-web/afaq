@@ -5,15 +5,19 @@ namespace App\Providers;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use App\Models\UserPermission;
+use App\Models\Client;
 use App\Models\Project;
+use App\Policies\ClientPolicy;
 use App\Models\DailySalesReport;
 use App\Models\DepartmentReport;
 use App\Models\MarketingPeriodReport;
 use App\Models\AttendanceAbsenceReview;
+use App\Models\AttendanceCheckoutReview;
 use App\Models\OperationsPeriodReport;
 use App\Policies\DailySalesReportPolicy;
 use App\Policies\MarketingPeriodReportPolicy;
 use App\Policies\AttendanceAbsenceReviewPolicy;
+use App\Policies\AttendanceCheckoutReviewPolicy;
 use App\Policies\OperationsPeriodReportPolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\DepartmentReportPolicy;
@@ -27,11 +31,13 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         Project::class => ProjectPolicy::class,
+        Client::class => ClientPolicy::class,
         DepartmentReport::class => DepartmentReportPolicy::class,
         DailySalesReport::class => DailySalesReportPolicy::class,
         MarketingPeriodReport::class => MarketingPeriodReportPolicy::class,
         OperationsPeriodReport::class => OperationsPeriodReportPolicy::class,
         AttendanceAbsenceReview::class => AttendanceAbsenceReviewPolicy::class,
+        AttendanceCheckoutReview::class => AttendanceCheckoutReviewPolicy::class,
     ];
 
     /**

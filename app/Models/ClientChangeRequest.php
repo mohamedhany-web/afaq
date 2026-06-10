@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ProjectChangeRequest extends Model
+class ClientChangeRequest extends Model
 {
     public const ACTION_CREATE = 'create';
     public const ACTION_UPDATE = 'update';
@@ -18,7 +18,7 @@ class ProjectChangeRequest extends Model
     protected $fillable = [
         'action',
         'status',
-        'project_id',
+        'client_id',
         'requested_by',
         'reviewed_by',
         'reviewed_at',
@@ -33,9 +33,9 @@ class ProjectChangeRequest extends Model
         'reviewed_at' => 'datetime',
     ];
 
-    public function project(): BelongsTo
+    public function client(): BelongsTo
     {
-        return $this->belongsTo(Project::class);
+        return $this->belongsTo(Client::class);
     }
 
     public function requester(): BelongsTo
@@ -51,9 +51,9 @@ class ProjectChangeRequest extends Model
     public function actionLabel(): string
     {
         return match ($this->action) {
-            self::ACTION_CREATE => 'إضافة مشروع',
-            self::ACTION_UPDATE => 'تعديل مشروع',
-            self::ACTION_DELETE => 'حذف مشروع',
+            self::ACTION_CREATE => 'إضافة عميل',
+            self::ACTION_UPDATE => 'تعديل عميل',
+            self::ACTION_DELETE => 'حذف عميل',
             default => $this->action,
         };
     }

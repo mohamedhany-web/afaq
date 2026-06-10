@@ -10,24 +10,19 @@ use Illuminate\Support\Facades\DB;
 
 class ProjectApprovalService
 {
-    public function __construct(protected ProjectManagementService $projects) {}
+    public function __construct(
+        protected ProjectManagementService $projects,
+        protected CrmRecordApprovalService $approval,
+    ) {}
 
-    /** موظفو المبيعات يحتاجون موافقة — الإدارة العليا تنفّذ مباشرة */
     public function requiresApproval(User $user): bool
     {
-        if ($user->hasRole(['super_admin', 'admin'])) {
-            return false;
-        }
-
-        return $user->can('create-projects')
-            || $user->can('edit-projects')
-            || $user->can('delete-projects');
+        return $this->approval->requiresApproval($user);
     }
 
     public function canApprove(User $user): bool
     {
-        return $user->hasRole(['super_admin', 'admin'])
-            || $user->can('approve-project-changes');
+        return $this->approval->canApproveProjects($user);
     }
 
     public function submitCreate(Request $request, User $user): ProjectChangeRequest
@@ -79,7 +74,7 @@ class ProjectApprovalService
         return $change;
     }
 
-    public function submitDelete(Project $project, User $user): ProjectChangeRequest
+    public function submitDelete(Project $project, User $user, string $reason): ProjectChangeRequest
     {
         if (!$project->isDeletable()) {
             abort(422, 'لا يمكن حذف مشروع مرتبط بصفقات أو يحتوي على وحدات مباعة.');
@@ -92,8 +87,12 @@ class ProjectApprovalService
             'status' => ProjectChangeRequest::STATUS_PENDING,
             'project_id' => $project->id,
             'requested_by' => $user->id,
+            'request_reason' => $reason,
             'summary' => 'طلب حذف: ' . $project->name,
-            'payload' => ['project_name' => $project->name],
+            'payload' => [
+                'project_name' => $project->name,
+                'delete_reason' => $reason,
+            ],
         ]);
 
         $this->notifyApprovers($change->load('requester'));
@@ -105,6 +104,10 @@ class ProjectApprovalService
     {
         if (!$this->canApprove($reviewer)) {
             abort(403);
+        }
+
+        if ((int) $change->requested_by === (int) $reviewer->id) {
+            abort(403, 'لا يمكنك الموافقة على طلبك الخاص.');
         }
 
         if ($change->status !== ProjectChangeRequest::STATUS_PENDING) {

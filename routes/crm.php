@@ -4,6 +4,7 @@ use App\Http\Controllers\ClientSearchController;
 use App\Http\Controllers\DeveloperSearchController;
 use App\Http\Controllers\Crm\CrmDailySalesReportController;
 use App\Http\Controllers\Crm\CrmDashboardController;
+use App\Http\Controllers\Crm\CrmClientApprovalController;
 use App\Http\Controllers\Crm\CrmClientController;
 use App\Http\Controllers\Crm\CrmFollowUpController;
 use App\Http\Controllers\Crm\CrmIntelligenceController;
@@ -32,6 +33,10 @@ Route::middleware(['auth', 'verified', 'verified.code'])->prefix('crm')->name('c
     Route::get('intelligence', [CrmIntelligenceController::class, 'index'])->name('intelligence.index');
 
     Route::get('clients', [CrmClientController::class, 'index'])->name('clients.index');
+    Route::get('clients/approvals/list', [CrmClientApprovalController::class, 'index'])->name('clients.approvals.index');
+    Route::get('clients/approvals/{changeRequest}', [CrmClientApprovalController::class, 'show'])->name('clients.approvals.show');
+    Route::post('clients/approvals/{changeRequest}/approve', [CrmClientApprovalController::class, 'approve'])->name('clients.approvals.approve');
+    Route::post('clients/approvals/{changeRequest}/reject', [CrmClientApprovalController::class, 'reject'])->name('clients.approvals.reject');
     Route::get('clients/create', [CrmClientController::class, 'create'])->name('clients.create');
     Route::get('clients/import/template', [CrmClientController::class, 'importTemplate'])->name('clients.import.template');
     Route::post('clients/import', [CrmClientController::class, 'import'])->name('clients.import');

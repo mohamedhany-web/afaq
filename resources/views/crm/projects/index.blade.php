@@ -8,10 +8,16 @@
     'title' => 'المشاريع العقارية',
     'subtitle' => 'كل المشاريع المتاحة لفريق المبيعات — إضافة وتعديل حسب الصلاحيات',
     'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />',
-    'actionUrl' => auth()->user()->can('create-projects') ? route('crm.projects.create') : null,
-    'actionLabel' => 'مشروع جديد',
+    'actionUrl' => auth()->user()?->can('create', \App\Models\Project::class) ? route('crm.projects.create') : null,
+    'actionLabel' => ($requiresApproval ?? false) ? 'طلب مشروع جديد' : 'مشروع جديد',
     'actionIcon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />',
 ])
+
+@if($requiresApproval ?? false)
+<div class="mb-4 p-4 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-900 font-tajawal">
+    إضافة أو تعديل أو حذف المشاريع يمرّ بموافقة الإدارة. تتبع طلباتك من <a href="{{ route('crm.projects.approvals.index') }}" class="font-bold underline">طلباتي — المشاريع</a>.
+</div>
+@endif
 
 @if(session('success'))
 <div class="mb-4 p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm font-tajawal">{{ session('success') }}</div>
@@ -121,7 +127,7 @@
     @empty
     <div class="col-span-full bg-white rounded-2xl border border-gray-200 p-12 text-center text-gray-400 font-tajawal">
         <p class="mb-4">لا توجد مشاريع عقارية</p>
-        @can('create-projects')
+        @can('create', \App\Models\Project::class)
         <a href="{{ route('crm.projects.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-semibold font-tajawal"
            style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">إضافة أول مشروع</a>
         @endcan

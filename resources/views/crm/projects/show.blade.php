@@ -82,7 +82,7 @@
         </div>
         @endif
         <div class="px-5 sm:px-6 py-4 border-t border-gray-100 flex flex-col gap-2">
-            @can('edit-projects')
+            @can('update', $project)
             @if(empty($pendingChange))
             <a href="{{ route('crm.projects.edit', $project) }}" class="inline-flex justify-center w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-white font-tajawal"
                style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">{{ ($requiresApproval ?? false) ? 'طلب تعديل' : 'تعديل المشروع' }}</a>
@@ -90,11 +90,18 @@
             @endcan
             @can('delete', $project)
             @if(empty($pendingChange))
-            <form action="{{ route('crm.projects.destroy', $project) }}" method="POST"
-                  onsubmit="return confirm('{{ ($requiresApproval ?? false) ? 'إرسال طلب حذف للإدارة العليا؟' : 'حذف هذا المشروع؟ لا يمكن التراجع.' }}')">
-                @csrf @method('DELETE')
-                <button type="submit" class="w-full px-4 py-2.5 rounded-xl text-sm font-semibold bg-red-50 text-red-600 hover:bg-red-100 font-tajawal">{{ ($requiresApproval ?? false) ? 'طلب حذف المشروع' : 'حذف المشروع' }}</button>
-            </form>
+                @if($requiresApproval ?? false)
+                    @include('crm.partials.delete-request-form', [
+                        'action' => route('crm.projects.destroy', $project),
+                        'label' => 'طلب حذف المشروع',
+                    ])
+                @else
+                <form action="{{ route('crm.projects.destroy', $project) }}" method="POST"
+                      onsubmit="return confirm('حذف هذا المشروع؟ لا يمكن التراجع.')">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="w-full px-4 py-2.5 rounded-xl text-sm font-semibold bg-red-50 text-red-600 hover:bg-red-100 font-tajawal">حذف المشروع</button>
+                </form>
+                @endif
             @endif
             @elseif(!$project->isDeletable())
             <p class="text-xs text-center text-gray-400 font-tajawal py-1">لا يمكن الحذف — المشروع مرتبط بصفقات أو يحتوي وحدات مباعة</p>

@@ -11,10 +11,16 @@
     'title' => 'العملاء',
     'subtitle' => 'إدارة قاعدة عملاء المبيعات العقارية',
     'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />',
-    'actionUrl' => route('crm.clients.create'),
-    'actionLabel' => 'عميل جديد',
+    'actionUrl' => auth()->user()?->can('create', \App\Models\Client::class) ? route('crm.clients.create') : null,
+    'actionLabel' => ($requiresApproval ?? false) ? 'طلب عميل جديد' : 'عميل جديد',
     'actionIcon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />',
 ])
+
+@if($requiresApproval ?? false)
+<div class="mb-4 p-4 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-900 font-tajawal">
+    إضافة أو تعديل أو حذف العملاء يمرّ بموافقة الإدارة. تتبع طلباتك من <a href="{{ route('crm.clients.approvals.index') }}" class="font-bold underline">طلباتي — العملاء</a>.
+</div>
+@endif
 
 @if(session('success'))
 <div class="mb-4 p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm font-tajawal">{{ session('success') }}</div>

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Attendance;
 use App\Models\Employee;
 use Carbon\Carbon;
+use App\Services\AttendanceCheckoutReviewService;
 use App\Services\AttendanceScopeService;
 use App\Services\AutoPenaltyService;
 use App\Services\EmployeeScheduleService;
@@ -19,6 +20,7 @@ class AttendanceController extends Controller
         protected WorkDayService $workDay,
         protected EmployeeScheduleService $schedule,
         protected AutoPenaltyService $autoPenalties,
+        protected AttendanceCheckoutReviewService $checkoutReviews,
     ) {}
     /**
      * Display a listing of the resource.
@@ -112,7 +114,11 @@ class AttendanceController extends Controller
             $statusColor = 'gray';
         } elseif ($attendance?->check_in) {
             if (!$attendance->check_out) {
-                if ($attendance->current_status === 'on_break') {
+                if ($attendance->current_status === 'checkout_pending') {
+                    $filterKey = 'checkout_pending';
+                    $statusLabel = 'انصراف بانتظار العمليات';
+                    $statusColor = 'amber';
+                } elseif ($attendance->current_status === 'on_break') {
                     $filterKey = 'on_break';
                     $statusLabel = 'في استراحة';
                     $statusColor = 'amber';
@@ -170,6 +176,7 @@ class AttendanceController extends Controller
         $late = 0;
         $absent = 0;
         $working = 0;
+        $checkoutPending = 0;
         $onBreak = 0;
         $onLeave = 0;
         $offDay = 0;
@@ -190,6 +197,9 @@ class AttendanceController extends Controller
                 $present++;
             } elseif ($key === 'on_break') {
                 $onBreak++;
+                $present++;
+            } elseif ($key === 'checkout_pending') {
+                $checkoutPending++;
                 $present++;
             } elseif ($key === 'absent') {
                 $absent++;
@@ -443,50 +453,21 @@ class AttendanceController extends Controller
                     'success' => false
                 ], 400, [], JSON_UNESCAPED_UNICODE);
             }
-            
-            $checkOutTime = Carbon::now();
-            $checkInTime = Carbon::parse($attendance->check_in);
-            
-            // Calculate total hours
-            $totalMinutes = $checkOutTime->diffInMinutes($checkInTime);
-            
-            // Subtract break time if exists
-            if ($attendance->break_duration_minutes) {
-                $totalMinutes -= $attendance->break_duration_minutes;
-            }
-            
-            $totalHours = round($totalMinutes / 60, 2);
-            $isEarlyDeparture = $this->schedule->isEarlyDeparture($employee, $checkOutTime, $today);
-            $wasLate = ($attendance->late_minutes ?? 0) > 0 || $attendance->status === 'late';
 
-            $requiredHours = (float) ($attendance->required_hours ?? $this->workDay->requiredDailyHours($employee));
-            $metRequired = $totalHours >= ($requiredHours - 0.1);
-
-            $finalStatus = 'present';
-            if ($wasLate) {
-                $finalStatus = 'late';
-            } elseif ($isEarlyDeparture && !$metRequired) {
-                $finalStatus = 'half_day';
-            }
-
-            $attendance->update([
-                'check_out' => $checkOutTime,
-                'total_hours' => $totalHours,
-                'status' => $finalStatus,
-                'current_status' => 'completed',
-                'work_day_locked' => true,
-            ]);
+            $review = $this->checkoutReviews->submit($attendance, $employee);
 
             return response()->json([
                 'success' => true,
-                'message' => $metRequired
-                    ? ($wasLate ? 'تم إنهاء اليوم (مع تأخير في الحضور)' : 'تم إنهاء يوم العمل بنجاح')
-                    : ($isEarlyDeparture ? 'تم إنهاء اليوم (انصراف مبكر — لم تكتمل الساعات)' : 'تم إنهاء يوم العمل'),
-                'check_out_time' => $checkOutTime->format('H:i:s'),
-                'total_hours' => $totalHours,
-                'is_early' => $isEarlyDeparture,
-                'scheduled_checkout' => $attendance->scheduled_checkout_at?->format('H:i'),
+                'message' => 'تم إرسال طلب الانصراف لمدير العمليات — سيُسجَّل بعد الموافقة',
+                'pending_review' => true,
+                'requested_at' => $review->requested_check_out_at->format('H:i:s'),
+                'total_hours_preview' => $review->total_hours_preview,
             ], 200, [], JSON_UNESCAPED_UNICODE);
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            return response()->json([
+                'error' => $e->getMessage() ?: 'تعذر إرسال طلب الانصراف',
+                'success' => false,
+            ], $e->getStatusCode(), [], JSON_UNESCAPED_UNICODE);
         } catch (\Exception $e) {
             \Log::error('Error in checkOut: ' . $e->getMessage());
             return response()->json([
@@ -535,6 +516,13 @@ class AttendanceController extends Controller
                 return response()->json([
                     'error' => 'أنت في الاستراحة بالفعل',
                     'success' => false
+                ], 400, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            if ($attendance->current_status === 'checkout_pending') {
+                return response()->json([
+                    'error' => 'طلب الانصراف قيد المراجعة — لا يمكن بدء استراحة',
+                    'success' => false,
                 ], 400, [], JSON_UNESCAPED_UNICODE);
             }
             

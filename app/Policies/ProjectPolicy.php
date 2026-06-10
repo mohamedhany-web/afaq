@@ -53,16 +53,31 @@ class ProjectPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasRole('super_admin') || $user->hasRole('admin') || $user->can('create-projects');
+        if ($user->hasRole(['super_admin', 'admin'])) {
+            return true;
+        }
+
+        if ($user->usesCrmWorkspace()) {
+            return true;
+        }
+
+        return $user->hasPermissionTo('create-projects');
     }
 
     public function update(User $user, Project $project): bool
     {
-        if ($user->hasRole('super_admin') || $user->hasRole('admin') || $user->can('edit-projects')) {
+        if ($user->hasRole(['super_admin', 'admin'])) {
             return true;
         }
 
-        // allow PM to update their own project if permitted
+        if ($user->usesCrmWorkspace() || $user->usesMarketingWorkspace()) {
+            return true;
+        }
+
+        if ($user->can('edit-projects')) {
+            return true;
+        }
+
         return $user->can('edit-own-projects') && (int) $project->project_manager_id === (int) $user->id;
     }
 
@@ -72,9 +87,15 @@ class ProjectPolicy
             return false;
         }
 
-        return $user->hasRole('super_admin')
-            || $user->hasRole('admin')
-            || $user->can('edit-projects');
+        if ($user->hasRole(['super_admin', 'admin'])) {
+            return true;
+        }
+
+        if ($user->usesCrmWorkspace() || $user->usesMarketingWorkspace()) {
+            return true;
+        }
+
+        return $user->hasPermissionTo('edit-projects');
     }
 }
 

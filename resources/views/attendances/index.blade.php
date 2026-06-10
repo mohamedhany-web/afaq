@@ -24,23 +24,28 @@
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             بدء يوم العمل
         </button>
+        @elseif($todayAttendance->current_status === 'checkout_pending')
+        <div class="px-5 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 font-bold">
+            طلب الانصراف لدى العمليات — بانتظار الموافقة
+        </div>
         @elseif(!$todayAttendance->check_out)
-        <div class="relative" id="timerControlDropdown">
-            <button id="timerControlBtn" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold shadow-md" style="background:linear-gradient(135deg,{{ $themeColor }},{{ $themeColor }}dd)">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <span id="timerControlText">إدارة اليوم</span>
+        <div class="flex flex-wrap items-center gap-3">
+            <button id="checkOutBtn" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold shadow-md hover:shadow-lg transition-all" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                تسجيل انصراف
             </button>
-            <div id="timerControlMenu" class="hidden absolute top-full right-0 mt-2 w-52 bg-white rounded-xl shadow-xl border z-50 py-2">
-                <button id="startBreakBtn" class="w-full text-right px-4 py-3 text-sm hover:bg-gray-50 flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-amber-500"></span> بدء الاستراحة
+            <div class="relative" id="timerControlDropdown">
+                <button id="timerControlBtn" type="button" class="inline-flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-gray-200 text-gray-700 font-semibold text-sm bg-white hover:bg-gray-50">
+                    <span id="timerControlText">الاستراحة</span>
                 </button>
-                <button id="endBreakBtn" class="hidden w-full text-right px-4 py-3 text-sm hover:bg-gray-50 flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-green-500"></span> انتهاء الاستراحة
-                </button>
-                <hr class="my-1">
-                <button id="checkOutBtn" class="w-full text-right px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-red-500"></span> إنهاء يوم العمل
-                </button>
+                <div id="timerControlMenu" class="hidden absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border z-50 py-2">
+                    <button id="startBreakBtn" type="button" class="w-full text-right px-4 py-3 text-sm hover:bg-gray-50 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span> بدء الاستراحة
+                    </button>
+                    <button id="endBreakBtn" type="button" class="hidden w-full text-right px-4 py-3 text-sm hover:bg-gray-50 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-green-500"></span> انتهاء الاستراحة
+                    </button>
+                </div>
             </div>
         </div>
         @else
@@ -51,7 +56,7 @@
     </div>
 </div>
 
-@if($todayAttendance && $todayAttendance->check_in && !$todayAttendance->check_out)
+@if($todayAttendance && $todayAttendance->check_in && !$todayAttendance->check_out && $todayAttendance->current_status !== 'checkout_pending')
 <div class="mb-6 bg-white rounded-2xl border p-5 sm:p-6 font-tajawal" id="workTimeCard">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -116,6 +121,7 @@
                 <option value="">الكل</option>
                 <option value="present" @selected(request('status') === 'present')>مكتمل</option>
                 <option value="working" @selected(request('status') === 'working')>يعمل الآن</option>
+                <option value="checkout_pending" @selected(request('status') === 'checkout_pending')>انصراف بانتظار العمليات</option>
                 <option value="on_break" @selected(request('status') === 'on_break')>في استراحة</option>
                 <option value="late" @selected(request('status') === 'late')>متأخر</option>
                 <option value="absent" @selected(request('status') === 'absent')>غائب</option>
@@ -193,6 +199,8 @@
                     @if($row['is_early'])
                     <span class="block text-xs text-red-600">مبكر</span>
                     @endif
+                    @elseif($att?->current_status === 'checkout_pending')
+                    <span class="text-xs text-amber-700 font-semibold">بانتظار العمليات</span>
                     @elseif($att?->check_in)
                     <span class="text-xs text-blue-600 font-semibold">لم ينصرف</span>
                     @else
@@ -310,6 +318,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function checkOut() {
+        if (!confirm('إرسال طلب الانصراف لمدير العمليات؟ لن يُسجَّل الانصراف إلا بعد الموافقة.')) return;
         fetch('{{ route("attendances.check-out") }}', { method: 'POST', headers: csrfHeaders() })
             .then(r => r.json()).then(data => {
                 if (data?.success) { notify(data.message, 'success'); setTimeout(() => location.reload(), 800); }
@@ -337,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('breakStatus')?.classList.toggle('hidden', !onBreak);
         document.getElementById('startBreakBtn')?.classList.toggle('hidden', onBreak);
         document.getElementById('endBreakBtn')?.classList.toggle('hidden', !onBreak);
-        document.getElementById('timerControlText').textContent = onBreak ? 'في الاستراحة' : 'إدارة اليوم';
+        document.getElementById('timerControlText').textContent = onBreak ? 'في الاستراحة' : 'الاستراحة';
         if (breakStart) document.getElementById('breakStartTime').textContent = breakStart;
     }
 

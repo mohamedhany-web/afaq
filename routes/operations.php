@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Operations\OperationsAttendanceReviewController;
+use App\Http\Controllers\Operations\OperationsCheckoutReviewController;
 use App\Http\Controllers\Operations\OperationsCrmController;
 use App\Http\Controllers\Operations\OperationsDashboardController;
 use App\Http\Controllers\Operations\OperationsInventoryController;
@@ -34,4 +35,8 @@ Route::middleware(['auth', 'verified', 'verified.code'])->prefix('operations')->
     Route::post('attendance-reviews/{attendanceAbsenceReview}/confirm-absent', [OperationsAttendanceReviewController::class, 'confirmAbsent'])->name('attendance-reviews.confirm-absent');
     Route::post('attendance-reviews/{attendanceAbsenceReview}/confirm-present', [OperationsAttendanceReviewController::class, 'confirmPresent'])->name('attendance-reviews.confirm-present');
     Route::post('attendance-reviews/{attendanceAbsenceReview}/excuse', [OperationsAttendanceReviewController::class, 'excuse'])->name('attendance-reviews.excuse');
+
+    Route::get('checkout-reviews', [OperationsCheckoutReviewController::class, 'index'])->name('checkout-reviews.index');
+    Route::post('checkout-reviews/{checkoutReview}/approve', [OperationsCheckoutReviewController::class, 'approve'])->name('checkout-reviews.approve');
+    Route::post('checkout-reviews/{checkoutReview}/reject', [OperationsCheckoutReviewController::class, 'reject'])->name('checkout-reviews.reject');
 });

@@ -10,12 +10,18 @@
 @endphp
 
 @include('crm.partials.page-header', [
-    'title' => 'إضافة عملاء / Leads',
+    'title' => ($requiresApproval ?? false) ? 'طلب إضافة عميل' : 'إضافة عملاء / Leads',
     'subtitle' => 'إدخال يدوي أو استيراد من ملف Excel / CSV',
     'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />',
     'actionUrl' => route('crm.clients.index'),
     'actionLabel' => 'قائمة العملاء',
 ])
+
+@if($requiresApproval ?? false)
+<div class="mb-4 p-4 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-900 font-tajawal">
+    سيتم إرسال بيانات العميل للإدارة للموافقة قبل إضافته إلى النظام.
+</div>
+@endif
 
 <div class="mb-6 flex flex-wrap gap-2">
     <a href="{{ route('crm.clients.create', ['tab' => 'manual']) }}"
@@ -93,7 +99,7 @@
         </a>
         <button type="submit" class="inline-flex items-center justify-center px-8 py-3 rounded-xl text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all font-tajawal"
                 style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">
-            حفظ العميل
+            {{ ($requiresApproval ?? false) ? 'إرسال طلب الإضافة' : 'حفظ العميل' }}
         </button>
     </div>
 </form>

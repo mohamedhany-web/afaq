@@ -9,10 +9,16 @@
 @endphp
 
 @include('crm.partials.page-header', [
-    'title' => 'تعديل عميل',
+    'title' => ($requiresApproval ?? false) ? 'طلب تعديل عميل' : 'تعديل عميل',
     'subtitle' => $client->name,
     'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />',
 ])
+
+@if($requiresApproval ?? false)
+<div class="mb-4 p-4 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-900 font-tajawal">
+    سيتم إرسال التعديلات للإدارة للموافقة قبل تطبيقها على ملف العميل.
+</div>
+@endif
 
 <form action="{{ route('crm.clients.update', $client) }}" method="POST" class="w-full space-y-6">
     @csrf
@@ -25,7 +31,7 @@
         </a>
         <button type="submit" class="inline-flex items-center justify-center px-8 py-3 rounded-xl text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all font-tajawal"
                 style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">
-            حفظ التعديلات
+            {{ ($requiresApproval ?? false) ? 'إرسال طلب التعديل' : 'حفظ التعديلات' }}
         </button>
     </div>
 </form>
