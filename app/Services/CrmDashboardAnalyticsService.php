@@ -362,8 +362,6 @@ class CrmDashboardAnalyticsService
             ->values()
             ->all();
     }
-            ->all();
-    }
 
     protected function propertyInsights(): array
     {
