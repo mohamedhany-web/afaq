@@ -17,12 +17,12 @@
 ])
 
 <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'الراتب الأساسي', 'value' => $money($run->base_salary), 'compact' => true, 'accent' => 'blue'])
-    @include('crm.partials.stat-card', ['label' => 'العمولة', 'value' => $money($run->commission_total), 'compact' => true, 'accent' => 'green'])
-    @include('crm.partials.stat-card', ['label' => 'درجة KPI', 'value' => round($run->kpi_score ?? 0, 1) . '%', 'compact' => true, 'accent' => 'purple', 'footer' => '<span class="text-gray-600">المستوى: ' . e($level) . '</span>'])
-    @include('crm.partials.stat-card', ['label' => 'المكافآت', 'value' => $money($run->bonus_total), 'compact' => true, 'accent' => 'amber'])
-    @include('crm.partials.stat-card', ['label' => 'الخصومات', 'value' => $money($run->deduction_total), 'compact' => true, 'accent' => 'red'])
-    @include('crm.partials.stat-card', ['label' => 'صافي الراتب المتوقع', 'value' => $money($run->net_pay), 'compact' => true, 'accent' => 'theme'])
+    @include('crm.partials.stat-card', ['label' => 'الراتب الأساسي', 'value' => $money($run->base_salary), 'compact' => true, 'accent' => 'blue', 'href' => '#payroll-details', 'linkLabel' => 'عرض التفاصيل'])
+    @include('crm.partials.stat-card', ['label' => 'العمولة', 'value' => $money($run->commission_total), 'compact' => true, 'accent' => 'green', 'href' => '#payroll-details', 'linkLabel' => 'عرض التفاصيل'])
+    @include('crm.partials.stat-card', ['label' => 'درجة KPI', 'value' => round($run->kpi_score ?? 0, 1) . '%', 'compact' => true, 'accent' => 'purple', 'footer' => '<span class="text-gray-600">المستوى: ' . e($level) . '</span>', 'href' => '#payroll-details', 'linkLabel' => 'عرض التفاصيل'])
+    @include('crm.partials.stat-card', ['label' => 'المكافآت', 'value' => $money($run->bonus_total), 'compact' => true, 'accent' => 'amber', 'href' => '#payroll-details', 'linkLabel' => 'عرض التفاصيل'])
+    @include('crm.partials.stat-card', ['label' => 'الخصومات', 'value' => $money($run->deduction_total), 'compact' => true, 'accent' => 'red', 'href' => '#payroll-details', 'linkLabel' => 'عرض التفاصيل'])
+    @include('crm.partials.stat-card', ['label' => 'صافي الراتب المتوقع', 'value' => $money($run->net_pay), 'compact' => true, 'accent' => 'theme', 'href' => '#payroll-details', 'linkLabel' => 'عرض التفاصيل'])
 </div>
 
 <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 mb-6">

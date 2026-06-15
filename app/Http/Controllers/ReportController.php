@@ -11,7 +11,9 @@ use App\Models\Attendance;
 use App\Models\Salary;
 use App\Models\Department;
 use App\Models\User;
+use App\Services\CrmScopeService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
@@ -179,24 +181,25 @@ class ReportController extends Controller
     {
         $start_date = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $end_date = $request->get('end_date', Carbon::now()->format('Y-m-d'));
-        
-        $sales = Sale::with('client')
+
+        $query = $this->scopedSalesQuery()->with(['client', 'project', 'salesRep'])
             ->whereBetween('expected_close_date', [$start_date, $end_date])
-            ->orderBy('expected_close_date', 'desc')
-            ->get();
-        
+            ->orderBy('expected_close_date', 'desc');
+
+        $sales = $query->get();
+
         $summary = [
             'total_sales' => $sales->count(),
-            'total_amount' => $sales->sum('estimated_value'),
-            'average_sale' => $sales->avg('estimated_value'),
-            'by_status' => $sales->groupBy('stage')->map(function($group) {
+            'total_amount' => $sales->sum(fn ($sale) => $sale->amount),
+            'average_sale' => $sales->avg(fn ($sale) => $sale->amount),
+            'by_status' => $sales->groupBy('stage')->map(function ($group) {
                 return [
                     'count' => $group->count(),
-                    'amount' => $group->sum('estimated_value'),
+                    'amount' => $group->sum(fn ($sale) => $sale->amount),
                 ];
             }),
         ];
-        
+
         return view('reports.sales', compact('sales', 'summary', 'start_date', 'end_date'));
     }
 
@@ -207,25 +210,36 @@ class ReportController extends Controller
     {
         $start_date = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $end_date = $request->get('end_date', Carbon::now()->format('Y-m-d'));
-        
-        $sales = Sale::with('client')
+
+        $sales = $this->scopedSalesQuery()->with(['client', 'project', 'salesRep'])
             ->whereBetween('expected_close_date', [$start_date, $end_date])
             ->orderBy('expected_close_date', 'desc')
             ->get();
-        
+
         $summary = [
             'total_sales' => $sales->count(),
-            'total_amount' => $sales->sum('estimated_value'),
-            'average_sale' => $sales->avg('estimated_value'),
-            'by_status' => $sales->groupBy('stage')->map(function($group) {
+            'total_amount' => $sales->sum(fn ($sale) => $sale->amount),
+            'average_sale' => $sales->avg(fn ($sale) => $sale->amount),
+            'by_status' => $sales->groupBy('stage')->map(function ($group) {
                 return [
                     'count' => $group->count(),
-                    'amount' => $group->sum('estimated_value'),
+                    'amount' => $group->sum(fn ($sale) => $sale->amount),
                 ];
             }),
         ];
-        
+
         return view('reports.sales-print', compact('sales', 'summary', 'start_date', 'end_date'));
+    }
+
+    private function scopedSalesQuery()
+    {
+        $user = Auth::user();
+
+        if ($user && $user->canAccessCrm()) {
+            return CrmScopeService::for($user)->salesQuery();
+        }
+
+        return Sale::query();
     }
 
     /**

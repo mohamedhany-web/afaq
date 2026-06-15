@@ -25,43 +25,18 @@
 ])
 
 <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'إجمالي الصفقات', 'value' => $stats['total'], 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" />'])
-    @include('crm.partials.stat-card', ['label' => 'صفقات نشطة', 'value' => $stats['active'], 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />'])
-    @include('crm.partials.stat-card', ['label' => 'تم البيع', 'value' => $stats['won'], 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />'])
-    @include('crm.partials.stat-card', ['label' => 'قيمة المسار', 'value' => $money($stats['pipeline_value']), 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />'])
-    @include('crm.partials.stat-card', ['label' => 'إيرادات مكتملة', 'value' => $money($stats['won_value']), 'accent' => 'purple', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z" />'])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي الصفقات', 'value' => $stats['total'], 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" />', 'href' => route('crm.pipeline.index', ['view' => 'deals']) . '#pipeline-kanban', 'linkLabel' => 'عرض Kanban'])
+    @include('crm.partials.stat-card', ['label' => 'صفقات نشطة', 'value' => $stats['active'], 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />', 'href' => route('crm.pipeline.index', ['view' => 'deals']) . '#pipeline-kanban', 'linkLabel' => 'عرض النشطة'])
+    @include('crm.partials.stat-card', ['label' => 'تم البيع', 'value' => $stats['won'], 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />', 'href' => route('crm.pipeline.index', ['view' => 'deals', 'stage' => 'closed_won', 'show_closed' => 1]) . '#pipeline-kanban', 'linkLabel' => 'عرض المباع'])
+    @include('crm.partials.stat-card', ['label' => 'قيمة المسار', 'value' => $money($stats['pipeline_value']), 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />', 'href' => route('crm.pipeline.index', ['view' => 'deals']) . '#pipeline-kanban', 'linkLabel' => 'عرض المسار'])
+    @include('crm.partials.stat-card', ['label' => 'إيرادات مكتملة', 'value' => $money($stats['won_value']), 'accent' => 'purple', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z" />', 'href' => route('crm.pipeline.index', ['view' => 'deals', 'stage' => 'closed_won', 'show_closed' => 1]) . '#pipeline-kanban', 'linkLabel' => 'عرض الإيرادات'])
 </div>
 
 @include('crm.pipeline.partials.view-switcher', ['current' => 'deals'])
 
-<div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-5 mb-4">
-    <form method="GET" class="flex flex-col lg:flex-row gap-3 lg:items-end">
-        <input type="hidden" name="view" value="deals">
-        <div class="flex-1">
-            <label class="block text-xs font-bold text-gray-500 mb-1.5 font-tajawal">بحث</label>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="اسم العميل، المشروع، أو وصف الصفقة..."
-                   class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 font-tajawal text-sm">
-        </div>
-        <div class="w-full lg:w-44">
-            <label class="block text-xs font-bold text-gray-500 mb-1.5 font-tajawal">مرحلة الصفقة</label>
-            <select name="stage" class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 font-tajawal text-sm">
-                <option value="">كل المراحل النشطة</option>
-                @foreach($stageLabels as $key => $label)
-                    <option value="{{ $key }}" @selected(request('stage') === $key)>{{ $label }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div class="flex flex-wrap gap-2">
-            <button type="submit" class="px-5 py-2.5 rounded-xl text-white text-sm font-semibold shadow-sm font-tajawal"
-                    style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">تطبيق</button>
-            @if(request()->hasAny(['search', 'stage', 'show_closed']))
-            <a href="{{ route('crm.pipeline.index', ['view' => 'deals']) }}" class="px-5 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 font-tajawal">مسح</a>
-            @endif
-        </div>
-    </form>
-</div>
+@include('crm.partials.filter-bar')
 
-<div class="mb-8">
+<div id="pipeline-kanban" class="mb-8">
     <div class="flex items-center gap-3 mb-3">
         <h2 class="text-base font-bold text-gray-900 font-tajawal">مراحل البيع النشطة</h2>
         <span class="text-xs px-2.5 py-0.5 rounded-full font-medium" style="background: {{ $themeColor }}15; color: {{ $themeColor }};">{{ number_format($stats['active']) }} صفقة</span>

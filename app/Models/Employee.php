@@ -81,6 +81,26 @@ class Employee extends Model
         return $this->hasMany(Salary::class);
     }
 
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(EmployeeContract::class);
+    }
+
+    public function custodyAssignments(): HasMany
+    {
+        return $this->hasMany(CustodyAssignment::class);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(EmployeeDocument::class);
+    }
+
+    public function adminNotes(): HasMany
+    {
+        return $this->hasMany(EmployeeAdminNote::class);
+    }
+
     /**
      * توليد رقم توظيفي تلقائي
      */

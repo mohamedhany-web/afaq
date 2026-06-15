@@ -99,6 +99,8 @@
             'accent' => 'theme',
             'icon' => $iconProjects,
             'footer' => '<div class="flex items-center justify-between"><div class="flex items-center gap-1 text-green-600"><svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg><span class="font-semibold">' . ($active_projects ?? 0) . '</span><span class="hidden sm:inline">نشط</span></div><div class="text-gray-600"><span class="font-bold" style="color: ' . e($themeColor) . ';">' . ($project_completion_rate ?? 0) . '%</span><span class="hidden sm:inline"> مكتمل</span></div></div>',
+            'href' => route('crm.projects.index'),
+            'linkLabel' => 'عرض المشاريع',
         ])
         @endif
 
@@ -109,6 +111,8 @@
             'accent' => 'green',
             'icon' => $iconActive,
             'footer' => '<div class="flex items-center gap-1 text-green-600"><svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">' . $iconActive . '</svg><span class="font-semibold">قيد التنفيذ</span></div>',
+            'href' => route('crm.projects.index', ['listing_status' => 'active']),
+            'linkLabel' => 'عرض النشطة',
         ])
         @endif
 
@@ -119,6 +123,8 @@
             'accent' => 'purple',
             'icon' => $iconEmployees,
             'footer' => '<div class="flex items-center gap-1 text-purple-600"><svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">' . $iconCheck . '</svg><span class="font-semibold">' . ($active_employees ?? 0) . '</span><span class="hidden sm:inline">نشطون</span></div>',
+            'href' => route('employees.index'),
+            'linkLabel' => 'عرض الموظفين',
         ])
         @endif
 
@@ -129,6 +135,8 @@
             'accent' => 'orange',
             'icon' => $iconClients,
             'footer' => '<div class="flex items-center gap-1 text-orange-600"><svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">' . $iconEmployees . '</svg><span class="font-semibold">قاعدة العملاء</span></div>',
+            'href' => auth()->user()->clientsHubUrl(),
+            'linkLabel' => 'عرض العملاء',
         ])
         @endif
 
@@ -141,6 +149,8 @@
             'accent' => 'blue',
             'icon' => $iconProjects,
             'footer' => '<span class="text-blue-600 font-semibold">المشاريع المكلف بها</span>',
+            'href' => route('crm.projects.index'),
+            'linkLabel' => 'عرض المشاريع',
         ])
         @endif
 
@@ -151,6 +161,8 @@
             'accent' => 'green',
             'icon' => $iconActive,
             'footer' => '<span class="text-green-600 font-semibold">قيد التنفيذ</span>',
+            'href' => route('crm.projects.index'),
+            'linkLabel' => 'عرض المشاريع',
         ])
         @endif
 
@@ -161,6 +173,8 @@
             'accent' => 'purple',
             'icon' => $iconSales,
             'footer' => '<span class="text-purple-600 font-semibold">إجمالي الصفقات</span>',
+            'href' => route('crm.pipeline.index', ['view' => 'deals']),
+            'linkLabel' => 'عرض الصفقات',
         ])
         @endif
 
@@ -171,6 +185,8 @@
             'accent' => 'red',
             'icon' => $iconClock,
             'footer' => '<span class="text-red-600 font-semibold">قيد المتابعة</span>',
+            'href' => route('crm.pipeline.index', ['view' => 'deals']),
+            'linkLabel' => 'عرض الصفقات',
         ])
         @endif
 
@@ -182,6 +198,8 @@
             'value' => $total_employees,
             'accent' => 'blue',
             'icon' => $iconEmployees,
+            'href' => route('employees.index'),
+            'linkLabel' => 'عرض الموظفين',
         ])
         @endif
 
@@ -191,6 +209,8 @@
             'value' => $pending_leaves,
             'accent' => 'yellow',
             'icon' => $iconClock,
+            'href' => route('leaves.index'),
+            'linkLabel' => 'عرض الإجازات',
         ])
         @endif
 
@@ -202,6 +222,8 @@
             'value' => number_format($total_amount, 2) . ' ج.م',
             'accent' => 'green',
             'icon' => $iconMoney,
+            'href' => route('expenses.index'),
+            'linkLabel' => 'عرض المصروفات',
         ])
         @endif
 
@@ -213,6 +235,8 @@
             'value' => $total_clients,
             'accent' => 'blue',
             'icon' => $iconClients,
+            'href' => auth()->user()->clientsHubUrl(),
+            'linkLabel' => 'عرض العملاء',
         ])
         @endif
 
@@ -224,6 +248,8 @@
             'value' => $my_tickets,
             'accent' => 'blue',
             'icon' => $iconTicket,
+            'href' => route('tickets.index'),
+            'linkLabel' => 'عرض التذاكر',
         ])
         @endif
     @endif

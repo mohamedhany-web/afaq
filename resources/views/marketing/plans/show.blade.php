@@ -20,10 +20,10 @@
 @if(session('success'))<div class="mb-4 p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm font-tajawal">{{ session('success') }}</div>@endif
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'إجمالي المهام', 'value' => $stats['total'], 'accent' => 'theme', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'مكتملة', 'value' => $stats['completed'], 'accent' => 'green', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'متأخرة', 'value' => $stats['overdue'], 'accent' => 'amber', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'التقدم', 'value' => $plan->progressPercent() . '%', 'accent' => 'purple', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي المهام', 'value' => $stats['total'], 'accent' => 'theme', 'compact' => true, 'href' => '#plan-tasks', 'linkLabel' => 'عرض المهام'])
+    @include('crm.partials.stat-card', ['label' => 'مكتملة', 'value' => $stats['completed'], 'accent' => 'green', 'compact' => true, 'href' => '#plan-tasks', 'linkLabel' => 'عرض المهام'])
+    @include('crm.partials.stat-card', ['label' => 'متأخرة', 'value' => $stats['overdue'], 'accent' => 'amber', 'compact' => true, 'href' => '#plan-tasks', 'linkLabel' => 'عرض المهام'])
+    @include('crm.partials.stat-card', ['label' => 'التقدم', 'value' => $plan->progressPercent() . '%', 'accent' => 'purple', 'compact' => true, 'href' => '#plan-tasks', 'linkLabel' => 'عرض المهام'])
 </div>
 
 @if($isManager)

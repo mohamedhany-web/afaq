@@ -14,10 +14,10 @@
 @include('accounting.partials.nav')
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'إجمالي المصروفات', 'value' => $stats['total'], 'accent' => 'theme', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'إجمالي المبلغ', 'value' => $money($stats['total_amount']), 'accent' => 'purple', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'بانتظار الموافقة', 'value' => $stats['pending'], 'accent' => 'amber', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'موافق عليها', 'value' => $stats['approved'], 'accent' => 'green', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي المصروفات', 'value' => $stats['total'], 'accent' => 'theme', 'compact' => true, 'href' => route('expenses.index') . '#page-data', 'linkLabel' => 'عرض القائمة'])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي المبلغ', 'value' => $money($stats['total_amount']), 'accent' => 'purple', 'compact' => true, 'href' => route('expenses.index') . '#page-data', 'linkLabel' => 'عرض المصروفات'])
+    @include('crm.partials.stat-card', ['label' => 'بانتظار الموافقة', 'value' => $stats['pending'], 'accent' => 'amber', 'compact' => true, 'href' => route('expenses.index', ['status' => 'pending']) . '#page-data', 'linkLabel' => 'عرض المعلّقة'])
+    @include('crm.partials.stat-card', ['label' => 'موافق عليها', 'value' => $stats['approved'], 'accent' => 'green', 'compact' => true, 'href' => route('expenses.index', ['status' => 'approved']) . '#page-data', 'linkLabel' => 'عرض الموافق عليها'])
 </div>
 
 @include('accounting.partials.filter-bar', [
@@ -28,7 +28,7 @@
     ],
 ])
 
-<div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+<div id="page-data" class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
     <div class="px-5 py-4 border-b flex justify-between items-center font-tajawal" style="{{ $headerStyle }}">
         <h2 class="font-bold">قائمة المصروفات</h2>
         <span class="text-xs px-3 py-1 rounded-full font-medium" style="background:{{ $themeColor }}15;color:{{ $themeColor }};">{{ $expenses->total() }}</span>

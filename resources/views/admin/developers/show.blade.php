@@ -45,15 +45,17 @@
 @endif
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'المشاريع', 'value' => $developer->projects_count, 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5" />'])
-    @include('crm.partials.stat-card', ['label' => 'حسابات البوابة', 'value' => $developer->accounts_count, 'accent' => 'purple', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />'])
-    @include('crm.partials.stat-card', ['label' => 'سابقة الأعمال', 'value' => $developer->portfolio_items_count, 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />'])
+    @include('crm.partials.stat-card', ['label' => 'المشاريع', 'value' => $developer->projects_count, 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5" />', 'href' => route('admin.developers.index'), 'linkLabel' => 'عرض المطورين'])
+    @include('crm.partials.stat-card', ['label' => 'حسابات البوابة', 'value' => $developer->accounts_count, 'accent' => 'purple', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />', 'href' => route('admin.developers.index'), 'linkLabel' => 'عرض المطورين'])
+    @include('crm.partials.stat-card', ['label' => 'سابقة الأعمال', 'value' => $developer->portfolio_items_count, 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />', 'href' => route('admin.developers.index'), 'linkLabel' => 'عرض المطورين'])
     @include('crm.partials.stat-card', [
         'label' => 'حالة البوابة',
         'value' => $developer->isPortalReady() ? 'مفعّلة' : ($developer->portal_enabled ? 'بدون حساب' : 'موقوفة'),
         'accent' => $developer->isPortalReady() ? 'green' : 'amber',
         'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />',
         'compact' => true,
+        'href' => route('admin.developers.index'),
+        'linkLabel' => 'عرض المطورين',
     ])
 </div>
 

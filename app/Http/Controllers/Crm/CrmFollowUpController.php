@@ -3,10 +3,9 @@
 namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
-use App\Models\Client;
 use App\Models\CrmFollowUp;
 use App\Services\CrmFollowUpService;
-use App\Services\CrmScopeService;
+use App\Services\FollowUpDashboardService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,60 +15,9 @@ class CrmFollowUpController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $service = CrmFollowUpService::for($user);
-        $scope = CrmScopeService::for($user);
+        $workspace = $user->hasRole(['super_admin', 'admin']) ? 'admin' : 'sales';
 
-        $date = $request->filled('date') ? Carbon::parse($request->date) : now();
-        $view = $request->get('view', 'day');
-
-        $base = $service->followUpsQuery()
-            ->with(['client:id,name,phone', 'user:id,name', 'creator:id,name', 'sale:id,product_service']);
-
-        if ($view === 'week') {
-            $start = $date->copy()->startOfWeek();
-            $end = $date->copy()->endOfWeek();
-        } else {
-            $start = $date->copy()->startOfDay();
-            $end = $date->copy()->endOfDay();
-        }
-
-        $query = (clone $base)
-            ->when($request->status, fn ($q) => $q->where('status', $request->status))
-            ->when($request->type, fn ($q) => $q->where('interaction_type', $request->type))
-            ->when($request->user_id && $scope->isManagerScope(), fn ($q) => $q->where('user_id', $request->user_id))
-            ->when($request->search, function ($q) use ($request) {
-                $s = '%' . $request->search . '%';
-                $q->where(function ($sub) use ($s) {
-                    $sub->where('notes', 'like', $s)
-                        ->orWhereHas('client', fn ($c) => $c->where('name', 'like', $s)->orWhere('phone', 'like', $s));
-                });
-            });
-
-        $dayQuery = $view === 'week'
-            ? (clone $query)->whereBetween('scheduled_at', [$start, $end])
-            : (clone $query)->whereDate('scheduled_at', $date->toDateString());
-
-        $stats = [
-            'today' => (clone $base)->scheduled()->whereDate('scheduled_at', today())->count(),
-            'overdue' => (clone $base)->scheduled()->where('scheduled_at', '<', now())->count(),
-            'upcoming' => (clone $base)->scheduled()->whereBetween('scheduled_at', [now(), now()->addDays(7)])->count(),
-        ];
-
-        $followUps = $dayQuery->orderBy('scheduled_at')->paginate(30)->withQueryString();
-
-        $assignableUsers = collect($service->assignableUsers($user));
-
-        return view('crm.follow-ups.index', [
-            'followUps' => $followUps,
-            'stats' => $stats,
-            'date' => $date,
-            'view' => $view,
-            'assignableUsers' => $assignableUsers,
-            'typeLabels' => CrmFollowUp::TYPE_LABELS,
-            'canAssignOthers' => $assignableUsers->count() > 1,
-            'isManager' => $scope->isManagerScope() || $scope->hasFullAccess(),
-            'highlight' => $request->integer('highlight'),
-        ]);
+        return view('crm.follow-ups.index', FollowUpDashboardService::for($user)->buildIndex($request, $user, $workspace));
     }
 
     public function store(Request $request)
@@ -97,9 +45,10 @@ class CrmFollowUpController extends Controller
         }
 
         $scheduledDate = Carbon::parse($validated['scheduled_at'])->toDateString();
+        $redirectRoute = $request->input('_redirect_route', 'crm.follow-ups.index');
 
         return redirect()
-            ->route('crm.follow-ups.index', [
+            ->route($redirectRoute, [
                 'date' => $scheduledDate,
                 'highlight' => $followUp->id,
             ])

@@ -2,84 +2,79 @@
 @section('page-title', 'لوحة العمليات')
 
 @section('content')
-@php $themeColor = \App\Helpers\SettingsHelper::getThemeColor(); @endphp
-
-@include('crm.partials.page-header', [
-    'title' => $resolver->isAdmin() ? 'متابعة مديري العمليات' : 'مركز عمليات عقاري',
-    'subtitle' => 'تحويل التسويق والمبيعات إلى منظومة قابلة للقياس والنمو — ' . now()->locale('ar')->translatedFormat('d F Y'),
-    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>',
-    'actionUrl' => route('operations.reports.index'),
-    'actionLabel' => 'التقارير الدورية',
-])
-
-<div class="grid grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'عملاء بانتظار التوزيع', 'value' => $stats['unassigned_leads'] ?? 0, 'accent' => 'red'])
-    @include('crm.partials.stat-card', ['label' => 'غياب بانتظار المراجعة', 'value' => $stats['pending_absence_reviews'] ?? 0, 'accent' => 'amber'])
-    @include('crm.partials.stat-card', ['label' => 'مشاريع نشطة', 'value' => $stats['active_projects'], 'accent' => 'theme'])
-    @include('crm.partials.stat-card', ['label' => 'مطورون نشطون', 'value' => $stats['developers'], 'accent' => 'blue'])
-    @include('crm.partials.stat-card', ['label' => 'تقارير مرفوعة', 'value' => $stats['submitted_reports'], 'accent' => 'green'])
-    @include('crm.partials.stat-card', ['label' => 'مسودات تقارير', 'value' => $stats['pending_reports'], 'accent' => 'amber'])
-</div>
-
-@if(($kpi['overall_score'] ?? 0) > 0 || !empty($kpi['items']))
-<div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden mb-6 font-tajawal">
-    <div class="px-5 py-4 border-b font-bold" style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, transparent 100%);">
-        مؤشرات الأداء المركّبة — {{ $period->label ?? 'الفترة الحالية' }}
-    </div>
-    <div class="p-5 sm:p-6">
-        <div class="flex flex-wrap items-center gap-4 mb-4">
-            <div class="text-3xl font-extrabold" style="color: {{ $themeColor }};">{{ number_format($kpi['overall_score'] ?? 0, 1) }}%</div>
-            <span class="px-3 py-1 rounded-full text-sm font-bold bg-gray-100">{{ $kpi['level']['label'] ?? '—' }}</span>
-        </div>
-        @if(!empty($kpi['items']))
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            @foreach(array_slice($kpi['items'], 0, 6) as $item)
-            <div class="p-3 rounded-xl bg-gray-50">
-                <p class="text-xs text-gray-500">{{ $item['name'] }}</p>
-                <p class="font-bold text-gray-900">{{ number_format($item['actual'], 1) }}%</p>
-                <p class="text-xs mt-1" style="color: {{ $themeColor }};">تحقيق {{ number_format($item['achievement'], 1) }}%</p>
-            </div>
-            @endforeach
-        </div>
-        @endif
-    </div>
-</div>
-@endif
-
 @php
-    $groupLinks = [
+    $themeColor = \App\Helpers\SettingsHelper::getThemeColor();
+    $kpiLinks = [
         'lead_management' => route('operations.leads.index'),
         'crm_management' => route('operations.crm.index'),
         'sales_operations' => route('operations.crm.index'),
-        'revenue_impact' => route('operations.team.index'),
+        'revenue_impact' => route('operations.crm.index'),
         'inventory_operations' => route('operations.inventory.index'),
         'team_performance' => route('operations.team.index'),
         'reporting_management' => route('operations.reports.index'),
     ];
 @endphp
 
-<div class="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-6">
-    @foreach($kpiGroups['groups'] ?? [] as $key => $group)
-        @include('operations.partials.kpi-group', ['group' => $group, 'link' => $groupLinks[$key] ?? null])
-    @endforeach
+@include('crm.partials.page-header', [
+    'title' => 'لوحة تحكم العمليات',
+    'subtitle' => 'مركز التشغيل — توزيع العملاء · المخزون · الفريق · الحضور',
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>',
+    'actionUrl' => route('operations.reports.index'),
+    'actionLabel' => 'تقاريري',
+])
+
+@include('operations.partials.crm-pulse')
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+    @include('crm.partials.stat-card', ['label' => 'عملاء بانتظار التوزيع', 'value' => $stats['unassigned_leads'], 'accent' => 'amber', 'href' => route('operations.leads.index', ['filter' => 'unassigned']) . '#page-data', 'linkLabel' => 'توزيع العملاء'])
+    @include('crm.partials.stat-card', ['label' => 'غياب بانتظار المراجعة', 'value' => $stats['pending_absence_reviews'], 'accent' => 'red', 'href' => route('operations.attendance-reviews.index', ['status' => 'pending']) . '#page-data', 'linkLabel' => 'مراجعة الغياب'])
+    @include('crm.partials.stat-card', ['label' => 'انصراف بانتظار الموافقة', 'value' => $stats['pending_checkout_reviews'], 'accent' => 'purple', 'href' => route('operations.checkout-reviews.index') . '#page-data', 'linkLabel' => 'موافقات الانصراف'])
+    @include('crm.partials.stat-card', ['label' => 'مشاريع نشطة', 'value' => $stats['active_projects'], 'accent' => 'theme', 'href' => route('operations.inventory.index') . '#page-data', 'linkLabel' => 'المخزون العقاري'])
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 font-tajawal">
-    <a href="{{ route('operations.leads.index') }}" class="p-5 rounded-2xl border-2 border-gray-200 bg-white hover:shadow-lg transition-shadow">
-        <p class="font-bold text-gray-900 mb-1">رحلة العميل وتوزيع الـ Leads</p>
-        <p class="text-sm text-gray-600">استلام من التسويق، توزيع على المبيعات، تقليل الفقد.</p>
-    </a>
-    <a href="{{ route('operations.crm.index') }}" class="p-5 rounded-2xl border-2 border-gray-200 bg-white hover:shadow-lg transition-shadow">
-        <p class="font-bold text-gray-900 mb-1">متابعة CRM والـ Pipeline</p>
-        <p class="text-sm text-gray-600">جودة البيانات، الصفقات المتعثرة، المتابعات الفائتة.</p>
-    </a>
-    <a href="{{ route('operations.inventory.index') }}" class="p-5 rounded-2xl border-2 border-gray-200 bg-white hover:shadow-lg transition-shadow">
-        <p class="font-bold text-gray-900 mb-1">المخزون العقاري</p>
-        <p class="text-sm text-gray-600">الوحدات المتاحة والمحجوزة ودقة الأسعار.</p>
-    </a>
-    <a href="{{ route('operations.attendance-reviews.index') }}" class="p-5 rounded-2xl border-2 border-gray-200 bg-white hover:shadow-lg transition-shadow">
-        <p class="font-bold text-gray-900 mb-1">مراجعة الغياب</p>
-        <p class="text-sm text-gray-600">تأكيد حضور/غياب الفريق قبل الخصومات.</p>
-    </a>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+    @include('crm.partials.stat-card', ['label' => 'مطورون نشطون', 'value' => $stats['developers'], 'accent' => 'blue', 'href' => route('admin.developers.index'), 'linkLabel' => 'عرض المطورين'])
+    @include('crm.partials.stat-card', ['label' => 'تقاريري — مسودات', 'value' => $stats['pending_reports'], 'accent' => 'amber', 'href' => route('operations.reports.index', ['status' => 'draft']) . '#page-data', 'linkLabel' => 'عرض المسودات'])
+    @include('crm.partials.stat-card', ['label' => 'تقاريري — مرفوعة', 'value' => $stats['submitted_reports'], 'accent' => 'green', 'href' => route('operations.reports.index', ['status' => 'submitted']) . '#page-data', 'linkLabel' => 'عرض المرفوعة'])
+    @if($resolver->isAdmin())
+    @include('crm.partials.stat-card', ['label' => 'تقارير الفريق — مسودات', 'value' => $stats['team_reports_pending'] ?? 0, 'accent' => 'amber', 'href' => route('operations.reports.index', ['status' => 'draft']) . '#page-data', 'linkLabel' => 'متابعة الفريق'])
+    @endif
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 font-tajawal">
+    <div class="bg-white rounded-2xl border p-5">
+        <p class="text-xs text-gray-500 mb-1">مؤشرات التعويضات — {{ $period->label }}</p>
+        <p class="text-3xl font-extrabold" style="color:{{ $themeColor }}">{{ number_format($kpi['total_score'] ?? 0, 1) }}%</p>
+        <p class="text-sm text-gray-600 mt-2">الدرجة الإجمالية للفترة الحالية</p>
+        <a href="{{ route('crm.compensation.dashboard') }}" class="inline-flex items-center gap-1 text-xs font-bold mt-3 hover:underline" style="color:{{ $themeColor }}">تفاصيل التعويضات ←</a>
+    </div>
+    <div class="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
+        @foreach([
+            ['route' => 'operations.leads.index', 'label' => 'توزيع العملاء', 'icon' => 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z'],
+            ['route' => 'operations.follow-ups.index', 'label' => 'جدول المتابعات', 'icon' => 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'],
+            ['route' => 'operations.crm.index', 'label' => 'متابعة CRM', 'icon' => 'M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4'],
+            ['route' => 'operations.inventory.index', 'label' => 'المخزون', 'icon' => 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'],
+            ['route' => 'operations.team.index', 'label' => 'أداء الفريق', 'icon' => 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z'],
+            ['route' => 'operations.attendance-reviews.index', 'label' => 'مراجعة الغياب', 'icon' => 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z'],
+            ['route' => 'operations.checkout-reviews.index', 'label' => 'موافقات الانصراف', 'icon' => 'M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'],
+        ] as $action)
+        <a href="{{ route($action['route']) }}" class="flex flex-col items-center gap-2 p-4 rounded-2xl border bg-white hover:shadow-md transition-shadow text-center group">
+            <div class="p-3 rounded-xl text-white" style="background:{{ $themeColor }}">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $action['icon'] }}"/></svg>
+            </div>
+            <span class="text-xs font-bold text-gray-800">{{ $action['label'] }}</span>
+            <span class="text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity" style="color:{{ $themeColor }}">فتح القسم ←</span>
+        </a>
+        @endforeach
+    </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-4 font-tajawal" id="page-data">
+    @foreach($kpiGroups as $group)
+    @include('operations.partials.kpi-group', [
+        'group' => $group,
+        'link' => $kpiLinks[$group['key'] ?? ''] ?? null,
+    ])
+    @endforeach
 </div>
 @endsection

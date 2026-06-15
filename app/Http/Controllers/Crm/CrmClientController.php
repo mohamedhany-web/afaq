@@ -14,8 +14,11 @@ use App\Support\CrmLostReasonRules;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+use App\Http\Controllers\Crm\Concerns\UsesCrmFilters;
+
 class CrmClientController extends Controller
 {
+    use UsesCrmFilters;
     public function __construct(
         protected ClientManagementService $clients,
         protected ClientApprovalService $approval,
@@ -23,7 +26,10 @@ class CrmClientController extends Controller
 
     public function index(Request $request)
     {
-        $baseQuery = CrmScopeService::for(Auth::user())->clientsQuery();
+        $this->authorize('viewAny', Client::class);
+
+        $filters = $this->crmFilters($request);
+        $baseQuery = $filters->scope()->clientsQuery();
 
         $stats = [
             'total' => (clone $baseQuery)->count(),
@@ -32,23 +38,36 @@ class CrmClientController extends Controller
             'with_deals' => (clone $baseQuery)->whereHas('sales')->count(),
         ];
 
-        $clients = $baseQuery
-            ->with(['assignedEmployee', 'createdBy:id,name', 'sales'])
-            ->when($request->search, fn ($q) => $q->where(function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%')
-                    ->orWhere('phone', 'like', '%' . $request->search . '%')
-                    ->orWhere('email', 'like', '%' . $request->search . '%')
-                    ->orWhere('company_name', 'like', '%' . $request->search . '%');
-            }))
-            ->when($request->status, fn ($q) => $q->where('status', $request->status))
+        $clients = $filters->applyClientFilters(
+            $baseQuery->with(['assignedEmployee', 'createdBy:id,name', 'sales']),
+            $request,
+        )
             ->latest()
             ->paginate(15)
             ->withQueryString();
+
+        $statusLabels = [
+            'prospect' => 'محتمل',
+            'active' => 'نشط',
+            'inactive' => 'غير نشط',
+            'suspended' => 'موقوف',
+        ];
+
+        $stageLabels = [
+            'lead' => 'عميل محتمل',
+            'prospect' => 'مهتم',
+            'proposal' => 'عرض سعر',
+            'negotiation' => 'تفاوض',
+            'closed_won' => 'تم البيع',
+            'closed_lost' => 'خسارة',
+        ];
 
         return view('crm.clients.index', [
             'clients' => $clients,
             'stats' => $stats,
             'requiresApproval' => $this->approval->requiresApproval(Auth::user()),
+            'clearUrl' => route('crm.clients.index'),
+            ...$this->clientFilterViewData($filters, $request, $stageLabels, $statusLabels),
         ]);
     }
 
@@ -121,21 +140,45 @@ class CrmClientController extends Controller
 
         app(ClientTimelineService::class)->recordLeadCreated($client, $user);
 
-        return redirect()->route('crm.clients.index')->with('success', 'تم إضافة العميل بنجاح');
+        return $this->redirectAfterClientMutation($client, 'تم إضافة العميل بنجاح');
+    }
+
+    protected function redirectAfterClientMutation(Client $client, string $message)
+    {
+        $user = Auth::user();
+
+        if ($user->can('viewAny', Client::class)) {
+            return redirect()->route('crm.clients.index')->with('success', $message);
+        }
+
+        return redirect()->route('crm.pipeline.client', $client)->with('success', $message);
     }
 
     public function show(Client $client)
     {
         $this->authorizeClient($client);
-        $client->load(['sales.project', 'sales.salesRep', 'assignedEmployee', 'createdBy:id,name']);
+
+        if (! Auth::user()->can('viewFullDetails', $client)) {
+            return redirect()->route('crm.pipeline.client', $client);
+        }
+
+        $client->load(['sales.project', 'sales.salesRep', 'assignedEmployee.user', 'createdBy:id,name']);
 
         $timeline = app(ClientTimelineService::class)->buildForClient($client);
+        $portalHub = app(\App\Services\ClientPortalHubService::class)->summaryForClient($client);
         $lostReasons = config('crm_intelligence.lost_reasons');
+        $relatedProjects = $client->sales
+            ->pluck('project')
+            ->filter()
+            ->unique('id')
+            ->values();
 
         return view('crm.clients.show', [
             'client' => $client,
             'timeline' => $timeline,
+            'portalHub' => $portalHub,
             'lostReasons' => $lostReasons,
+            'relatedProjects' => $relatedProjects,
             'pendingChange' => $this->approval->pendingForClient($client),
             'requiresApproval' => $this->approval->requiresApproval(Auth::user()),
         ]);
@@ -274,14 +317,15 @@ class CrmClientController extends Controller
 
         $this->clients->deleteClient($client);
 
-        return redirect()->route('crm.clients.index')->with('success', 'تم حذف العميل بنجاح');
+        if ($user->can('viewAny', Client::class)) {
+            return redirect()->route('crm.clients.index')->with('success', 'تم حذف العميل بنجاح');
+        }
+
+        return redirect()->route('crm.pipeline.index')->with('success', 'تم حذف العميل بنجاح');
     }
 
     protected function authorizeClient(Client $client): void
     {
-        $scope = CrmScopeService::for(Auth::user());
-        if (!$scope->clientsQuery()->where('id', $client->id)->exists()) {
-            abort(403, 'لا يمكنك الوصول إلى هذا العميل.');
-        }
+        $this->authorize('view', $client);
     }
 }

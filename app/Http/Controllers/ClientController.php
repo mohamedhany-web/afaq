@@ -41,19 +41,24 @@ class ClientController extends Controller
      */
     public function store(Request $request)
     {
+        $type = Client::normalizeType($request->client_type);
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'company_name' => 'nullable|string|max:255',
             'email' => 'required|email|unique:clients',
             'phone' => 'nullable|string|max:20',
+            'id_number' => $type === 'freelance' ? 'required|string|max:50' : 'nullable|string|max:50',
             'address' => 'nullable|string',
             'website' => 'nullable|url',
             'industry' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
             'status' => 'required|in:active,inactive,suspended',
-            'client_type' => 'nullable|in:individual,small_business,enterprise',
+            'client_type' => 'nullable|in:' . implode(',', Client::typeKeys()),
             'city' => 'nullable|string|max:255',
             'country' => 'nullable|string|max:255',
+        ], [
+            'id_number.required' => 'رقم البطاقة إلزامي لعملاء فري لانس.',
         ]);
 
         if ($validator->fails()) {
@@ -64,6 +69,7 @@ class ClientController extends Controller
 
         Client::create(array_merge($request->all(), [
             'created_by' => auth()->id(),
+            'client_type' => Client::normalizeType($request->client_type),
         ]));
 
         return redirect()->route('clients.index')
@@ -99,19 +105,24 @@ class ClientController extends Controller
      */
     public function update(Request $request, Client $client)
     {
+        $type = Client::normalizeType($request->client_type);
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'company_name' => 'nullable|string|max:255',
             'email' => 'required|email|unique:clients,email,' . $client->id,
             'phone' => 'nullable|string|max:20',
+            'id_number' => $type === 'freelance' ? 'required|string|max:50' : 'nullable|string|max:50',
             'address' => 'nullable|string',
             'website' => 'nullable|url',
             'industry' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
             'status' => 'required|in:active,inactive,suspended',
-            'client_type' => 'nullable|in:individual,small_business,enterprise',
+            'client_type' => 'nullable|in:' . implode(',', Client::typeKeys()),
             'city' => 'nullable|string|max:255',
             'country' => 'nullable|string|max:255',
+        ], [
+            'id_number.required' => 'رقم البطاقة إلزامي لعملاء فري لانس.',
         ]);
 
         if ($validator->fails()) {
@@ -120,7 +131,9 @@ class ClientController extends Controller
                 ->withInput();
         }
 
-        $client->update($request->all());
+        $client->update(array_merge($request->all(), [
+            'client_type' => Client::normalizeType($request->client_type),
+        ]));
 
         return redirect()->route('clients.index')
             ->with('success', 'تم تحديث العميل بنجاح');

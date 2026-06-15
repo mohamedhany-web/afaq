@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Http\Controllers\Crm\Concerns\UsesCrmFilters;
 use App\Services\CrmEmployeeService;
 use App\Services\CrmScopeService;
 use App\Services\EmployeeComplianceService;
@@ -12,17 +13,24 @@ use Illuminate\Support\Facades\Auth;
 
 class EmployeeComplianceController extends Controller
 {
+    use UsesCrmFilters;
+
     public function __construct(protected EmployeeComplianceService $compliance) {}
 
     public function index(Request $request)
     {
         $user = Auth::user();
+        $filters = $this->crmFilters($request);
         $start = $request->date('from') ?? now()->startOfMonth();
         $end = $request->date('to') ?? now()->endOfDay();
 
         if ($user->hasRole(['super_admin', 'admin']) || $user->isSalesManager()) {
             $team = $this->teamUsers($user);
             $overview = $this->compliance->teamOverview($team, $start, $end)->values();
+
+            if ($salesRepId = $filters->resolveSalesRepId($request)) {
+                $overview = $overview->filter(fn ($r) => (int) ($r['user_id'] ?? 0) === $salesRepId)->values();
+            }
 
             $stats = [
                 'team_size' => $overview->count(),
@@ -31,6 +39,8 @@ class EmployeeComplianceController extends Controller
                 'penalties_month' => $overview->sum('penalties_total'),
             ];
 
+            $complianceKeys = ['from', 'to', 'sales_rep'];
+
             return view('crm.employee-compliance.index', [
                 'mode' => 'manager',
                 'overview' => $overview,
@@ -38,6 +48,14 @@ class EmployeeComplianceController extends Controller
                 'start' => $start,
                 'end' => $end,
                 'self' => null,
+                'clearUrl' => route('crm.employee-compliance.index'),
+                'filterKeys' => $complianceKeys,
+                'advancedKeys' => [],
+                'hasActive' => $filters->hasActiveFilters($request, $complianceKeys),
+                'salesReps' => $filters->salesReps(),
+                'showSalesRepFilter' => $filters->showSalesRepFilter(),
+                'fromValue' => $start->toDateString(),
+                'toValue' => $end->toDateString(),
             ]);
         }
 

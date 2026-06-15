@@ -16,6 +16,7 @@ class AttendanceAbsenceReviewService
         protected WorkDayService $workDay,
         protected OrganizationalHierarchyService $hierarchy,
         protected EmployeeScheduleService $schedule,
+        protected AutoPenaltyService $penalties,
     ) {}
 
     /** @return int عدد السجلات المُنشأة */
@@ -95,6 +96,7 @@ class AttendanceAbsenceReviewService
                         'reviewed_at' => now(),
                         'review_notes' => 'تأكيد تلقائي بعد انتهاء مهلة المراجعة',
                     ]);
+                    $this->applyAbsencePenalty($review, 'تأكيد تلقائي — غياب');
                     $count++;
                 }
             });
@@ -112,6 +114,8 @@ class AttendanceAbsenceReviewService
                 'reviewed_at' => now(),
                 'review_notes' => $notes,
             ]);
+
+            $this->applyAbsencePenalty($review, $notes ?? 'غياب مؤكد');
         });
     }
 
@@ -156,12 +160,68 @@ class AttendanceAbsenceReviewService
 
     public function excuse(AttendanceAbsenceReview $review, User $reviewer, string $notes): void
     {
+        $this->penalties->reverseBySourceKey(
+            'absence_review:' . $review->id,
+            $notes,
+        );
+
         $review->update([
             'status' => AttendanceAbsenceReview::STATUS_EXCUSED,
             'reviewed_by' => $reviewer->id,
             'reviewed_at' => now(),
             'review_notes' => $notes,
         ]);
+    }
+
+    public function revokeConfirmation(AttendanceAbsenceReview $review, User $reviewer, string $notes): void
+    {
+        if (! in_array($review->status, [
+            AttendanceAbsenceReview::STATUS_CONFIRMED_ABSENT,
+            AttendanceAbsenceReview::STATUS_AUTO_CONFIRMED,
+        ], true)) {
+            abort(422, 'لا يمكن إلغاء هذا القرار');
+        }
+
+        DB::transaction(function () use ($review, $reviewer, $notes) {
+            $this->penalties->reverseBySourceKey('absence_review:' . $review->id, $notes);
+
+            if ($review->attendance) {
+                $review->attendance->update([
+                    'status' => 'present',
+                    'current_status' => 'working',
+                    'work_day_locked' => false,
+                    'notes' => trim(($review->attendance->notes ? $review->attendance->notes . ' | ' : '') . 'إلغاء قرار الغياب — ' . $notes),
+                ]);
+            }
+
+            $review->update([
+                'status' => AttendanceAbsenceReview::STATUS_PENDING,
+                'reviewed_by' => $reviewer->id,
+                'reviewed_at' => now(),
+                'review_notes' => $notes,
+            ]);
+        });
+    }
+
+    protected function applyAbsencePenalty(AttendanceAbsenceReview $review, string $notes): void
+    {
+        $user = $review->employee?->user;
+        if (!$user) {
+            return;
+        }
+
+        $sourceType = match ($review->flag_reason) {
+            AttendanceAbsenceReview::REASON_SHORT_HOURS => 'attendance_short_hours',
+            default => 'attendance_no_start',
+        };
+
+        $this->penalties->applyReviewPenalty(
+            $user,
+            $sourceType,
+            'absence_review:' . $review->id,
+            'مراجعة غياب ' . $review->review_date->format('Y-m-d'),
+            $notes,
+        );
     }
 
     protected function applyAbsentStatus(AttendanceAbsenceReview $review, ?User $reviewer, ?string $notes): void

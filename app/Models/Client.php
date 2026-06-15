@@ -28,6 +28,7 @@ class Client extends Model
         'created_by',
         'client_type',
         'lead_source',
+        'id_number',
         'marketing_campaign_id',
     ];
 
@@ -114,5 +115,85 @@ class Client extends Model
     public function meetingRequests(): HasMany
     {
         return $this->hasMany(ClientMeetingRequest::class)->orderByDesc('created_at');
+    }
+
+    public static function typeLabels(): array
+    {
+        return config('client_types.labels', []);
+    }
+
+    public static function typeKeys(): array
+    {
+        return array_keys(static::typeLabels());
+    }
+
+    public static function normalizeType(?string $type): string
+    {
+        if (! $type) {
+            return 'individual';
+        }
+
+        $legacy = config('client_types.legacy_map', []);
+
+        if (isset($legacy[$type])) {
+            return $legacy[$type];
+        }
+
+        return array_key_exists($type, static::typeLabels()) ? $type : 'individual';
+    }
+
+    public function typeLabel(): string
+    {
+        return static::typeLabels()[static::normalizeType($this->client_type)] ?? 'فرد';
+    }
+
+    public static function leadSourceLabels(): array
+    {
+        return config('client_lead_sources.labels', []);
+    }
+
+    public static function leadSourceKeys(): array
+    {
+        return array_keys(static::leadSourceLabels());
+    }
+
+    public static function normalizeLeadSource(?string $source): ?string
+    {
+        if (! $source || trim($source) === '') {
+            return null;
+        }
+
+        $source = strtolower(trim($source));
+        $legacy = config('client_lead_sources.legacy_map', []);
+
+        if (isset($legacy[$source])) {
+            return $legacy[$source];
+        }
+
+        if (array_key_exists($source, static::leadSourceLabels())) {
+            return $source;
+        }
+
+        $byLabel = collect(static::leadSourceLabels())
+            ->mapWithKeys(fn ($label, $key) => [mb_strtolower($label) => $key])
+            ->all();
+
+        return $byLabel[$source] ?? null;
+    }
+
+    public function leadSourceLabel(): ?string
+    {
+        $key = static::normalizeLeadSource($this->lead_source);
+
+        return $key ? (static::leadSourceLabels()[$key] ?? $key) : null;
+    }
+
+    public function profileUrl(string $hash = ''): string
+    {
+        if (auth()->user()?->can('viewFullDetails', $this)) {
+            return route('crm.clients.show', $this) . $hash;
+        }
+
+        return route('crm.pipeline.client', $this) . $hash;
     }
 }

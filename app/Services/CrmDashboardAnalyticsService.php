@@ -25,17 +25,11 @@ class CrmDashboardAnalyticsService
     ];
 
     public const LEAD_SOURCE_LABELS = [
-        'facebook_ads' => 'إعلانات فيسبوك',
-        'google_ads' => 'إعلانات جوجل',
-        'website' => 'الموقع',
-        'whatsapp' => 'واتساب',
-        'referral' => 'إحالة',
-        'walk_in' => 'زيارة مباشرة',
-        'social_media' => 'وسائل التواصل',
-        'advertisement' => 'إعلان',
-        'call' => 'اتصال',
-        'email' => 'بريد',
-        'other' => 'أخرى',
+        'personal' => 'شخصي',
+        'referral' => 'ترشيح',
+        'event' => 'إيفينت',
+        'marketing' => 'ماركتينج',
+        'paid_ad' => 'إعلان ممول',
     ];
 
     public function __construct(
@@ -344,44 +338,30 @@ class CrmDashboardAnalyticsService
 
     protected function leadSourceBreakdown(): array
     {
-        $raw = $this->scope->salesQuery()
+        $raw = $this->scope->clientsQuery()
             ->select('lead_source', DB::raw('count(*) as total'))
             ->whereNotNull('lead_source')
+            ->where('lead_source', '!=', '')
             ->groupBy('lead_source')
             ->pluck('total', 'lead_source');
 
-        $normalized = [
-            'facebook_ads' => 0,
-            'google_ads' => 0,
-            'website' => 0,
-            'whatsapp' => 0,
-            'referral' => 0,
-            'walk_in' => 0,
-            'other' => 0,
-        ];
+        $normalized = array_fill_keys(Client::leadSourceKeys(), 0);
 
         foreach ($raw as $source => $count) {
-            $key = match ($source) {
-                'website' => 'website',
-                'referral' => 'referral',
-                'walk_in' => 'walk_in',
-                'whatsapp' => 'whatsapp',
-                'facebook_ads', 'google_ads' => $source,
-                'social_media', 'advertisement' => 'facebook_ads',
-                'call', 'email' => 'whatsapp',
-                default => 'other',
-            };
+            $key = Client::normalizeLeadSource($source) ?? 'personal';
             $normalized[$key] = ($normalized[$key] ?? 0) + (int) $count;
         }
 
         return collect($normalized)
             ->map(fn ($count, $key) => [
                 'key' => $key,
-                'label' => self::LEAD_SOURCE_LABELS[$key] ?? $key,
+                'label' => Client::leadSourceLabels()[$key] ?? $key,
                 'count' => $count,
             ])
             ->sortByDesc('count')
             ->values()
+            ->all();
+    }
             ->all();
     }
 

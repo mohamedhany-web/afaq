@@ -26,7 +26,17 @@ class OperationsLeadController extends Controller
 
     public function index(Request $request)
     {
-        $leads = $this->distribution->unassignedLeadsQuery()
+        $filter = $request->get('filter', 'unassigned');
+
+        $baseQuery = match ($filter) {
+            'stale' => Client::query()
+                ->whereNull('assigned_to')
+                ->where('updated_at', '<', now()->subDays(3))
+                ->orderByDesc('updated_at'),
+            default => $this->distribution->unassignedLeadsQuery(),
+        };
+
+        $leads = (clone $baseQuery)
             ->when($request->search, fn ($q) => $q->where(function ($q) use ($request) {
                 $s = '%' . $request->search . '%';
                 $q->where('name', 'like', $s)->orWhere('phone', 'like', $s);
@@ -39,6 +49,7 @@ class OperationsLeadController extends Controller
 
         return view('operations.leads.index', [
             'leads' => $leads,
+            'filter' => $filter,
             'reps' => $this->distribution->assignableReps(),
             'repLoads' => $this->distribution->repLoads(),
             'leadKpis' => $leadGroup,

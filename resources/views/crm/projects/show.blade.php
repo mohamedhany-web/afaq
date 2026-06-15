@@ -19,10 +19,10 @@
 ])
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 w-full">
-    @include('crm.partials.stat-card', ['label' => 'الوحدات', 'value' => $project->total_units ?? 0, 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7" />'])
-    @include('crm.partials.stat-card', ['label' => 'متاح', 'value' => $project->available_units ?? 0, 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4" />'])
-    @include('crm.partials.stat-card', ['label' => 'الصفقات', 'value' => $project->sales_count, 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2" />'])
-    @include('crm.partials.stat-card', ['label' => 'قيمة الصفقات', 'value' => \App\Helpers\SettingsHelper::formatMoney($stats['sales_value']), 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2" />'])
+    @include('crm.partials.stat-card', ['label' => 'الوحدات', 'value' => $project->total_units ?? 0, 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7" />', 'href' => '#building-units-root', 'linkLabel' => 'عرض الوحدات'])
+    @include('crm.partials.stat-card', ['label' => 'متاح', 'value' => $project->available_units ?? 0, 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4" />', 'href' => '?status=available#building-units-root', 'linkLabel' => 'عرض المتاح'])
+    @include('crm.partials.stat-card', ['label' => 'الصفقات', 'value' => $project->sales_count, 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2" />', 'href' => '#project-sales', 'linkLabel' => 'عرض الصفقات'])
+    @include('crm.partials.stat-card', ['label' => 'قيمة الصفقات', 'value' => \App\Helpers\SettingsHelper::formatMoney($stats['sales_value']), 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2" />', 'href' => '#project-sales', 'linkLabel' => 'عرض الصفقات'])
 </div>
 
 @if($project->hasMapLocation() || $project->mapPins->isNotEmpty())
@@ -109,13 +109,21 @@
         </div>
     </div>
 
-    <div class="xl:col-span-2 bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+    <div id="project-sales" class="xl:col-span-2 bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
         <div class="{{ $sectionHeader }}" style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">آخر الصفقات</div>
         <div class="p-5 sm:p-6">
             @forelse($project->sales as $sale)
             <a href="{{ route('crm.pipeline.show', $sale) }}" class="block p-4 mb-3 last:mb-0 rounded-xl border border-gray-100 hover:bg-gray-50 font-tajawal">
                 <div class="font-semibold text-gray-900">{{ $sale->product_service }}</div>
-                @if($sale->client)<div class="text-xs text-gray-500 mt-1">{{ $sale->client->name }}</div>@endif
+                <div class="text-xs text-gray-500 mt-1 flex flex-wrap items-center gap-1">
+                    @if($sale->client)
+                    <a href="{{ $sale->client->profileUrl() }}" class="hover:underline" style="color: {{ $themeColor }};">{{ $sale->client->name }}</a>
+                    @endif
+                    @if($sale->salesRep)
+                    <span class="text-gray-300">·</span>
+                    <a href="{{ route('crm.team-members.show', $sale->salesRep) }}" class="hover:underline">{{ $sale->salesRep->name }}</a>
+                    @endif
+                </div>
             </a>
             @empty
             <p class="text-center text-gray-400 py-6 font-tajawal">لا توجد صفقات بعد — ابدأ بصفقة جديدة على هذا المشروع.</p>

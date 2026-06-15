@@ -15,13 +15,17 @@
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 space-y-4 text-sm">
         <h3 class="font-bold text-gray-900 font-tajawal border-b pb-2">بيانات الصفقة</h3>
-        <p><span class="text-gray-500">العميل:</span> <a href="{{ route('crm.clients.show', $sale->client) }}" class="font-semibold" style="color: {{ $themeColor }};">{{ $sale->client?->name }}</a></p>
-        <p><span class="text-gray-500">المشروع:</span> <span class="text-gray-900">{{ $sale->project?->name ?? '—' }}</span></p>
+        <p><span class="text-gray-500">العميل:</span> <a href="{{ $sale->client?->profileUrl() }}" class="font-semibold" style="color: {{ $themeColor }};">{{ $sale->client?->name }}</a></p>
+        <p><span class="text-gray-500">المشروع:</span>
+            @include('crm.partials.entity-link', ['type' => 'project', 'entity' => $sale->project])
+        </p>
         <p><span class="text-gray-500">المرحلة:</span> <span class="px-2 py-1 rounded-lg text-xs font-medium" style="background: {{ $themeColor }}15; color: {{ $themeColor }};">{{ $sale->stage }}</span></p>
         <p><span class="text-gray-500">القيمة:</span> <strong class="text-gray-900">{{ \App\Helpers\SettingsHelper::formatMoney($sale->estimated_value) }}</strong></p>
         <p><span class="text-gray-500">نوع الوحدة:</span> {{ $sale->unit_type ?? '—' }}</p>
         <p><span class="text-gray-500">معاينة:</span> {{ $sale->viewing_date?->format('Y-m-d') ?? '—' }}</p>
-        <p><span class="text-gray-500">مندوب المبيعات:</span> {{ $sale->salesRep?->name }}</p>
+        <p><span class="text-gray-500">مندوب المبيعات:</span>
+            @include('crm.partials.entity-link', ['type' => 'rep', 'entity' => $sale->salesRep])
+        </p>
     </div>
     <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
         <h3 class="font-bold mb-4 text-gray-900 font-tajawal">تحديث المرحلة</h3>

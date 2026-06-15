@@ -27,9 +27,9 @@
 </div>
 
 <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'مرفوعة', 'value' => $stats['submitted'], 'accent' => 'green'])
-    @include('crm.partials.stat-card', ['label' => 'مسودات', 'value' => $stats['draft'], 'accent' => 'amber'])
-    @include('crm.partials.stat-card', ['label' => 'القائمة', 'value' => $reports->total(), 'accent' => 'theme'])
+    @include('crm.partials.stat-card', ['label' => 'مرفوعة', 'value' => $stats['submitted'], 'accent' => 'green', 'href' => route('operations.reports.index', ['status' => 'submitted']) . '#page-data', 'linkLabel' => 'عرض المرفوعة'])
+    @include('crm.partials.stat-card', ['label' => 'مسودات', 'value' => $stats['draft'], 'accent' => 'amber', 'href' => route('operations.reports.index', ['status' => 'draft']) . '#page-data', 'linkLabel' => 'عرض المسودات'])
+    @include('crm.partials.stat-card', ['label' => 'القائمة', 'value' => $reports->total(), 'accent' => 'theme', 'href' => route('operations.reports.index') . '#page-data', 'linkLabel' => 'عرض القائمة'])
 </div>
 
 @if($resolver->isManager())
@@ -47,7 +47,7 @@
 </div>
 @endif
 
-<div class="bg-white rounded-2xl shadow-lg border overflow-hidden font-tajawal">
+<div class="bg-white rounded-2xl shadow-lg border overflow-hidden font-tajawal" id="page-data">
     <div class="px-5 py-4 border-b font-bold">قائمة التقارير</div>
     <div class="overflow-x-auto">
         <table class="w-full text-sm">

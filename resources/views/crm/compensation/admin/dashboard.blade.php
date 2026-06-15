@@ -17,12 +17,12 @@
 ])
 
 <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'إجمالي الرواتب', 'value' => $money($stats['total_payroll']), 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'العمولات', 'value' => $money($stats['total_commission']), 'compact' => true, 'accent' => 'green'])
-    @include('crm.partials.stat-card', ['label' => 'المكافآت', 'value' => $money($stats['total_bonus']), 'compact' => true, 'accent' => 'amber'])
-    @include('crm.partials.stat-card', ['label' => 'الخصومات', 'value' => $money($stats['total_deduction']), 'compact' => true, 'accent' => 'red'])
-    @include('crm.partials.stat-card', ['label' => 'متوسط KPI', 'value' => $stats['avg_kpi'] . '%', 'compact' => true, 'accent' => 'purple'])
-    @include('crm.partials.stat-card', ['label' => 'الموظفون', 'value' => $stats['employees'], 'compact' => true, 'accent' => 'blue'])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي الرواتب', 'value' => $money($stats['total_payroll']), 'compact' => true, 'href' => route('crm.compensation.dashboard') . '#page-data', 'linkLabel' => 'عرض التفاصيل'])
+    @include('crm.partials.stat-card', ['label' => 'العمولات', 'value' => $money($stats['total_commission']), 'compact' => true, 'accent' => 'green', 'href' => route('crm.compensation.dashboard') . '#page-data', 'linkLabel' => 'عرض التفاصيل'])
+    @include('crm.partials.stat-card', ['label' => 'المكافآت', 'value' => $money($stats['total_bonus']), 'compact' => true, 'accent' => 'amber', 'href' => route('crm.compensation.dashboard') . '#page-data', 'linkLabel' => 'عرض التفاصيل'])
+    @include('crm.partials.stat-card', ['label' => 'الخصومات', 'value' => $money($stats['total_deduction']), 'compact' => true, 'accent' => 'red', 'href' => route('crm.compensation.dashboard') . '#page-data', 'linkLabel' => 'عرض التفاصيل'])
+    @include('crm.partials.stat-card', ['label' => 'متوسط KPI', 'value' => $stats['avg_kpi'] . '%', 'compact' => true, 'accent' => 'purple', 'href' => route('crm.compensation.dashboard') . '#page-data', 'linkLabel' => 'عرض التفاصيل'])
+    @include('crm.partials.stat-card', ['label' => 'الموظفون', 'value' => $stats['employees'], 'compact' => true, 'accent' => 'blue', 'href' => route('crm.compensation.dashboard') . '#page-data', 'linkLabel' => 'عرض التفاصيل'])
 </div>
 
 <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 mb-6">

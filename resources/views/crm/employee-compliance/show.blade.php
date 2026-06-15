@@ -19,10 +19,10 @@
 ])
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'أيام عمل متوقعة', 'value' => $e['period']['expected_work_days'], 'accent' => 'theme', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'تقارير مرفوعة', 'value' => $e['reports']['submitted'].'/'.$e['reports']['expected'], 'accent' => 'blue', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'حضور %', 'value' => $e['attendance_compliance'].'%', 'accent' => 'green', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'عقوبات', 'value' => $money($e['penalties_total']), 'accent' => 'red', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'أيام عمل متوقعة', 'value' => $e['period']['expected_work_days'], 'accent' => 'theme', 'compact' => true, 'href' => route('crm.employee-compliance.index'), 'linkLabel' => 'عرض القائمة'])
+    @include('crm.partials.stat-card', ['label' => 'تقارير مرفوعة', 'value' => $e['reports']['submitted'].'/'.$e['reports']['expected'], 'accent' => 'blue', 'compact' => true, 'href' => route('crm.employee-compliance.index'), 'linkLabel' => 'عرض القائمة'])
+    @include('crm.partials.stat-card', ['label' => 'حضور %', 'value' => $e['attendance_compliance'].'%', 'accent' => 'green', 'compact' => true, 'href' => route('crm.employee-compliance.index'), 'linkLabel' => 'عرض القائمة'])
+    @include('crm.partials.stat-card', ['label' => 'عقوبات', 'value' => $money($e['penalties_total']), 'accent' => 'red', 'compact' => true, 'href' => route('crm.employee-compliance.index'), 'linkLabel' => 'عرض القائمة'])
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">

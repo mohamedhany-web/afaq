@@ -1,8 +1,9 @@
 @php
     $isEdit = isset($client);
     $clientTypeValue = old('client_type', $isEdit
-        ? (($client->client_type === 'small_business') ? 'company' : 'individual')
+        ? \App\Models\Client::normalizeType($client->client_type)
         : 'individual');
+    $leadSourceValue = old('lead_source', $isEdit ? $client->lead_source : '');
 @endphp
 
 {{-- البيانات الأساسية --}}
@@ -28,11 +29,28 @@
             @error('email')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
         </div>
         <div>
-            <label class="{{ $label }}">نوع العميل</label>
-            <select name="client_type" class="{{ $input }}">
-                <option value="individual" @selected($clientTypeValue === 'individual')>فرد</option>
-                <option value="company" @selected($clientTypeValue === 'company')>شركة / منشأة</option>
+            <label class="{{ $label }}">تصنيف العميل</label>
+            <select name="client_type" id="client_type" class="{{ $input }}">
+                @foreach(\App\Models\Client::typeLabels() as $value => $labelText)
+                    <option value="{{ $value }}" @selected($clientTypeValue === $value)>{{ $labelText }}</option>
+                @endforeach
             </select>
+            @error('client_type')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
+        </div>
+        <div id="id_number_wrap">
+            <label class="{{ $label }}">رقم البطاقة <span id="id_number_required_mark" class="text-red-600 hidden">*</span></label>
+            <input name="id_number" id="id_number" value="{{ old('id_number', $client->id_number ?? '') }}" class="{{ $input }}" placeholder="إلزامي لعملاء فري لانس" dir="ltr" maxlength="50">
+            @error('id_number')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
+        </div>
+        <div>
+            <label class="{{ $label }}">مصدر العميل</label>
+            <select name="lead_source" class="{{ $input }}">
+                <option value="">— غير محدد —</option>
+                @foreach(\App\Models\Client::leadSourceLabels() as $value => $labelText)
+                    <option value="{{ $value }}" @selected($leadSourceValue === $value)>{{ $labelText }}</option>
+                @endforeach
+            </select>
+            @error('lead_source')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
         </div>
         <div>
             <label class="{{ $label }}">الحالة *</label>
@@ -78,3 +96,23 @@
         @error('notes')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
     </div>
 </div>
+
+@push('scripts')
+<script>
+(function () {
+    const typeSelect = document.getElementById('client_type');
+    const idInput = document.getElementById('id_number');
+    const mark = document.getElementById('id_number_required_mark');
+    if (!typeSelect || !idInput) return;
+
+    function syncIdRequirement() {
+        const freelance = typeSelect.value === 'freelance';
+        idInput.required = freelance;
+        mark?.classList.toggle('hidden', !freelance);
+    }
+
+    typeSelect.addEventListener('change', syncIdRequirement);
+    syncIdRequirement();
+})();
+</script>
+@endpush

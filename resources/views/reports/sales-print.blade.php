@@ -87,20 +87,26 @@
                 </thead>
                 <tbody>
                     @foreach($sales as $index => $sale)
+                    @php
+                        $stageLabels = [
+                            'lead' => 'عميل محتمل',
+                            'prospect' => 'مهتم',
+                            'proposal' => 'عرض سعر',
+                            'negotiation' => 'تفاوض',
+                            'closed_won' => 'تم البيع',
+                            'closed_lost' => 'خسارة',
+                        ];
+                    @endphp
                     <tr>
                         <td>{{ $index + 1 }}</td>
-                        <td class="client-name">{{ $sale->title }}</td>
+                        <td class="client-name">{{ $sale->product_service }}</td>
                         <td>{{ $sale->client->name ?? '-' }}</td>
                         <td class="amount">{{ number_format($sale->amount, 0) }} ج.م</td>
-                        <td>{{ $sale->sale_date ? \Carbon\Carbon::parse($sale->sale_date)->format('Y-m-d') : '-' }}</td>
-                        <td>{{ $sale->stage ?? '-' }}</td>
+                        <td>{{ $sale->expected_close_date?->format('Y-m-d') ?? '-' }}</td>
+                        <td>{{ $stageLabels[$sale->stage] ?? $sale->stage }}</td>
                         <td>
-                            <span class="status-badge status-{{ $sale->status }}">
-                                @if($sale->status === 'pending') قيد المتابعة
-                                @elseif($sale->status === 'closed') مغلقة
-                                @elseif($sale->status === 'lost') خاسرة
-                                @else {{ $sale->status }}
-                                @endif
+                            <span class="status-badge status-{{ $sale->stage === 'closed_won' ? 'closed' : ($sale->stage === 'closed_lost' ? 'lost' : 'pending') }}">
+                                {{ $stageLabels[$sale->stage] ?? $sale->stage }}
                             </span>
                         </td>
                     </tr>

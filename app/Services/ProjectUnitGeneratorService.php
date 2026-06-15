@@ -7,6 +7,7 @@ use App\Models\Project;
 use App\Models\Project3dScene;
 use App\Models\ProjectUnit;
 use App\Models\UnitPaymentPlan;
+use App\Support\ProjectUnitNumbering;
 use Illuminate\Support\Facades\DB;
 
 class ProjectUnitGeneratorService
@@ -93,7 +94,7 @@ class ProjectUnitGeneratorService
                     'administrative_units' => 1,
                     'commercial_area' => [42, 60],
                 ],
-                'residential_floors' => 4,
+                'residential_floors' => 3,
                 'residential' => [
                     'units_per_floor' => 4,
                     'height_m' => 3.6,
@@ -158,7 +159,7 @@ class ProjectUnitGeneratorService
             $floors[] = BuildingFloor::create([
                 'project_id' => $project->id,
                 'level' => -1,
-                'label' => 'بدروم',
+                'label' => ProjectUnitNumbering::floorLabel(-1),
                 'height_m' => $structure['basement']['height_m'] ?? 3.2,
                 'use_mix' => ['commercial', 'administrative'],
                 'sort_order' => $sort++,
@@ -168,7 +169,7 @@ class ProjectUnitGeneratorService
         $floors[] = BuildingFloor::create([
             'project_id' => $project->id,
             'level' => 0,
-            'label' => 'أرضي',
+            'label' => ProjectUnitNumbering::floorLabel(0),
             'height_m' => $structure['ground']['height_m'] ?? 4.5,
             'use_mix' => ['commercial', 'administrative'],
             'sort_order' => $sort++,
@@ -179,7 +180,7 @@ class ProjectUnitGeneratorService
             $floors[] = BuildingFloor::create([
                 'project_id' => $project->id,
                 'level' => $i,
-                'label' => 'الدور ' . $i,
+                'label' => ProjectUnitNumbering::floorLabel($i),
                 'height_m' => $structure['residential']['height_m'] ?? 3.6,
                 'use_mix' => ['residential'],
                 'sort_order' => $sort++,
@@ -193,64 +194,58 @@ class ProjectUnitGeneratorService
     protected function unitDefinitionsForFloor(BuildingFloor $floor, array $config): array
     {
         $structure = $config['structure'] ?? [];
-        $definitions = [];
+        $specs = [];
 
         if ($floor->level === -1) {
             $basement = $structure['basement'] ?? [];
             $range = $basement['commercial_area'] ?? [65, 120];
             for ($i = 1; $i <= (int) ($basement['commercial_units'] ?? 0); $i++) {
-                $definitions[] = [
-                    'code' => 'B-P' . $i,
+                $specs[] = [
                     'use_type' => ProjectUnit::USE_COMMERCIAL,
                     'area_m2' => $this->varyArea($range, $i),
                 ];
             }
             for ($i = 1; $i <= (int) ($basement['administrative_units'] ?? 0); $i++) {
-                $definitions[] = [
-                    'code' => 'B-A' . $i,
+                $specs[] = [
                     'use_type' => ProjectUnit::USE_ADMINISTRATIVE,
                     'area_m2' => 80 + ($i * 5),
                 ];
             }
-
-            return $definitions;
-        }
-
-        if ($floor->level === 0) {
+        } elseif ($floor->level === 0) {
             $ground = $structure['ground'] ?? [];
             $range = $ground['commercial_area'] ?? [42, 60];
             for ($i = 1; $i <= (int) ($ground['commercial_units'] ?? 0); $i++) {
-                $definitions[] = [
-                    'code' => sprintf('G-%02d', $i),
+                $specs[] = [
                     'use_type' => ProjectUnit::USE_COMMERCIAL,
                     'area_m2' => $this->varyArea($range, $i),
                 ];
             }
             for ($i = 1; $i <= (int) ($ground['administrative_units'] ?? 0); $i++) {
-                $definitions[] = [
-                    'code' => 'G-A' . $i,
+                $specs[] = [
                     'use_type' => ProjectUnit::USE_ADMINISTRATIVE,
                     'area_m2' => 90,
                 ];
             }
+        } else {
+            $res = $structure['residential'] ?? [];
+            $areas = $res['areas'] ?? [120, 95, 140, 110];
+            $perFloor = (int) ($res['units_per_floor'] ?? 4);
 
-            return $definitions;
+            for ($i = 0; $i < $perFloor; $i++) {
+                $specs[] = [
+                    'use_type' => ProjectUnit::USE_RESIDENTIAL,
+                    'area_m2' => (float) ($areas[$i] ?? $this->varyArea($res['area_range'] ?? [90, 170], $i + 1)),
+                ];
+            }
         }
 
-        $res = $structure['residential'] ?? [];
-        $areas = $res['areas'] ?? [120, 95, 140, 110];
-        $suffixes = ['A', 'B', 'C', 'D'];
-        $perFloor = (int) ($res['units_per_floor'] ?? 4);
-
-        for ($i = 0; $i < $perFloor; $i++) {
-            $definitions[] = [
-                'code' => $floor->level . '-' . ($suffixes[$i] ?? chr(65 + $i)),
-                'use_type' => ProjectUnit::USE_RESIDENTIAL,
-                'area_m2' => (float) ($areas[$i] ?? $this->varyArea($res['area_range'] ?? [90, 170], $i + 1)),
-            ];
+        $sequence = 1;
+        foreach ($specs as &$spec) {
+            $spec['code'] = ProjectUnitNumbering::unitCode($floor->level, $sequence++);
         }
+        unset($spec);
 
-        return $definitions;
+        return $specs;
     }
 
     /** @return array{x: float, y: float, z: float, w: float, d: float} */
@@ -469,6 +464,43 @@ class ProjectUnitGeneratorService
     }
 
     /** @return array<string, mixed> */
+    /** إعادة ترقيم الوحدات والطوابق حسب معيار آفاق (B.1 · GF.1 · FF.1 …) */
+    public function applyAfaqNumbering(Project $project): int
+    {
+        $updated = 0;
+
+        $floors = $project->buildingFloors()
+            ->orderBy('sort_order')
+            ->with(['units' => fn ($q) => $q->orderBy('id')])
+            ->get();
+
+        foreach ($floors as $floor) {
+            $level = (int) $floor->level;
+            $label = ProjectUnitNumbering::floorLabel($level);
+
+            if ($floor->label !== $label) {
+                $floor->update(['label' => $label]);
+            }
+
+            $sequence = 1;
+            foreach ($floor->units as $unit) {
+                $newCode = ProjectUnitNumbering::unitCode($level, $sequence++);
+                if ($unit->code !== $newCode) {
+                    $unit->update(['code' => $newCode]);
+                    $updated++;
+                }
+            }
+        }
+
+        if ($updated > 0 && $project->scene3d) {
+            $config = $project->building_config ?? self::defaultConfigFor5B();
+            $totalHeight = (float) $floors->sum('height_m');
+            $this->upsertScene($project, $config, $totalHeight);
+        }
+
+        return $updated;
+    }
+
     public function buildingSummary(Project $project): array
     {
         $units = $project->units;

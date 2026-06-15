@@ -47,6 +47,8 @@
         'accent' => 'amber',
         'compact' => true,
         'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />',
+        'href' => route('leaves.index', ['status' => 'pending']) . '#page-data',
+        'linkLabel' => 'عرض المعلّقة',
     ])
     @include('crm.partials.stat-card', [
         'label' => 'موافق عليها (الشهر)',
@@ -54,6 +56,8 @@
         'accent' => 'green',
         'compact' => true,
         'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />',
+        'href' => route('leaves.index', ['status' => 'approved']) . '#page-data',
+        'linkLabel' => 'عرض الموافق عليها',
     ])
     @include('crm.partials.stat-card', [
         'label' => 'مرفوضة (الشهر)',
@@ -61,6 +65,8 @@
         'accent' => 'red',
         'compact' => true,
         'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />',
+        'href' => route('leaves.index', ['status' => 'rejected']) . '#page-data',
+        'linkLabel' => 'عرض المرفوضة',
     ])
     @include('crm.partials.stat-card', [
         'label' => $mode === 'admin' ? 'أيام معتمدة (السنة)' : 'أيامي المعتمدة',
@@ -68,6 +74,8 @@
         'accent' => 'blue',
         'compact' => true,
         'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
+        'href' => route('leaves.index') . '#page-data',
+        'linkLabel' => 'عرض الطلبات',
     ])
     @if($mode !== 'admin' && $stats['remaining_annual'] !== null)
     @include('crm.partials.stat-card', [
@@ -77,11 +85,13 @@
         'compact' => true,
         'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />',
         'footer' => '<span class="text-gray-500">من ' . config('leaves.annual_limit_days', 21) . ' يوم سنوياً</span>',
+        'href' => route('leaves.index') . '#page-data',
+        'linkLabel' => 'عرض الرصيد',
     ])
     @endif
 </div>
 
-<div class="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+<div id="page-data" class="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
     <div class="px-5 py-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3" style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">
         <h3 class="text-lg font-bold text-gray-900 font-tajawal">طلبات الإجازة</h3>
         <div class="flex flex-wrap items-center gap-2">

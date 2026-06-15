@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\EmployeeDossierController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ClientSearchController;
 use App\Http\Controllers\DepartmentController;
@@ -169,6 +170,7 @@ Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'inde
 require __DIR__.'/crm.php';
 require __DIR__.'/marketing.php';
 require __DIR__.'/operations.php';
+require __DIR__.'/hr.php';
 
 // Profile routes
 Route::middleware(['auth', 'verified', 'verified.code'])->group(function () {
@@ -180,7 +182,7 @@ Route::middleware(['auth', 'verified', 'verified.code'])->group(function () {
 });
 
 // All authenticated routes
-Route::middleware(['auth', 'verified', 'verified.code', 'crm.only', 'marketing.only', 'operations.only'])->group(function () {
+Route::middleware(['auth', 'verified', 'verified.code', 'crm.only', 'marketing.only', 'operations.only', 'hr.only'])->group(function () {
     // =========================
     // Client Portal (بوابة العميل)
     // =========================
@@ -247,6 +249,12 @@ Route::middleware(['auth', 'verified', 'verified.code', 'crm.only', 'marketing.o
     Route::get('employees/create', [EmployeeController::class, 'create'])->name('employees.create')->middleware('permission:create-employees');
     Route::post('employees', [EmployeeController::class, 'store'])->name('employees.store')->middleware('permission:create-employees');
     Route::get('employees/{employee}', [EmployeeController::class, 'show'])->name('employees.show')->middleware('permission:view-employees');
+    Route::get('employees/{employee}/dossier', [EmployeeDossierController::class, 'show'])->name('employees.dossier')->middleware('permission:view-employees');
+    Route::post('employees/{employee}/dossier/notes', [EmployeeDossierController::class, 'storeNote'])->name('employees.dossier.notes.store')->middleware('permission:view-employees');
+    Route::delete('employees/{employee}/dossier/notes/{employeeAdminNote}', [EmployeeDossierController::class, 'destroyNote'])->name('employees.dossier.notes.destroy')->middleware('permission:view-employees');
+    Route::post('employees/{employee}/dossier/documents', [EmployeeDossierController::class, 'storeDocument'])->name('employees.dossier.documents.store')->middleware('permission:view-employees');
+    Route::post('employees/{employee}/dossier/cv', [EmployeeDossierController::class, 'storeCv'])->name('employees.dossier.cv.store')->middleware('permission:view-employees');
+    Route::get('employees/{employee}/dossier/documents/{employeeDocument}/download', [EmployeeDossierController::class, 'downloadDocument'])->name('employees.dossier.documents.download')->middleware('permission:view-employees');
     Route::get('employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit')->middleware('permission:edit-employees');
     Route::put('employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update')->middleware('permission:edit-employees');
     Route::delete('employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy')->middleware('permission:delete-employees');
@@ -261,6 +269,7 @@ Route::middleware(['auth', 'verified', 'verified.code', 'crm.only', 'marketing.o
     Route::delete('attendances/{attendance}', [AttendanceController::class, 'destroy'])->name('attendances.destroy')->middleware('permission:delete-attendance');
     Route::post('attendances/check-in', [AttendanceController::class, 'checkIn'])->name('attendances.check-in');
     Route::post('attendances/check-out', [AttendanceController::class, 'checkOut'])->name('attendances.check-out');
+    Route::post('attendances/cancel-checkout', [AttendanceController::class, 'cancelCheckout'])->name('attendances.cancel-checkout');
     Route::post('attendances/start-break', [AttendanceController::class, 'startBreak'])->name('attendances.start-break');
     Route::post('attendances/end-break', [AttendanceController::class, 'endBreak'])->name('attendances.end-break');
     Route::get('attendances/current-work-time', [AttendanceController::class, 'getCurrentWorkTime'])->name('attendances.current-work-time');

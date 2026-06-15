@@ -21,10 +21,10 @@
 ])
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 no-print">
-    @include('crm.partials.stat-card', ['label' => 'تشغيلي', 'value' => ($operatingCashFlow >= 0 ? '+' : '-') . $money(abs($operatingCashFlow)), 'accent' => $operatingCashFlow >= 0 ? 'green' : 'red', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'استثماري', 'value' => ($investingCashFlow >= 0 ? '+' : '-') . $money(abs($investingCashFlow)), 'accent' => $investingCashFlow >= 0 ? 'purple' : 'red', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'تمويلي', 'value' => ($financingCashFlow >= 0 ? '+' : '-') . $money(abs($financingCashFlow)), 'accent' => $financingCashFlow >= 0 ? 'blue' : 'red', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'صافي التغير', 'value' => ($netCashFlow >= 0 ? '+' : '-') . $money(abs($netCashFlow)), 'accent' => $netCashFlow >= 0 ? 'theme' : 'red', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'تشغيلي', 'value' => ($operatingCashFlow >= 0 ? '+' : '-') . $money(abs($operatingCashFlow)), 'accent' => $operatingCashFlow >= 0 ? 'green' : 'red', 'compact' => true, 'href' => route('accounting.reports.cash-flow') . '#page-data', 'linkLabel' => 'عرض التقرير'])
+    @include('crm.partials.stat-card', ['label' => 'استثماري', 'value' => ($investingCashFlow >= 0 ? '+' : '-') . $money(abs($investingCashFlow)), 'accent' => $investingCashFlow >= 0 ? 'purple' : 'red', 'compact' => true, 'href' => route('accounting.reports.cash-flow') . '#page-data', 'linkLabel' => 'عرض التقرير'])
+    @include('crm.partials.stat-card', ['label' => 'تمويلي', 'value' => ($financingCashFlow >= 0 ? '+' : '-') . $money(abs($financingCashFlow)), 'accent' => $financingCashFlow >= 0 ? 'blue' : 'red', 'compact' => true, 'href' => route('accounting.reports.cash-flow') . '#page-data', 'linkLabel' => 'عرض التقرير'])
+    @include('crm.partials.stat-card', ['label' => 'صافي التغير', 'value' => ($netCashFlow >= 0 ? '+' : '-') . $money(abs($netCashFlow)), 'accent' => $netCashFlow >= 0 ? 'theme' : 'red', 'compact' => true, 'href' => route('accounting.reports.cash-flow') . '#page-data', 'linkLabel' => 'عرض التقرير'])
 </div>
 
 <div id="report-document" class="font-tajawal">

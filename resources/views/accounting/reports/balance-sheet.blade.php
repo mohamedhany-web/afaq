@@ -16,10 +16,10 @@
 @include('accounting.partials.report-toolbar', ['filterType' => 'date', 'date' => $date])
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 no-print">
-    @include('crm.partials.stat-card', ['label' => 'إجمالي الأصول', 'value' => $money($totalAssets), 'accent' => 'green', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'إجمالي الخصوم', 'value' => $money($totalLiabilities), 'accent' => 'amber', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'حقوق الملكية', 'value' => $money($totalEquity), 'accent' => 'blue', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'التوازن', 'value' => $isBalanced ? 'متوازنة' : 'غير متوازنة', 'accent' => $isBalanced ? 'green' : 'red', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي الأصول', 'value' => $money($totalAssets), 'accent' => 'green', 'compact' => true, 'href' => route('accounting.reports.balance-sheet') . '#page-data', 'linkLabel' => 'عرض التقرير'])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي الخصوم', 'value' => $money($totalLiabilities), 'accent' => 'amber', 'compact' => true, 'href' => route('accounting.reports.balance-sheet') . '#page-data', 'linkLabel' => 'عرض التقرير'])
+    @include('crm.partials.stat-card', ['label' => 'حقوق الملكية', 'value' => $money($totalEquity), 'accent' => 'blue', 'compact' => true, 'href' => route('accounting.reports.balance-sheet') . '#page-data', 'linkLabel' => 'عرض التقرير'])
+    @include('crm.partials.stat-card', ['label' => 'التوازن', 'value' => $isBalanced ? 'متوازنة' : 'غير متوازنة', 'accent' => $isBalanced ? 'green' : 'red', 'compact' => true, 'href' => route('accounting.reports.balance-sheet') . '#page-data', 'linkLabel' => 'عرض التقرير'])
 </div>
 
 <div id="report-document" class="font-tajawal">

@@ -12,9 +12,9 @@
 ])
 
 <div class="grid grid-cols-3 gap-3 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'الفريق', 'value' => $stats['total'], 'accent' => 'purple'])
-    @include('crm.partials.stat-card', ['label' => 'مديرون', 'value' => $stats['managers'], 'accent' => 'theme'])
-    @include('crm.partials.stat-card', ['label' => 'موظفون', 'value' => $stats['reps'], 'accent' => 'blue'])
+    @include('crm.partials.stat-card', ['label' => 'الفريق', 'value' => $stats['total'], 'accent' => 'purple', 'href' => route('marketing.team.index') . '#page-data', 'linkLabel' => 'عرض الفريق'])
+    @include('crm.partials.stat-card', ['label' => 'مديرون', 'value' => $stats['managers'], 'accent' => 'theme', 'href' => route('marketing.team.index') . '#page-data', 'linkLabel' => 'عرض الفريق'])
+    @include('crm.partials.stat-card', ['label' => 'موظفون', 'value' => $stats['reps'], 'accent' => 'blue', 'href' => route('marketing.team.index') . '#page-data', 'linkLabel' => 'عرض الفريق'])
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

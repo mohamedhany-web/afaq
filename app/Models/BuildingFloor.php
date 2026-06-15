@@ -26,6 +26,6 @@ class BuildingFloor extends Model
 
     public function units(): HasMany
     {
-        return $this->hasMany(ProjectUnit::class, 'building_floor_id')->orderBy('code');
+        return $this->hasMany(ProjectUnit::class, 'building_floor_id')->orderBy('id');
     }
 }

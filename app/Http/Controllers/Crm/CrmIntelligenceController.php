@@ -4,20 +4,23 @@ namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
 use App\Models\ClientPostSalesCase;
+use App\Http\Controllers\Crm\Concerns\UsesCrmFilters;
 use App\Services\Crm\LeadFunnelAnalyticsService;
 use App\Services\Crm\SalesForecastingService;
 use App\Services\Crm\SalesManagementIntelligenceService;
-use App\Services\CrmScopeService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class CrmIntelligenceController extends Controller
 {
+    use UsesCrmFilters;
+
     public function index(Request $request)
     {
         $user = Auth::user();
-        $scope = CrmScopeService::for($user);
+        $filters = $this->crmFilters($request);
+        $scope = $filters->scope();
 
         if (!$scope->hasFullAccess() && !$scope->isManagerScope()) {
             abort(403, 'هذه اللوحة متاحة للإدارة ومديري المبيعات فقط.');
@@ -38,6 +41,12 @@ class CrmIntelligenceController extends Controller
             $postSalesQuery->whereIn('client_id', $clientIds);
         }
 
+        if ($salesRepId = $filters->resolveSalesRepId($request)) {
+            $postSalesQuery->where('assigned_to', $salesRepId);
+        }
+
+        $intelKeys = ['from', 'to', 'sales_rep'];
+
         return view('crm.intelligence.index', [
             'funnel' => LeadFunnelAnalyticsService::build($user, $from, $to),
             'management' => SalesManagementIntelligenceService::build($user),
@@ -52,6 +61,14 @@ class CrmIntelligenceController extends Controller
             ],
             'lostReasons' => config('crm_intelligence.lost_reasons'),
             'filters' => ['from' => $from->toDateString(), 'to' => $to->toDateString()],
+            'clearUrl' => route('crm.intelligence.index'),
+            'filterKeys' => $intelKeys,
+            'advancedKeys' => [],
+            'hasActive' => $filters->hasActiveFilters($request, $intelKeys),
+            'salesReps' => $filters->salesReps(),
+            'showSalesRepFilter' => $filters->showSalesRepFilter(),
+            'fromValue' => $from->toDateString(),
+            'toValue' => $to->toDateString(),
         ]);
     }
 }

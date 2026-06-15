@@ -37,14 +37,14 @@
 ])
 
 <div class="grid grid-cols-2 lg:grid-cols-{{ ($operationsOnly ?? false) || ($marketingOnly ?? false) ? '4' : '5' }} gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'إجمالي الموظفين', 'value' => $stats['total'], 'accent' => 'theme', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'نشطون', 'value' => $stats['active'], 'accent' => 'green', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => ($operationsOnly ?? false) ? 'مديرو عمليات' : (($marketingOnly ?? false) ? 'مديرو تسويق' : 'مديرو مبيعات'), 'value' => $stats['managers'], 'accent' => 'purple', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي الموظفين', 'value' => $stats['total'], 'accent' => 'theme', 'compact' => true, 'href' => $indexUrl . '#page-data', 'linkLabel' => 'عرض القائمة'])
+    @include('crm.partials.stat-card', ['label' => 'نشطون', 'value' => $stats['active'], 'accent' => 'green', 'compact' => true, 'href' => route('employees.index', array_filter(['sales_only' => ($salesOnly ?? false) ? 1 : null, 'marketing_only' => ($marketingOnly ?? false) ? 1 : null, 'operations_only' => ($operationsOnly ?? false) ? 1 : null, 'status' => 'active'])) . '#page-data', 'linkLabel' => 'عرض النشطين'])
+    @include('crm.partials.stat-card', ['label' => ($operationsOnly ?? false) ? 'مديرو عمليات' : (($marketingOnly ?? false) ? 'مديرو تسويق' : 'مديرو مبيعات'), 'value' => $stats['managers'], 'accent' => 'purple', 'compact' => true, 'href' => route('employees.index', array_filter(['sales_only' => ($salesOnly ?? false) ? 1 : null, 'marketing_only' => ($marketingOnly ?? false) ? 1 : null, 'operations_only' => ($operationsOnly ?? false) ? 1 : null, 'crm_role' => 'manager'])) . '#page-data', 'linkLabel' => 'عرض المديرين'])
     @if(!($operationsOnly ?? false) && !($marketingOnly ?? false))
-    @include('crm.partials.stat-card', ['label' => 'قادة فرق', 'value' => $stats['team_leaders'] ?? 0, 'accent' => 'blue', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'قادة فرق', 'value' => $stats['team_leaders'] ?? 0, 'accent' => 'blue', 'compact' => true, 'href' => route('employees.index', array_filter(['sales_only' => ($salesOnly ?? false) ? 1 : null, 'crm_role' => 'team_leader'])) . '#page-data', 'linkLabel' => 'عرض القادة'])
     @endif
     @if(!($operationsOnly ?? false))
-    @include('crm.partials.stat-card', ['label' => ($marketingOnly ?? false) ? 'موظفو تسويق' : 'مندوبو مبيعات', 'value' => $stats['agents'], 'accent' => 'amber', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => ($marketingOnly ?? false) ? 'موظفو تسويق' : 'مندوبو مبيعات', 'value' => $stats['agents'], 'accent' => 'amber', 'compact' => true, 'href' => route('employees.index', array_filter(['sales_only' => ($salesOnly ?? false) ? 1 : null, 'marketing_only' => ($marketingOnly ?? false) ? 1 : null, 'crm_role' => 'agent'])) . '#page-data', 'linkLabel' => 'عرض المندوبين'])
     @endif
 </div>
 
@@ -87,7 +87,7 @@
     </form>
 </div>
 
-<div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+<div id="page-data" class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
     <div class="px-5 sm:px-6 py-4 border-b border-gray-200 flex items-center justify-between" style="{{ $headerStyle }}">
         <h2 class="font-bold text-gray-900 font-tajawal">قائمة الموظفين</h2>
         <span class="text-xs px-3 py-1 rounded-full font-medium font-tajawal" style="background: {{ $themeColor }}15; color: {{ $themeColor }};">{{ $employees->total() }} موظف</span>
@@ -155,6 +155,9 @@
                     </td>
                     <td class="p-4">
                         <div class="flex flex-wrap gap-1.5">
+                            <a href="{{ route('employees.dossier', array_merge(['employee' => $employee], $query)) }}"
+                               class="px-2.5 py-1.5 rounded-lg text-xs font-semibold border font-tajawal"
+                               style="border-color:{{ $themeColor }}40;color:{{ $themeColor }}">الملف</a>
                             <a href="{{ route('employees.show', array_merge(['employee' => $employee], $query)) }}"
                                class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white font-tajawal"
                                style="background:{{ $themeColor }}">عرض</a>

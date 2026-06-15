@@ -16,10 +16,10 @@
 @if(session('error'))<div class="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-tajawal">{{ session('error') }}</div>@endif
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'إجمالي الحملات', 'value' => $stats['total'], 'accent' => 'purple'])
-    @include('crm.partials.stat-card', ['label' => 'نشطة', 'value' => $stats['active'], 'accent' => 'green'])
-    @include('crm.partials.stat-card', ['label' => 'Leads', 'value' => $stats['leads'], 'accent' => 'blue'])
-    @include('crm.partials.stat-card', ['label' => 'الميزانية', 'value' => number_format($stats['budget']), 'accent' => 'amber'])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي الحملات', 'value' => $stats['total'], 'accent' => 'purple', 'href' => route('marketing.campaigns.index') . '#page-data', 'linkLabel' => 'عرض الحملات'])
+    @include('crm.partials.stat-card', ['label' => 'نشطة', 'value' => $stats['active'], 'accent' => 'green', 'href' => route('marketing.campaigns.index', ['status' => 'active']) . '#page-data', 'linkLabel' => 'عرض النشطة'])
+    @include('crm.partials.stat-card', ['label' => 'Leads', 'value' => $stats['leads'], 'accent' => 'blue', 'href' => route('marketing.leads.index'), 'linkLabel' => 'عرض Leads'])
+    @include('crm.partials.stat-card', ['label' => 'الميزانية', 'value' => number_format($stats['budget']), 'accent' => 'amber', 'href' => route('marketing.campaigns.index') . '#page-data', 'linkLabel' => 'عرض الحملات'])
 </div>
 
 <form method="GET" class="mb-4 flex flex-wrap gap-2">
@@ -33,7 +33,7 @@
     <button type="submit" class="px-4 py-2 rounded-xl text-white text-sm font-tajawal" style="background: {{ $themeColor }};">تصفية</button>
 </form>
 
-<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+<div id="page-data" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
     @forelse($campaigns as $campaign)
     <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-5 font-tajawal">
         <div class="flex justify-between items-start gap-2 mb-3">

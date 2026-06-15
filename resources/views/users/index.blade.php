@@ -2,11 +2,14 @@
 @section('page-title', 'المستخدمون')
 
 @section('content')
-@php $themeColor = \App\Helpers\SettingsHelper::getThemeColor(); @endphp
+@php
+    $themeColor = \App\Helpers\SettingsHelper::getThemeColor();
+    $activeWorkspace = request('workspace');
+@endphp
 
 @include('crm.partials.page-header', [
     'title' => 'إدارة المستخدمين',
-    'subtitle' => 'حسابات الدخول، الأدوار، وربط الموظفين بالنظام العقاري',
+    'subtitle' => 'مركز إدارة حسابات النظام — اختر القسم والدور ثم أضِف المستخدم من هنا',
     'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>',
     'actionUrl' => auth()->user()->can('create-users') ? route('users.create') : null,
     'actionLabel' => 'مستخدم جديد',
@@ -15,25 +18,83 @@
 @if(session('success'))<div class="mb-4 p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm font-tajawal">{{ session('success') }}</div>@endif
 @if(session('error'))<div class="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-tajawal">{{ session('error') }}</div>@endif
 
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'إجمالي المستخدمين', 'value' => $stats['total'], 'accent' => 'theme'])
-    @include('crm.partials.stat-card', ['label' => 'حسابات مفعّلة', 'value' => $stats['verified'], 'accent' => 'green'])
-    @include('crm.partials.stat-card', ['label' => 'مرتبطون بموظف', 'value' => $stats['with_employee'], 'accent' => 'blue'])
-    @include('crm.partials.stat-card', ['label' => 'إدارة', 'value' => $stats['admins'], 'accent' => 'purple'])
+<div class="mb-4 p-4 rounded-2xl border border-gray-200 bg-white font-tajawal text-sm text-gray-600">
+    جميع المستخدمين يُضافون من هذه الصفحة. اختر <strong class="text-gray-900">القسم</strong> (مبيعات · تسويق · عمليات · إلخ) ثم <strong class="text-gray-900">الدور</strong> المناسب — يُحدَّد تلقائياً القسم والصلاحيات ومساحة العمل.
+</div>
+
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+    @include('crm.partials.stat-card', [
+        'label' => 'الإجمالي',
+        'value' => $stats['total'],
+        'accent' => 'theme',
+        'compact' => true,
+        'href' => route('users.index') . '#page-data',
+        'linkLabel' => 'عرض الكل',
+    ])
+    @foreach($workspaceStats as $groupKey => $group)
+    @php
+        $wsAccent = match ($groupKey) {
+            'admin' => 'purple',
+            'sales' => 'blue',
+            'marketing' => 'purple',
+            'operations' => 'green',
+            'hr' => 'purple',
+            'clients' => 'green',
+            default => 'theme',
+        };
+    @endphp
+    @include('crm.partials.stat-card', [
+        'label' => $group['label'],
+        'value' => $group['count'],
+        'accent' => $wsAccent,
+        'compact' => true,
+        'class' => $activeWorkspace === $groupKey ? 'ring-2' : '',
+        'href' => route('users.index', ['workspace' => $groupKey]) . '#page-data',
+        'linkLabel' => 'عرض ' . $group['label'],
+    ])
+    @endforeach
+</div>
+
+<div class="flex flex-wrap gap-2 mb-4 font-tajawal">
+    <a href="{{ route('users.index') }}"
+       class="px-3 py-1.5 rounded-lg text-xs font-bold border transition {{ !$activeWorkspace ? 'text-white border-transparent' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50' }}"
+       @if(!$activeWorkspace) style="background:{{ $themeColor }}" @endif>
+        الكل ({{ $stats['total'] }})
+    </a>
+    @foreach($workspaceGroups as $groupKey => $group)
+    <a href="{{ route('users.index', ['workspace' => $groupKey]) }}"
+       class="px-3 py-1.5 rounded-lg text-xs font-bold border transition {{ $activeWorkspace === $groupKey ? 'text-white border-transparent' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50' }}"
+       @if($activeWorkspace === $groupKey) style="background:{{ $group['color'] }}" @endif>
+        {{ $group['label'] }}
+        <span class="opacity-80">({{ $workspaceStats[$groupKey]['count'] ?? 0 }})</span>
+    </a>
+    @endforeach
 </div>
 
 <div class="bg-white rounded-2xl border p-4 mb-6 font-tajawal">
     <form method="GET" class="flex flex-wrap gap-3 items-end">
+        @if($activeWorkspace)
+        <input type="hidden" name="workspace" value="{{ $activeWorkspace }}">
+        @endif
         <div class="flex-1 min-w-[200px]">
             <label class="block text-xs font-bold text-gray-500 mb-1">بحث</label>
             <input type="search" name="search" value="{{ request('search') }}" placeholder="الاسم أو البريد..." class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm">
         </div>
-        <div class="w-full sm:w-48">
-            <label class="block text-xs font-bold text-gray-500 mb-1">الدور</label>
+        <div class="w-full sm:w-52">
+            <label class="block text-xs font-bold text-gray-500 mb-1">الدور التفصيلي</label>
             <select name="role" class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm">
                 <option value="">كل الأدوار</option>
-                @foreach($assignableRoles as $role)
-                <option value="{{ $role->name }}" @selected(request('role') === $role->name)>{{ \App\Services\CrmRoleCatalogService::roleLabel($role->name) }}</option>
+                @foreach($workspaceGroups as $groupKey => $group)
+                @php $groupRoles = $assignableRoles->filter(fn ($r) => in_array($r->name, $group['roles'], true)); @endphp
+                @if($groupRoles->isNotEmpty())
+                <optgroup label="{{ $group['label'] }}">
+                    @foreach($groupRoles as $role)
+                    <option value="{{ $role->name }}" @selected(request('role') === $role->name)>
+                        {{ \App\Services\CrmRoleCatalogService::roleLabel($role->name) }}
+                    </option>
+                    @endforeach
+                </optgroup>
+                @endif
                 @endforeach
             </select>
         </div>
@@ -48,17 +109,28 @@
             </select>
         </div>
         <button type="submit" class="px-5 py-2.5 rounded-xl text-white text-sm font-bold" style="background:{{ $themeColor }}">تطبيق</button>
+        @if(request()->hasAny(['search', 'role', 'status', 'workspace']))
+        <a href="{{ route('users.index') }}" class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600">مسح</a>
+        @endif
     </form>
 </div>
 
-<div class="bg-white rounded-2xl shadow-lg border overflow-hidden font-tajawal">
+<div id="page-data" class="bg-white rounded-2xl shadow-lg border overflow-hidden font-tajawal">
+    @if($activeWorkspace && isset($workspaceGroups[$activeWorkspace]))
+    <div class="px-5 py-3 border-b text-sm flex items-center gap-2" style="background: {{ $workspaceGroups[$activeWorkspace]['color'] }}10;">
+        <span class="w-2.5 h-2.5 rounded-full" style="background:{{ $workspaceGroups[$activeWorkspace]['color'] }}"></span>
+        <span class="font-bold text-gray-800">{{ $workspaceGroups[$activeWorkspace]['label'] }}</span>
+        <span class="text-gray-500">— {{ $workspaceGroups[$activeWorkspace]['description'] }}</span>
+    </div>
+    @endif
     <div class="overflow-x-auto">
         <table class="w-full text-sm min-w-[900px]">
             <thead class="bg-gray-50 border-b">
                 <tr>
                     <th class="p-4 text-right font-bold">المستخدم</th>
+                    <th class="p-4 text-right font-bold">القسم</th>
                     <th class="p-4 text-right font-bold">الدور</th>
-                    <th class="p-4 text-right font-bold">القسم / الموظف</th>
+                    <th class="p-4 text-right font-bold">الموظف / القسم</th>
                     <th class="p-4 text-right font-bold">الحالة</th>
                     <th class="p-4 text-right font-bold">إجراءات</th>
                 </tr>
@@ -68,11 +140,22 @@
             @php
                 $roleKey = \App\Services\CrmRoleCatalogService::resolveUserDisplayRole($user);
                 $meta = $roleKey ? \App\Services\CrmRoleCatalogService::roleMeta($roleKey) : null;
+                $wsKey = $roleKey ? \App\Services\CrmRoleCatalogService::workspaceGroupForRole($roleKey) : null;
+                $wsMeta = $wsKey ? \App\Services\CrmRoleCatalogService::workspaceGroupMeta($wsKey) : null;
             @endphp
             <tr class="hover:bg-gray-50">
                 <td class="p-4">
                     <p class="font-semibold text-gray-900">{{ $user->name }}</p>
                     <p class="text-xs text-gray-500" dir="ltr">{{ $user->email }}</p>
+                </td>
+                <td class="p-4">
+                    @if($wsMeta)
+                    <span class="text-xs font-bold px-2.5 py-1 rounded-lg" style="background: {{ $wsMeta['color'] }}18; color: {{ $wsMeta['color'] }}">
+                        {{ $wsMeta['label'] }}
+                    </span>
+                    @else
+                    <span class="text-xs text-gray-400">—</span>
+                    @endif
                 </td>
                 <td class="p-4">
                     @if($meta)
@@ -106,7 +189,7 @@
                 </td>
             </tr>
             @empty
-            <tr><td colspan="5" class="p-10 text-center text-gray-500">لا يوجد مستخدمون</td></tr>
+            <tr><td colspan="6" class="p-10 text-center text-gray-500">لا يوجد مستخدمون في هذا التصنيف</td></tr>
             @endforelse
             </tbody>
         </table>

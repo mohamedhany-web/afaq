@@ -15,10 +15,10 @@
 @if(session('success'))<div class="mb-4 p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm font-tajawal">{{ session('success') }}</div>@endif
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'بانتظار المراجعة', 'value' => $stats['pending'], 'accent' => 'amber'])
-    @include('crm.partials.stat-card', ['label' => 'غياب مؤكد', 'value' => $stats['confirmed_absent'], 'accent' => 'red'])
-    @include('crm.partials.stat-card', ['label' => 'حضور مؤكد', 'value' => $stats['confirmed_present'], 'accent' => 'green'])
-    @include('crm.partials.stat-card', ['label' => 'معذور', 'value' => $stats['excused'], 'accent' => 'blue'])
+    @include('crm.partials.stat-card', ['label' => 'بانتظار المراجعة', 'value' => $stats['pending'], 'accent' => 'amber', 'href' => route('operations.attendance-reviews.index', ['status' => 'pending']) . '#page-data', 'linkLabel' => 'عرض المعلّقة'])
+    @include('crm.partials.stat-card', ['label' => 'غياب مؤكد', 'value' => $stats['confirmed_absent'], 'accent' => 'red', 'href' => route('operations.attendance-reviews.index', ['status' => 'confirmed_absent']) . '#page-data', 'linkLabel' => 'عرض الغياب'])
+    @include('crm.partials.stat-card', ['label' => 'حضور مؤكد', 'value' => $stats['confirmed_present'], 'accent' => 'green', 'href' => route('operations.attendance-reviews.index', ['status' => 'confirmed_present']) . '#page-data', 'linkLabel' => 'عرض الحضور'])
+    @include('crm.partials.stat-card', ['label' => 'معذور', 'value' => $stats['excused'], 'accent' => 'blue', 'href' => route('operations.attendance-reviews.index', ['status' => 'excused']) . '#page-data', 'linkLabel' => 'عرض المعذور'])
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 font-tajawal">
@@ -58,8 +58,7 @@
     </div>
 </div>
 
-<div class="bg-white rounded-2xl shadow-lg border overflow-hidden font-tajawal">
-    <div class="px-5 py-4 border-b font-bold">سجلات {{ $date->format('Y-m-d') }}</div>
+<div class="bg-white rounded-2xl shadow-lg border overflow-hidden font-tajawal" id="page-data">
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="bg-gray-50">
@@ -114,6 +113,12 @@
                             <button type="submit" class="px-3 py-1 rounded-lg border text-xs font-bold whitespace-nowrap">معذور</button>
                         </form>
                     </div>
+                    @elseif(in_array($review->status, ['confirmed_absent', 'auto_confirmed']))
+                    <form method="POST" action="{{ route('operations.attendance-reviews.revoke', $review) }}" class="flex gap-1 min-w-[200px]">
+                        @csrf
+                        <input type="text" name="notes" required placeholder="سبب إلغاء قرار الغياب" class="flex-1 border rounded-lg px-2 py-1 text-xs">
+                        <button type="submit" class="px-3 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold whitespace-nowrap">إلغاء القرار</button>
+                    </form>
                     @else
                     <span class="text-xs text-gray-500">{{ $review->reviewer?->name ?? '—' }}</span>
                     @endif

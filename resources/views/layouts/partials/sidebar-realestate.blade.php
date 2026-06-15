@@ -3,13 +3,16 @@
     $crmOnlyWorkspace = $webUser && $webUser->usesCrmWorkspace();
     $marketingOnlyWorkspace = $webUser && $webUser->usesMarketingWorkspace();
     $operationsOnlyWorkspace = $webUser && $webUser->usesOperationsWorkspace();
+    $hrOnlyWorkspace = $webUser && $webUser->usesHrWorkspace();
     $crmAdminInMainApp = $webUser && $webUser->canAccessCrm() && !$webUser->usesCrmWorkspace();
     $marketingAdminInMainApp = $webUser && $webUser->canAccessMarketing() && !$webUser->usesMarketingWorkspace();
     $crmRole = $webUser ? \App\Services\CrmRoleResolver::for($webUser)->workspace() : null;
     $marketingRole = $webUser ? \App\Services\MarketingRoleResolver::for($webUser)->workspace() : null;
 @endphp
 
-@if(!$isClientGuard && $operationsOnlyWorkspace && !$crmOnlyWorkspace && !$marketingOnlyWorkspace)
+@if(!$isClientGuard && $hrOnlyWorkspace && !$crmOnlyWorkspace && !$marketingOnlyWorkspace && !$operationsOnlyWorkspace)
+    @include('layouts.partials.sidebar-hr')
+@elseif(!$isClientGuard && $operationsOnlyWorkspace && !$crmOnlyWorkspace && !$marketingOnlyWorkspace)
     @include('layouts.partials.sidebar-operations-manager')
 @elseif(!$isClientGuard && $marketingOnlyWorkspace && !$crmOnlyWorkspace)
     @include(match ($marketingRole) {
@@ -99,7 +102,41 @@
 </div>
 @endif
 
-@if($webUser && !$webUser->usesCrmWorkspace() && !$webUser->usesMarketingWorkspace() && ($webUser->can('view-leaves') || $webUser->can('view-attendance') || $webUser->can('view-employees')))
+@if($webUser?->canAccessHr() && !$webUser?->usesHrWorkspace())
+<div class="mt-6">
+    <h3 class="sidebar-section-title px-4">الموارد البشرية</h3>
+    <a href="{{ route('hr.dashboard') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('hr.*') ? 'active' : '' }}">
+        <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        لوحة الموارد البشرية
+    </a>
+    <a href="{{ route('hr.exit-permits.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('hr.exit-permits.*') ? 'active' : '' }}">
+        <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
+        الأذونات
+    </a>
+    <a href="{{ route('hr.absences.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('hr.absences.*') ? 'active' : '' }}">
+        <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+        الغياب
+    </a>
+    <a href="{{ route('hr.reports.monthly') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('hr.reports.*') ? 'active' : '' }}">
+        <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-7M7 3h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg>
+        تقارير الحضور الشهرية
+    </a>
+    <a href="{{ route('hr.contracts.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('hr.contracts.*') ? 'active' : '' }}">
+        <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        عقود الموظفين
+    </a>
+    <a href="{{ route('hr.custody.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('hr.custody.*') ? 'active' : '' }}">
+        <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        استلام وتسليم العهد
+    </a>
+    <a href="{{ route('hr.documents.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('hr.documents.*') ? 'active' : '' }}">
+        <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        ملفات الموظفين
+    </a>
+</div>
+@endif
+
+@if($webUser && !$webUser->usesCrmWorkspace() && !$webUser->usesMarketingWorkspace() && !$webUser->usesHrWorkspace() && ($webUser->can('view-leaves') || $webUser->can('view-attendance') || $webUser->can('view-employees'))))
 <div class="mt-6">
     <h3 class="sidebar-section-title px-4">الموارد البشرية</h3>
     @if($webUser->can('view-attendance'))

@@ -121,11 +121,7 @@
                                 <div>
                                     <p class="text-sm font-medium text-gray-900">نوع العميل</p>
                                     <p class="text-sm text-gray-600">
-                                        @if($client->client_type == 'individual') فرد
-                                        @elseif($client->client_type == 'small_business') مشروع صغير
-                                        @elseif($client->client_type == 'enterprise') شركة كبيرة
-                                        @else غير محدد
-                                        @endif
+                                        @include('crm.clients.partials.type-badge', ['type' => $client->client_type])
                                     </p>
                                 </div>
                             </div>

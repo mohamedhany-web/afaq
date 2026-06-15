@@ -18,4 +18,9 @@ class AttendanceCheckoutReviewPolicy
     {
         return $this->viewAny($user) && $review->isPending();
     }
+
+    public function revoke(User $user, AttendanceCheckoutReview $review): bool
+    {
+        return $this->viewAny($user) && $review->isApproved();
+    }
 }

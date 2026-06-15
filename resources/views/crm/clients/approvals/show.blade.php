@@ -22,7 +22,7 @@
             <div><dt class="text-xs text-gray-500">مقدم الطلب</dt><dd class="font-semibold">{{ $request->requester?->name }}</dd></div>
             <div><dt class="text-xs text-gray-500">التاريخ</dt><dd>{{ $request->created_at->format('Y-m-d H:i') }}</dd></div>
             @if($request->client)
-            <div><dt class="text-xs text-gray-500">العميل الحالي</dt><dd><a href="{{ route('crm.clients.show', $request->client) }}" class="font-bold" style="color:{{ $themeColor }}">{{ $request->client->name }}</a></dd></div>
+            <div><dt class="text-xs text-gray-500">العميل الحالي</dt><dd><a href="{{ $request->client->profileUrl() }}" class="font-bold" style="color:{{ $themeColor }}">{{ $request->client->name }}</a></dd></div>
             @endif
         </dl>
 

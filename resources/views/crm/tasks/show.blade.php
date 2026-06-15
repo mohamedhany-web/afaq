@@ -94,7 +94,7 @@
         @if($task->client)
         <div class="bg-white rounded-2xl border p-4 text-sm font-tajawal">
             <p class="text-xs text-gray-500">العميل</p>
-            <a href="{{ route('crm.clients.show', $task->client) }}" class="font-bold" style="color:{{ $themeColor }}">{{ $task->client->name }}</a>
+            <a href="{{ $task->client->profileUrl() }}" class="font-bold" style="color:{{ $themeColor }}">{{ $task->client->name }}</a>
         </div>
         @endif
     </div>

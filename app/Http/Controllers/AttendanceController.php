@@ -476,6 +476,47 @@ class AttendanceController extends Controller
             ], 500, [], JSON_UNESCAPED_UNICODE);
         }
     }
+
+    public function cancelCheckout(Request $request)
+    {
+        try {
+            $currentUser = Auth::user();
+            $employee = Employee::where('user_id', $currentUser->id)->first();
+
+            if (!$employee) {
+                return response()->json(['error' => 'لم يتم العثور على سجل موظف', 'success' => false], 404, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            $request->validate(['notes' => 'required|string|max:1000']);
+
+            $attendance = Attendance::where('employee_id', $employee->id)
+                ->whereDate('date', Carbon::today())
+                ->first();
+
+            if (!$attendance || $attendance->current_status !== 'checkout_pending') {
+                return response()->json(['error' => 'لا يوجد طلب انصراف معلّق', 'success' => false], 400, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            $review = \App\Models\AttendanceCheckoutReview::query()
+                ->where('attendance_id', $attendance->id)
+                ->where('status', \App\Models\AttendanceCheckoutReview::STATUS_PENDING)
+                ->latest('id')
+                ->first();
+
+            if (!$review) {
+                return response()->json(['error' => 'لا يوجد طلب انصراف معلّق', 'success' => false], 400, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            $this->checkoutReviews->cancelPending($review, $currentUser, $request->input('notes'));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'تم إلغاء طلب الانصراف — يمكنك إعادة الإرسال',
+            ], 200, [], JSON_UNESCAPED_UNICODE);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'success' => false], 500, [], JSON_UNESCAPED_UNICODE);
+        }
+    }
     
     /**
      * Start break for employee

@@ -100,6 +100,93 @@ class CrmRoleCatalogService
         return $result;
     }
 
+    public static function workspaceGroups(): array
+    {
+        return config('crm_roles.workspace_groups', []);
+    }
+
+    /** @return list<string> */
+    public static function rolesForWorkspaceGroup(string $groupKey): array
+    {
+        $roles = config("crm_roles.workspace_groups.{$groupKey}.roles", []);
+
+        return collect($roles)
+            ->flatMap(function (string $role) {
+                $legacy = config("crm_roles.roles.{$role}.legacy_names", []);
+
+                return array_merge([$role], $legacy);
+            })
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    public static function workspaceGroupForRole(string $roleName): ?string
+    {
+        $canonical = self::canonicalRole($roleName);
+
+        foreach (self::workspaceGroups() as $key => $group) {
+            foreach ($group['roles'] as $role) {
+                if ($canonical === $role) {
+                    return $key;
+                }
+                $legacy = config("crm_roles.roles.{$role}.legacy_names", []);
+                if (in_array($roleName, $legacy, true)) {
+                    return $key;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public static function workspaceGroupMeta(string $groupKey): ?array
+    {
+        $group = config("crm_roles.workspace_groups.{$groupKey}");
+
+        return is_array($group) ? $group : null;
+    }
+
+    /** @return array<string, array{label: string, description: string, color: string, count: int}> */
+    public static function userCountsByWorkspaceGroup(): array
+    {
+        $result = [];
+
+        foreach (self::workspaceGroups() as $key => $group) {
+            $roleNames = self::rolesForWorkspaceGroup($key);
+            $result[$key] = [
+                'label' => $group['label'],
+                'description' => $group['description'] ?? '',
+                'color' => $group['color'] ?? '#6b7280',
+                'count' => $roleNames === []
+                    ? 0
+                    : \App\Models\User::role($roleNames)->count(),
+            ];
+        }
+
+        return $result;
+    }
+
+    /** @return array<string, array<string, mixed>> */
+    public static function roleAssignmentHints(): array
+    {
+        $hints = [];
+        foreach (config('crm_roles.roles', []) as $roleKey => $meta) {
+            $groupKey = self::workspaceGroupForRole($roleKey);
+            $group = $groupKey ? self::workspaceGroupMeta($groupKey) : null;
+            $hints[$roleKey] = [
+                'label' => $meta['label'] ?? $roleKey,
+                'description' => $meta['description'] ?? '',
+                'color' => $meta['color'] ?? '#6b7280',
+                'workspace_label' => $group['label'] ?? '—',
+                'needs_employee' => $group['needs_employee'] ?? !in_array($roleKey, ['client', 'super_admin', 'admin'], true),
+                'default_department' => $group['default_department'] ?? null,
+            ];
+        }
+
+        return $hints;
+    }
+
     public static function resolveUserDisplayRole(\App\Models\User $user): ?string
     {
         $priority = ['super_admin', 'admin', 'sales_manager', 'manager', 'sales_team_leader', 'marketing_manager', 'operation_manager', 'sales_rep', 'sales_agent', 'marketing_rep', 'employee', 'hr', 'client'];

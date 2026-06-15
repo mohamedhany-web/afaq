@@ -69,12 +69,16 @@
         'value' => $stats['total_attendance_days'] ?? 0,
         'accent' => 'theme',
         'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />',
+        'href' => route('attendances.index', ['employee' => $employee->id]),
+        'linkLabel' => 'سجل الحضور',
     ])
     @include('crm.partials.stat-card', [
         'label' => 'الإجازات',
         'value' => $stats['total_leaves'] ?? 0,
         'accent' => 'amber',
         'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
+        'href' => '#employee-profile',
+        'linkLabel' => 'عرض الملف',
     ])
     @include('crm.partials.stat-card', [
         'label' => $isMarketing ? 'Leads مُسجّلة' : 'صفقات CRM',
@@ -83,12 +87,16 @@
         'icon' => $isMarketing
             ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />'
             : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" />',
+        'href' => $isMarketing ? route('marketing.dashboard') : ($employee->user ? route('crm.team-members.show', $employee->user) : '#employee-profile'),
+        'linkLabel' => $isMarketing ? 'لوحة التسويق' : 'ملف CRM',
     ])
     @include('crm.partials.stat-card', [
         'label' => 'الراتب الشهري',
         'value' => $employee->salary ? number_format($employee->salary) . ' ج.م' : '—',
         'accent' => 'purple',
         'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />',
+        'href' => route('salaries.index', ['employee' => $employee->id]),
+        'linkLabel' => 'سجل المرتبات',
     ])
 </div>
 
@@ -132,6 +140,11 @@
             </dl>
         </div>
         <div class="px-5 sm:px-6 py-4 border-t border-gray-100 flex flex-col gap-2">
+            <a href="{{ route('employees.dossier', array_merge(['employee' => $employee], $listQuery)) }}"
+               class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-semibold font-tajawal text-white"
+               style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}cc 100%);">
+                ملف الموظف الكامل
+            </a>
             @if($canEdit ?? false)
             <a href="{{ route('employees.edit', array_merge(['employee' => $employee], $listQuery)) }}"
                class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-semibold font-tajawal text-white"
@@ -178,7 +191,7 @@
     </div>
 
     {{-- التفاصيل --}}
-    <div class="xl:col-span-2 space-y-6">
+    <div class="xl:col-span-2 space-y-6" id="employee-profile">
         <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
             <div class="{{ $sectionHeader }}" style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">
                 بيانات التواصل

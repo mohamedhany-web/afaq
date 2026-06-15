@@ -89,10 +89,10 @@
 </div>
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'إجمالي الفاتورة', 'value' => $money($invoice->total_amount), 'accent' => 'theme', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'المدفوع', 'value' => $money($invoice->paid_amount ?? 0), 'accent' => 'green', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'المتبقي', 'value' => $money($invoice->balance_due ?? max(0, $invoice->total_amount - ($invoice->paid_amount ?? 0))), 'accent' => 'amber', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'الحالة', 'value' => $statusName, 'accent' => $invoice->status === 'paid' ? 'green' : ($invoice->status === 'overdue' ? 'red' : 'blue'), 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي الفاتورة', 'value' => $money($invoice->total_amount), 'accent' => 'theme', 'compact' => true, 'href' => '#invoice-details', 'linkLabel' => 'عرض التفاصيل'])
+    @include('crm.partials.stat-card', ['label' => 'المدفوع', 'value' => $money($invoice->paid_amount ?? 0), 'accent' => 'green', 'compact' => true, 'href' => '#invoice-details', 'linkLabel' => 'عرض التفاصيل'])
+    @include('crm.partials.stat-card', ['label' => 'المتبقي', 'value' => $money($invoice->balance_due ?? max(0, $invoice->total_amount - ($invoice->paid_amount ?? 0))), 'accent' => 'amber', 'compact' => true, 'href' => '#invoice-details', 'linkLabel' => 'عرض التفاصيل'])
+    @include('crm.partials.stat-card', ['label' => 'الحالة', 'value' => $statusName, 'accent' => $invoice->status === 'paid' ? 'green' : ($invoice->status === 'overdue' ? 'red' : 'blue'), 'compact' => true, 'href' => '#invoice-details', 'linkLabel' => 'عرض التفاصيل'])
 </div>
 </div>
 

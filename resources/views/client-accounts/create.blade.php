@@ -17,7 +17,7 @@
             @csrf
 
             <div>
-                @include('partials.client-search-select', ['required' => true, 'value' => old('client_id'), 'inputClass' => 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500', 'crmScope' => false])
+                @include('partials.client-search-select', ['required' => true, 'value' => old('client_id', $preselectedClientId ?? ''), 'inputClass' => 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500', 'crmScope' => false])
                 @error('client_id')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
             </div>
 

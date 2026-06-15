@@ -59,6 +59,11 @@
         <div class="bg-white rounded-2xl border p-5 sm:p-6">
             <h2 class="font-bold text-gray-900 mb-4">الدور في النظام</h2>
             @if($meta)
+            @if($workspaceMeta ?? null)
+            <p class="text-xs font-bold px-2.5 py-1 rounded-lg inline-block mb-3" style="background: {{ $workspaceMeta['color'] }}18; color: {{ $workspaceMeta['color'] }}">
+                {{ $workspaceMeta['label'] }}
+            </p>
+            @endif
             <div class="p-4 rounded-2xl border-2" style="border-color: {{ $meta['color'] }}40; background: {{ $meta['color'] }}08;">
                 <p class="font-bold text-lg" style="color: {{ $meta['color'] }}">{{ $meta['label'] }}</p>
                 <p class="text-sm text-gray-600 mt-2">{{ $meta['description'] }}</p>

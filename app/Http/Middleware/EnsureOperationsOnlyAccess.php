@@ -18,12 +18,15 @@ class EnsureOperationsOnlyAccess
 
         $allowedPrefixes = [
             'operations',
+            'crm/clients',
             'crm/projects',
+            'crm/schedule',
             'admin/developers',
             'admin/system-reports',
             'employees',
             'leaves',
             'attendances',
+            'hr/exit-permits',
             'api',
             'profile',
             'logout',
@@ -45,7 +48,8 @@ class EnsureOperationsOnlyAccess
         if ($request->routeIs(
             'logout', 'profile.*', 'verification.*', 'notifications.*', 'messages.*',
             'attendances.*', 'leaves.*', 'employees.*', 'operations.*',
-            'crm.projects.*', 'admin.developers.*', 'admin.system-reports.*',
+            'hr.exit-permits.*',
+            'crm.clients.*', 'crm.projects.*', 'crm.follow-ups.*', 'admin.developers.*', 'admin.system-reports.*',
         )) {
             return $next($request);
         }

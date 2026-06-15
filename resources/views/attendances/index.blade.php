@@ -25,8 +25,13 @@
             بدء يوم العمل
         </button>
         @elseif($todayAttendance->current_status === 'checkout_pending')
-        <div class="px-5 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 font-bold">
-            طلب الانصراف لدى العمليات — بانتظار الموافقة
+        <div class="flex flex-wrap items-center gap-3">
+            <div class="px-5 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 font-bold">
+                طلب الانصراف لدى العمليات — بانتظار الموافقة
+            </div>
+            <button id="cancelCheckoutBtn" type="button" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-amber-300 text-amber-900 text-sm font-bold hover:bg-amber-100">
+                إلغاء الطلب
+            </button>
         </div>
         @elseif(!$todayAttendance->check_out)
         <div class="flex flex-wrap items-center gap-3">
@@ -75,14 +80,14 @@
 
 {{-- إحصائيات اليوم --}}
 <div class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'إجمالي الموظفين', 'value' => $stats['total_employees'], 'accent' => 'theme', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'حاضرون / سجّلوا', 'value' => $stats['present_today'], 'accent' => 'green', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'غائبون', 'value' => $stats['absent_today'], 'accent' => 'red', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'متأخرون', 'value' => $stats['late_today'], 'accent' => 'amber', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي الموظفين', 'value' => $stats['total_employees'], 'accent' => 'theme', 'compact' => true, 'href' => route('attendances.index') . '#page-data', 'linkLabel' => 'عرض السجل'])
+    @include('crm.partials.stat-card', ['label' => 'حاضرون / سجّلوا', 'value' => $stats['present_today'], 'accent' => 'green', 'compact' => true, 'href' => route('attendances.index', ['status' => 'present']) . '#page-data', 'linkLabel' => 'عرض الحاضرين'])
+    @include('crm.partials.stat-card', ['label' => 'غائبون', 'value' => $stats['absent_today'], 'accent' => 'red', 'compact' => true, 'href' => route('attendances.index', ['status' => 'absent']) . '#page-data', 'linkLabel' => 'عرض الغائبين'])
+    @include('crm.partials.stat-card', ['label' => 'متأخرون', 'value' => $stats['late_today'], 'accent' => 'amber', 'compact' => true, 'href' => route('attendances.index', ['status' => 'late']) . '#page-data', 'linkLabel' => 'عرض المتأخرين'])
     @if($isToday)
-    @include('crm.partials.stat-card', ['label' => 'يعملون الآن', 'value' => $stats['working_now'], 'accent' => 'blue', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'يعملون الآن', 'value' => $stats['working_now'], 'accent' => 'blue', 'compact' => true, 'href' => route('attendances.index', ['status' => 'working']) . '#page-data', 'linkLabel' => 'عرض النشطين'])
     @endif
-    @include('crm.partials.stat-card', ['label' => 'معدل الحضور', 'value' => $stats['attendance_rate'] . '%', 'accent' => 'purple', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'معدل الحضور', 'value' => $stats['attendance_rate'] . '%', 'accent' => 'purple', 'compact' => true, 'href' => route('attendances.index') . '#page-data', 'linkLabel' => 'عرض السجل'])
 </div>
 
 {{-- فلاتر --}}
@@ -139,7 +144,7 @@
 @endif
 
 {{-- جدول الحضور اليومي الكامل --}}
-<div class="bg-white rounded-2xl shadow-lg border overflow-hidden mb-6 font-tajawal">
+<div id="page-data" class="bg-white rounded-2xl shadow-lg border overflow-hidden mb-6 font-tajawal">
     <div class="px-5 py-4 border-b flex flex-wrap items-center justify-between gap-2">
         <h2 class="font-bold text-gray-900">
             @if($scopeMode === 'self')
@@ -293,6 +298,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     document.getElementById('checkOutBtn')?.addEventListener('click', checkOut);
+    document.getElementById('cancelCheckoutBtn')?.addEventListener('click', cancelCheckout);
     document.getElementById('startBreakBtn')?.addEventListener('click', startBreak);
     document.getElementById('endBreakBtn')?.addEventListener('click', endBreak);
 
@@ -324,6 +330,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data?.success) { notify(data.message, 'success'); setTimeout(() => location.reload(), 800); }
                 else notify(data?.error || 'خطأ', 'error');
             }).catch(() => notify('خطأ في الانصراف', 'error'));
+    }
+
+    function cancelCheckout() {
+        const notes = prompt('سبب إلغاء طلب الانصراف:');
+        if (!notes || !notes.trim()) return;
+        fetch('{{ route("attendances.cancel-checkout") }}', {
+            method: 'POST',
+            headers: csrfHeaders(),
+            body: JSON.stringify({ notes: notes.trim() }),
+        })
+            .then(r => r.json()).then(data => {
+                if (data?.success) { notify(data.message, 'success'); setTimeout(() => location.reload(), 800); }
+                else notify(data?.error || 'خطأ', 'error');
+            }).catch(() => notify('تعذر إلغاء الطلب', 'error'));
     }
 
     function startBreak() {

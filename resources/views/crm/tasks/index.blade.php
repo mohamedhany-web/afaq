@@ -22,11 +22,11 @@
 @endif
 
 <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'نشطة', 'value' => $stats['total_active'], 'compact' => true, 'accent' => 'theme'])
-    @include('crm.partials.stat-card', ['label' => 'اليوم', 'value' => $stats['due_today'], 'compact' => true, 'accent' => 'blue'])
-    @include('crm.partials.stat-card', ['label' => 'متأخرة', 'value' => $stats['overdue'], 'compact' => true, 'accent' => 'red'])
-    @include('crm.partials.stat-card', ['label' => 'حرجة', 'value' => $stats['critical'], 'compact' => true, 'accent' => 'amber'])
-    @include('crm.partials.stat-card', ['label' => 'أُنجزت هذا الأسبوع', 'value' => $stats['completed_week'], 'compact' => true, 'accent' => 'green'])
+    @include('crm.partials.stat-card', ['label' => 'نشطة', 'value' => $stats['total_active'], 'compact' => true, 'accent' => 'theme', 'href' => route('crm.tasks.index', ['status' => 'active']) . '#page-data', 'linkLabel' => 'عرض النشطة'])
+    @include('crm.partials.stat-card', ['label' => 'اليوم', 'value' => $stats['due_today'], 'compact' => true, 'accent' => 'blue', 'href' => route('crm.tasks.index', ['due' => 'today']) . '#page-data', 'linkLabel' => 'عرض اليوم'])
+    @include('crm.partials.stat-card', ['label' => 'متأخرة', 'value' => $stats['overdue'], 'compact' => true, 'accent' => 'red', 'href' => route('crm.tasks.index', ['due' => 'overdue']) . '#page-data', 'linkLabel' => 'عرض المتأخرة'])
+    @include('crm.partials.stat-card', ['label' => 'حرجة', 'value' => $stats['critical'], 'compact' => true, 'accent' => 'amber', 'href' => route('crm.tasks.index', ['priority' => 'critical']) . '#page-data', 'linkLabel' => 'عرض الحرجة'])
+    @include('crm.partials.stat-card', ['label' => 'أُنجزت هذا الأسبوع', 'value' => $stats['completed_week'], 'compact' => true, 'accent' => 'green', 'href' => route('crm.tasks.index', ['status' => 'completed']) . '#page-data', 'linkLabel' => 'عرض المنجزة'])
 </div>
 
 @if($isManager || $isAdmin)
@@ -55,25 +55,14 @@
 </div>
 @endif
 
-<div class="bg-white rounded-2xl border border-gray-200 p-4 mb-6 font-tajawal">
-    <form method="GET" class="flex flex-wrap gap-2 items-end">
-        <div class="flex flex-wrap gap-1">
-            @foreach(['active' => 'النشطة', 'today' => 'اليوم', 'overdue' => 'متأخرة', 'critical' => 'حرجة', 'high' => 'عالية+', 'completed' => 'مكتملة'] as $key => $lbl)
-            <a href="{{ route('crm.tasks.index', ['filter' => $key]) }}"
-               class="px-3 py-1.5 rounded-lg text-xs font-semibold {{ ($filter ?? 'active') === $key ? 'text-white' : 'bg-gray-100 text-gray-600' }}"
-               @if(($filter ?? 'active') === $key) style="background:{{ $themeColor }}" @endif>{{ $lbl }}</a>
-            @endforeach
-        </div>
-        @if($assignableUsers->isNotEmpty())
-        <select name="assignee" class="border-2 border-gray-200 rounded-xl px-3 py-2 text-xs" onchange="this.form.submit()">
-            <option value="">كل المكلفين</option>
-            @foreach($assignableUsers as $u)
-                <option value="{{ $u->id }}" @selected(request('assignee') == $u->id)>{{ $u->name }}</option>
-            @endforeach
-        </select>
-        @endif
-    </form>
+<div class="flex flex-wrap gap-1 mb-3 font-tajawal">
+    @foreach(['active' => 'النشطة', 'today' => 'اليوم', 'overdue' => 'متأخرة', 'critical' => 'حرجة', 'high' => 'عالية+', 'completed' => 'مكتملة'] as $key => $lbl)
+    <a href="{{ route('crm.tasks.index', array_merge(request()->except('filter', 'page'), ['filter' => $key])) }}"
+       class="px-3 py-1.5 rounded-lg text-xs font-semibold {{ ($filter ?? 'active') === $key ? 'text-white' : 'bg-gray-100 text-gray-600' }}"
+       @if(($filter ?? 'active') === $key) style="background:{{ $themeColor }}" @endif>{{ $lbl }}</a>
+    @endforeach
 </div>
+@include('crm.partials.filter-bar')
 
 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
     @forelse($tasks as $task)

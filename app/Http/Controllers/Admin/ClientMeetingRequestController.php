@@ -105,6 +105,15 @@ class ClientMeetingRequestController extends Controller
                     url('/client/meeting-requests/'.$meetingRequest->id),
                     ['meeting_request_id' => $meetingRequest->id]
                 );
+            } elseif (in_array($meetingRequest->status, ['completed', 'cancelled'], true)) {
+                ClientPortalNotifier::notify(
+                    $cid,
+                    'meeting_status',
+                    'تحديث على طلب الاجتماع',
+                    'تم تحديث حالة طلب الاجتماع '.$meetingRequest->reference_code.' إلى '.$meetingRequest->status,
+                    url('/client/meeting-requests/'.$meetingRequest->id),
+                    ['meeting_request_id' => $meetingRequest->id]
+                );
             }
         }
 

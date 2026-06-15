@@ -12,15 +12,15 @@ class CrmRecordApprovalService
         return $user->hasRole(['super_admin', 'admin']);
     }
 
-    /** يستطيع إرسال طلبات إضافة/تعديل/حذف (مبيعات وتسويق — ليس عمليات) */
+    /** يستطيع إرسال طلبات إضافة/تعديل/حذف (مبيعات وتسويق) أو إدارة مباشرة (عمليات) */
     public function canSubmitChanges(User $user): bool
     {
         if ($this->executesDirectly($user)) {
             return true;
         }
 
-        if ($user->usesOperationsWorkspace()) {
-            return false;
+        if ($user->canAccessOperations()) {
+            return true;
         }
 
         return $user->usesCrmWorkspace() || $user->usesMarketingWorkspace();
@@ -29,7 +29,11 @@ class CrmRecordApprovalService
     /** يحتاج موافقة الإدارة قبل التنفيذ */
     public function requiresApproval(User $user): bool
     {
-        return $this->canSubmitChanges($user) && !$this->executesDirectly($user);
+        if ($this->executesDirectly($user) || $user->canAccessOperations()) {
+            return false;
+        }
+
+        return $this->canSubmitChanges($user);
     }
 
     public function canApproveProjects(User $user): bool

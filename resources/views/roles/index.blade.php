@@ -20,13 +20,13 @@
 @endif
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'أدوار نشطة', 'value' => $stats['total_roles'], 'accent' => 'theme'])
-    @include('crm.partials.stat-card', ['label' => 'صلاحيات CRM', 'value' => $stats['total_permissions'], 'accent' => 'purple'])
-    @include('crm.partials.stat-card', ['label' => 'المستخدمون', 'value' => $stats['total_users'], 'accent' => 'blue'])
-    @include('crm.partials.stat-card', ['label' => 'فريق المبيعات', 'value' => $stats['crm_users'], 'accent' => 'amber'])
+    @include('crm.partials.stat-card', ['label' => 'أدوار نشطة', 'value' => $stats['total_roles'], 'accent' => 'theme', 'href' => route('roles.index') . '#page-data', 'linkLabel' => 'عرض الأدوار'])
+    @include('crm.partials.stat-card', ['label' => 'صلاحيات CRM', 'value' => $stats['total_permissions'], 'accent' => 'purple', 'href' => route('roles.index') . '#page-data', 'linkLabel' => 'عرض الصلاحيات'])
+    @include('crm.partials.stat-card', ['label' => 'المستخدمون', 'value' => $stats['total_users'], 'accent' => 'blue', 'href' => route('users.index'), 'linkLabel' => 'عرض المستخدمين'])
+    @include('crm.partials.stat-card', ['label' => 'فريق المبيعات', 'value' => $stats['crm_users'], 'accent' => 'amber', 'href' => route('employees.index', ['sales_only' => 1]), 'linkLabel' => 'عرض الفريق'])
 </div>
 
-<div class="bg-white rounded-2xl shadow-lg border border-gray-200 mb-6 overflow-hidden">
+<div id="page-data" class="bg-white rounded-2xl shadow-lg border border-gray-200 mb-6 overflow-hidden">
     <div class="px-5 sm:px-6 py-4 border-b border-gray-200">
         <h3 class="font-bold text-gray-900 font-tajawal">أدوار النظام العقاري</h3>
         <p class="text-xs text-gray-500 mt-1 font-tajawal">تم إخفاء الأدوار القديمة (مشاريع برمجية، QA، تصميم…) — الأدوار أدناه فقط</p>

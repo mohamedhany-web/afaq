@@ -6,7 +6,6 @@
 @php
     $themeColor = \App\Helpers\SettingsHelper::getThemeColor();
     $money = fn($v) => \App\Helpers\SettingsHelper::formatMoney($v);
-    $typeLabels = ['individual' => 'فرد', 'small_business' => 'شركة / منشأة'];
 @endphp
 
 @include('crm.partials.page-header', [
@@ -26,13 +25,15 @@
 </div>
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'مرحلة الرحلة', 'value' => $stageLabels[$client->lead_stage] ?? $client->lead_stage, 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />'])
-    @include('crm.partials.stat-card', ['label' => 'الصفقات', 'value' => $dealsCount, 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2" />'])
-    @include('crm.partials.stat-card', ['label' => 'قيمة الصفقات', 'value' => $money($dealsValue), 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />'])
-    @include('crm.partials.stat-card', ['label' => 'حالة العميل', 'value' => match($client->status) { 'prospect' => 'محتمل', 'active' => 'نشط', 'inactive' => 'غير نشط', 'suspended' => 'موقوف', default => $client->status }, 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />'])
+    @include('crm.partials.stat-card', ['label' => 'مرحلة الرحلة', 'value' => $stageLabels[$client->lead_stage] ?? $client->lead_stage, 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />', 'href' => '#client-journey', 'linkLabel' => 'عرض الرحلة'])
+    @include('crm.partials.stat-card', ['label' => 'الصفقات', 'value' => $dealsCount, 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2" />', 'href' => '#client-deals-kanban', 'linkLabel' => 'عرض الصفقات'])
+    @include('crm.partials.stat-card', ['label' => 'قيمة الصفقات', 'value' => $money($dealsValue), 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />', 'href' => '#client-deals-kanban', 'linkLabel' => 'عرض الصفقات'])
+    @include('crm.partials.stat-card', ['label' => 'حالة العميل', 'value' => match($client->status) { 'prospect' => 'محتمل', 'active' => 'نشط', 'inactive' => 'غير نشط', 'suspended' => 'موقوف', default => $client->status }, 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />', 'href' => $client->profileUrl('#client-details'), 'linkLabel' => 'عرض التفاصيل'])
 </div>
 
+<div id="client-journey">
 @include('crm.clients.partials.journey-kanban', compact('client', 'stageLabels', 'themeColor'))
+</div>
 
 <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
     {{-- بيانات العميل + تسجيل متابعة --}}
@@ -47,6 +48,7 @@
                     <span class="text-xs font-bold text-gray-500">الهاتف</span>
                     <p class="font-medium text-gray-900" dir="ltr">{{ $client->phone }}</p>
                 </div>
+                @can('viewFullDetails', $client)
                 <div>
                     <span class="text-xs font-bold text-gray-500">البريد</span>
                     <p class="text-gray-900" dir="ltr">{{ $client->email ?? '—' }}</p>
@@ -58,9 +60,14 @@
                 </div>
                 @endif
                 <div>
-                    <span class="text-xs font-bold text-gray-500">نوع العميل</span>
-                    <p class="text-gray-900">{{ $typeLabels[$client->client_type] ?? 'فرد' }}</p>
+                    <span class="text-xs font-bold text-gray-500">مصدر العميل</span>
+                    <div class="mt-1">@include('crm.clients.partials.source-badge', ['source' => $client->lead_source])</div>
                 </div>
+                <div>
+                    <span class="text-xs font-bold text-gray-500">تصنيف العميل</span>
+                    <p class="text-gray-900">@include('crm.clients.partials.type-badge', ['type' => $client->client_type])</p>
+                </div>
+                @endcan
                 <div>
                     <span class="text-xs font-bold text-gray-500">حالة الحساب</span>
                     <div class="mt-1">@include('crm.clients.partials.status-badge', ['status' => $client->status])</div>
@@ -77,9 +84,13 @@
                 </div>
             </div>
             <div class="px-5 py-3 border-t border-gray-100 flex flex-wrap gap-2">
+                @can('update', $client)
                 <a href="{{ route('crm.clients.edit', $client) }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-white font-tajawal"
                    style="background: {{ $themeColor }};">تعديل البيانات</a>
+                @endcan
+                @can('viewFullDetails', $client)
                 <a href="{{ route('crm.clients.show', $client) }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 text-gray-600 font-tajawal hover:bg-gray-50">الملف الكامل</a>
+                @endcan
             </div>
         </div>
 

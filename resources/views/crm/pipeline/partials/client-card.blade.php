@@ -17,7 +17,7 @@
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>
             </span>
             <div class="flex-1 min-w-0">
-                <a href="{{ route('crm.clients.show', $client) }}" class="font-bold text-[12px] text-gray-900 hover:underline block truncate" draggable="false">{{ $client->name }}</a>
+                <a href="{{ $client->profileUrl() }}" class="font-bold text-[12px] text-gray-900 hover:underline block truncate" draggable="false">{{ $client->name }}</a>
                 <p class="text-[10px] text-gray-500 truncate" dir="ltr">{{ $client->phone }}</p>
                 <div class="flex flex-wrap items-center gap-1 mt-1">
                     @include('crm.clients.partials.status-badge', ['status' => $client->status])

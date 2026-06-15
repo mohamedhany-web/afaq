@@ -1,0 +1,37 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class EmployeeAdminNote extends Model
+{
+    protected $fillable = [
+        'employee_id',
+        'author_id',
+        'category',
+        'title',
+        'body',
+        'is_confidential',
+    ];
+
+    protected $casts = [
+        'is_confidential' => 'boolean',
+    ];
+
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class);
+    }
+
+    public function author(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'author_id');
+    }
+
+    public function categoryLabel(): string
+    {
+        return config("employee_admin_notes.categories.{$this->category}", $this->category);
+    }
+}

@@ -16,10 +16,10 @@
 ])
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'راتبي الأساسي', 'value' => $money($myRun->base_salary), 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'درجة KPI', 'value' => round($myRun->kpi_score ?? 0, 1) . '%', 'compact' => true, 'accent' => 'purple'])
-    @include('crm.partials.stat-card', ['label' => 'أداء الفريق', 'value' => round($myRun->team_score ?? 0, 1) . '%', 'compact' => true, 'accent' => 'green'])
-    @include('crm.partials.stat-card', ['label' => 'صافي راتبي', 'value' => $money($myRun->net_pay), 'compact' => true, 'accent' => 'theme'])
+    @include('crm.partials.stat-card', ['label' => 'راتبي الأساسي', 'value' => $money($myRun->base_salary), 'compact' => true, 'href' => route('crm.compensation.dashboard') . '#payroll-details', 'linkLabel' => 'عرض الراتب'])
+    @include('crm.partials.stat-card', ['label' => 'درجة KPI', 'value' => round($myRun->kpi_score ?? 0, 1) . '%', 'compact' => true, 'accent' => 'purple', 'href' => route('crm.compensation.dashboard') . '#payroll-details', 'linkLabel' => 'عرض الراتب'])
+    @include('crm.partials.stat-card', ['label' => 'أداء الفريق', 'value' => round($myRun->team_score ?? 0, 1) . '%', 'compact' => true, 'accent' => 'green', 'href' => route('crm.compensation.dashboard') . '#payroll-details', 'linkLabel' => 'عرض الراتب'])
+    @include('crm.partials.stat-card', ['label' => 'صافي راتبي', 'value' => $money($myRun->net_pay), 'compact' => true, 'accent' => 'theme', 'href' => route('crm.compensation.dashboard') . '#payroll-details', 'linkLabel' => 'عرض الراتب'])
 </div>
 
 <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden mb-6">

@@ -1115,6 +1115,7 @@
                         أنت في <strong>إجازة معتمدة</strong> اليوم — لا يلزم تسجيل بدء يوم العمل.
                     </div>
                     @endif
+                    @include('layouts.partials.workspace-switcher')
                     @yield('content')
                 </div>
             </main>

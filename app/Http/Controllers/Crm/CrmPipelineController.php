@@ -7,7 +7,9 @@ use App\Models\Client;
 use App\Models\Project;
 use App\Models\Sale;
 use App\Models\SalesTeam;
+use App\Http\Controllers\Crm\Concerns\UsesCrmFilters;
 use App\Services\Crm\ClientTimelineService;
+use App\Services\Crm\CrmFilterService;
 use App\Services\CrmScopeService;
 use App\Services\Freelance\FreelanceCommissionSchemeService;
 use App\Services\Freelance\SaleCommissionSplitService;
@@ -20,6 +22,8 @@ use Illuminate\Support\Facades\Validator;
 
 class CrmPipelineController extends Controller
 {
+    use UsesCrmFilters;
+
     protected array $stages = ['lead', 'prospect', 'proposal', 'negotiation', 'closed_won', 'closed_lost'];
 
     public function __construct(
@@ -33,7 +37,12 @@ class CrmPipelineController extends Controller
 
     public function index(Request $request)
     {
-        $scope = CrmScopeService::for(Auth::user());
+        if ($request->get('view') === 'deals') {
+            return $this->dealsKanbanView($request);
+        }
+
+        $filters = $this->crmFilters($request);
+        $scope = $filters->scope();
         $filteredQuery = $this->filteredClientsQuery($request, $scope);
         $scopedSales = $scope->salesQuery();
 
@@ -53,20 +62,24 @@ class CrmPipelineController extends Controller
             ->paginate(24)
             ->withQueryString();
 
+        $stageLabels = $this->stageLabels();
+        $statusLabels = $this->clientStatusLabels();
+
         return view('crm.pipeline.index', [
             'clients' => $clients,
             'stats' => $stats,
-            'stageLabels' => $this->stageLabels(),
-            'statusLabels' => $this->clientStatusLabels(),
+            'stageLabels' => $stageLabels,
+            'statusLabels' => $statusLabels,
+            'clearUrl' => route('crm.pipeline.index'),
+            ...$this->clientFilterViewData($filters, $request, $stageLabels, $statusLabels),
         ]);
     }
 
     public function showClient(Client $client)
     {
+        $this->authorize('view', $client);
+
         $scope = CrmScopeService::for(Auth::user());
-        if (!$scope->clientsQuery()->where('id', $client->id)->exists()) {
-            abort(403, 'لا يمكنك الوصول إلى هذا العميل.');
-        }
 
         $client->load([
             'assignedEmployee:id,first_name,last_name',
@@ -119,7 +132,8 @@ class CrmPipelineController extends Controller
 
     protected function dealsKanbanView(Request $request)
     {
-        $scope = CrmScopeService::for(Auth::user());
+        $filters = $this->crmFilters($request);
+        $scope = $filters->scope();
         $filteredQuery = $this->filteredSalesQuery($request, $scope);
 
         $stageLabels = $this->stageLabels();
@@ -196,6 +210,8 @@ class CrmPipelineController extends Controller
             'stageTotals' => $stageTotals,
             'columnPageSize' => self::COLUMN_PAGE_SIZE,
             'showClosed' => $showClosed,
+            'clearUrl' => route('crm.pipeline.index', ['view' => 'deals']),
+            ...$this->saleFilterViewData($filters, $request, $stageLabels, ['view' => 'deals']),
         ]);
     }
 
@@ -240,40 +256,14 @@ class CrmPipelineController extends Controller
 
     protected function filteredClientsQuery(Request $request, CrmScopeService $scope): Builder
     {
-        $scopedSaleClientIds = fn () => $scope->salesQuery()->distinct()->pluck('client_id');
-
-        return $scope->clientsQuery()
-            ->when($request->search, function ($q) use ($request) {
-                $search = '%' . $request->search . '%';
-                $q->where(function ($query) use ($search) {
-                    $query->where('name', 'like', $search)
-                        ->orWhere('phone', 'like', $search)
-                        ->orWhere('email', 'like', $search)
-                        ->orWhere('company_name', 'like', $search);
-                });
-            })
-            ->when($request->status, fn ($q) => $q->where('status', $request->status))
-            ->when($request->lead_stage, fn ($q) => $q->where('lead_stage', $request->lead_stage))
-            ->when($request->deal_stage, function ($q) use ($request, $scope) {
-                $ids = $scope->salesQuery()->where('stage', $request->deal_stage)->distinct()->pluck('client_id');
-                $q->whereIn('id', $ids);
-            })
-            ->when($request->has_deals === '1', fn ($q) => $q->whereIn('id', $scopedSaleClientIds()))
-            ->when($request->has_deals === '0', fn ($q) => $q->whereNotIn('id', $scopedSaleClientIds()));
+        return CrmFilterService::for($request->user())
+            ->applyClientFilters($scope->clientsQuery(), $request);
     }
 
     protected function filteredSalesQuery(Request $request, CrmScopeService $scope): Builder
     {
-        return $scope->salesQuery()
-            ->when($request->search, function ($q) use ($request) {
-                $q->where(function ($query) use ($request) {
-                    $search = '%' . $request->search . '%';
-                    $query->where('product_service', 'like', $search)
-                        ->orWhereHas('client', fn ($c) => $c->where('name', 'like', $search))
-                        ->orWhereHas('project', fn ($p) => $p->where('name', 'like', $search));
-                });
-            })
-            ->when($request->stage, fn ($q) => $q->where('stage', $request->stage));
+        return CrmFilterService::for($request->user())
+            ->applySaleFilters($scope->salesQuery(), $request);
     }
 
     protected function clientEagerLoads(CrmScopeService $scope): array
@@ -316,7 +306,7 @@ class CrmPipelineController extends Controller
             'projects' => $projects,
             'stages' => $this->stages,
             'stageLabels' => $this->stageLabels(),
-            'leadSources' => ['website', 'referral', 'walk_in', 'social_media', 'advertisement', 'call', 'other'],
+            'leadSources' => Client::leadSourceLabels(),
         ]);
     }
 
@@ -330,7 +320,7 @@ class CrmPipelineController extends Controller
             'stage' => 'required|in:' . implode(',', $this->stages),
             'probability_percentage' => 'required|numeric|min:0|max:100',
             'expected_close_date' => 'nullable|date',
-            'lead_source' => 'nullable|string',
+            'lead_source' => 'nullable|in:' . implode(',', Client::leadSourceKeys()),
             'unit_type' => 'nullable|string|max:100',
             'interest_type' => 'nullable|string|max:100',
             'viewing_date' => 'nullable|date',
@@ -355,6 +345,11 @@ class CrmPipelineController extends Controller
         ]));
 
         $client = Client::find($request->client_id);
+
+        if ($request->filled('lead_source') && empty($client->lead_source)) {
+            $client->update(['lead_source' => Client::normalizeLeadSource($request->lead_source)]);
+        }
+
         app(ClientTimelineService::class)->record(
             $client,
             'deal_created',

@@ -63,7 +63,7 @@
 
     {{-- ملخص سريع --}}
     <div class="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-3">
-        @php $compactCard = ['compact' => true]; @endphp
+        @php $compactCard = ['compact' => true, 'href' => '#report-body', 'linkLabel' => 'عرض التفاصيل']; @endphp
         @include('crm.partials.stat-card', array_merge($compactCard, ['label' => 'عملاء جدد', 'value' => $v('lead_summary', 'new_leads_received'), 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>']))
         @include('crm.partials.stat-card', array_merge($compactCard, ['label' => 'مكالمات', 'value' => $v('communication', 'calls_made'), 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>']))
         @include('crm.partials.stat-card', array_merge($compactCard, ['label' => 'اجتماعات', 'value' => $v('meetings_visits', 'meetings_completed'), 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>']))
@@ -75,7 +75,7 @@
     </div>
 
     @if($canEdit)
-    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+    <div id="report-body" class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
         {{-- بيانات النظام (1–6) --}}
         <div class="xl:col-span-8 space-y-4">
             <div class="flex items-center justify-between">
@@ -145,7 +145,7 @@
 
     @else
     {{-- عرض للمدير / الإدارة --}}
-    <div class="space-y-4">
+    <div id="report-body" class="space-y-4">
         <div class="flex items-center justify-between">
             <h2 class="font-bold text-gray-900 font-tajawal text-lg">بيانات النظام</h2>
             <span class="text-xs text-gray-400 font-tajawal">الأقسام 1–6</span>

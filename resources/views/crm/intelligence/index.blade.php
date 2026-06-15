@@ -13,26 +13,16 @@
     'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />',
 ])
 
-<form method="GET" class="mb-6 flex flex-wrap gap-3 items-end bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
-    <div>
-        <label class="block text-xs font-bold text-gray-500 mb-1 font-tajawal">من</label>
-        <input type="date" name="from" value="{{ $filters['from'] }}" class="border-2 border-gray-200 rounded-xl px-3 py-2 text-sm">
-    </div>
-    <div>
-        <label class="block text-xs font-bold text-gray-500 mb-1 font-tajawal">إلى</label>
-        <input type="date" name="to" value="{{ $filters['to'] }}" class="border-2 border-gray-200 rounded-xl px-3 py-2 text-sm">
-    </div>
-    <button type="submit" class="px-5 py-2.5 rounded-xl text-white text-sm font-semibold font-tajawal" style="background: {{ $themeColor }};">تطبيق</button>
-</form>
+@include('crm.partials.filter-bar')
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'معدل التحويل', 'value' => $funnel['conversion']['lead_to_won'] . '%', 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />'])
-    @include('crm.partials.stat-card', ['label' => 'معدل الإغلاق', 'value' => $funnel['conversion']['deal_close_rate'] . '%', 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />'])
-    @include('crm.partials.stat-card', ['label' => 'صفقات خاسرة', 'value' => $funnel['lost_breakdown']['total_lost'], 'accent' => 'red', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />'])
-    @include('crm.partials.stat-card', ['label' => 'توقع الشهر القادم', 'value' => $money($forecast['forecast'][0]['revenue_forecast'] ?? 0), 'accent' => 'purple', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />'])
+    @include('crm.partials.stat-card', ['label' => 'معدل التحويل', 'value' => $funnel['conversion']['lead_to_won'] . '%', 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />', 'href' => '#funnel-section', 'linkLabel' => 'عرض القمع'])
+    @include('crm.partials.stat-card', ['label' => 'معدل الإغلاق', 'value' => $funnel['conversion']['deal_close_rate'] . '%', 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />', 'href' => route('crm.pipeline.index', ['view' => 'deals', 'stage' => 'closed_won']), 'linkLabel' => 'عرض الصفقات'])
+    @include('crm.partials.stat-card', ['label' => 'صفقات خاسرة', 'value' => $funnel['lost_breakdown']['total_lost'], 'accent' => 'red', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />', 'href' => route('crm.pipeline.index', ['view' => 'deals', 'stage' => 'closed_lost', 'show_closed' => 1]), 'linkLabel' => 'عرض الخاسرة'])
+    @include('crm.partials.stat-card', ['label' => 'توقع الشهر القادم', 'value' => $money($forecast['forecast'][0]['revenue_forecast'] ?? 0), 'accent' => 'purple', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />', 'href' => '#forecast-section', 'linkLabel' => 'عرض التوقعات'])
 </div>
 
-<div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+<div id="funnel-section" class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
     {{-- مسار العملاء --}}
     <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
         <div class="px-5 py-4 border-b border-gray-200 font-bold font-tajawal text-gray-900">مسار العملاء (Lead Funnel)</div>
@@ -107,7 +97,7 @@
     </div>
 </div>
 
-<div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+<div id="forecast-section" class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
     {{-- التنبؤ --}}
     <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
         <div class="px-5 py-4 border-b border-gray-200 font-bold font-tajawal text-gray-900">محرك التنبؤ — ماذا سيحدث</div>
@@ -173,7 +163,7 @@
         @forelse($postSales['recent'] as $case)
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-3 border-b border-gray-50 last:border-0">
                 <div>
-                    <a href="{{ route('crm.clients.show', $case->client_id) }}" class="font-semibold text-sm font-tajawal hover:underline" style="color: {{ $themeColor }};">{{ $case->client?->name }}</a>
+                    <a href="{{ $case->client?->profileUrl() ?? '#' }}" class="font-semibold text-sm font-tajawal hover:underline" style="color: {{ $themeColor }};">{{ $case->client?->name }}</a>
                     <p class="text-sm text-gray-700 font-tajawal">{{ $case->title }}</p>
                     <p class="text-xs text-gray-400 font-tajawal">{{ $case->typeLabel() }} · {{ $case->statusLabel() }}</p>
                 </div>

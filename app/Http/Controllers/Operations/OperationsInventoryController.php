@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\ProjectUnit;
 use App\Services\Operations\OperationsKpiService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class OperationsInventoryController extends Controller
 {
@@ -22,7 +22,7 @@ class OperationsInventoryController extends Controller
         });
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $kpiData = $this->kpis->collect();
 
@@ -51,11 +51,44 @@ class OperationsInventoryController extends Controller
             ->limit(10)
             ->get();
 
+        $statusFilter = $request->get('status');
+        if ($statusFilter && !in_array($statusFilter, [
+            ProjectUnit::STATUS_AVAILABLE,
+            ProjectUnit::STATUS_RESERVED,
+            ProjectUnit::STATUS_SOLD,
+        ], true)) {
+            $statusFilter = null;
+        }
+
+        $units = ProjectUnit::query()
+            ->with(['project:id,name', 'floor:id,label,level'])
+            ->when($statusFilter, fn ($q) => $q->where('status', $statusFilter))
+            ->when($request->filled('project_id'), fn ($q) => $q->where('project_id', (int) $request->project_id))
+            ->when($request->search, function ($q) use ($request) {
+                $s = '%' . $request->search . '%';
+                $q->where(function ($q) use ($s) {
+                    $q->where('code', 'like', $s)
+                        ->orWhereHas('project', fn ($p) => $p->where('name', 'like', $s));
+                });
+            })
+            ->orderBy('project_id')
+            ->orderBy('code')
+            ->paginate(48)
+            ->withQueryString();
+
+        $projects = Project::query()
+            ->whereHas('units')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         return view('operations.inventory.index', [
             'inventoryKpis' => $kpiData['groups']['inventory_operations'] ?? null,
             'byStatus' => $byStatus,
             'byProject' => $byProject,
             'missingPrice' => $missingPrice,
+            'units' => $units,
+            'projects' => $projects,
+            'statusFilter' => $statusFilter,
             'stats' => [
                 'total' => ProjectUnit::count(),
                 'available' => (int) ($byStatus[ProjectUnit::STATUS_AVAILABLE] ?? 0),

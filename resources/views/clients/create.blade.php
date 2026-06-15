@@ -124,13 +124,12 @@
 
                 <!-- Client Type -->
                 <div>
-                    <label for="client_type" class="block text-sm font-medium text-gray-700 mb-2">نوع العميل</label>
+                    <label for="client_type" class="block text-sm font-medium text-gray-700 mb-2">تصنيف العميل</label>
                     <select name="client_type" id="client_type"
                             class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 @error('client_type') border-red-500 @enderror">
-                        <option value="">اختر نوع العميل</option>
-                        <option value="individual" {{ old('client_type') == 'individual' ? 'selected' : '' }}>فرد</option>
-                        <option value="small_business" {{ old('client_type') == 'small_business' ? 'selected' : '' }}>مشروع صغير</option>
-                        <option value="enterprise" {{ old('client_type') == 'enterprise' ? 'selected' : '' }}>شركة كبيرة</option>
+                        @foreach(\App\Models\Client::typeLabels() as $value => $label)
+                        <option value="{{ $value }}" {{ old('client_type', 'individual') == $value ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
                     </select>
                     @error('client_type')
                         <p class="mt-1 text-sm text-red-600 flex items-center">

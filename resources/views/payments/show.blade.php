@@ -70,13 +70,15 @@
         'value' => ($isIncoming ? '+' : '-') . $money($payment->amount),
         'accent' => $isIncoming ? 'green' : 'red',
         'compact' => true,
+        'href' => '#payment-details',
+        'linkLabel' => 'عرض التفاصيل',
     ])
-    @include('crm.partials.stat-card', ['label' => 'نوع الدفعة', 'value' => $typeName, 'accent' => $isIncoming ? 'green' : 'red', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'الحالة', 'value' => $statusName, 'accent' => $statusAccent, 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'تاريخ الدفعة', 'value' => $payment->payment_date->format('Y/m/d'), 'accent' => 'theme', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'نوع الدفعة', 'value' => $typeName, 'accent' => $isIncoming ? 'green' : 'red', 'compact' => true, 'href' => '#payment-details', 'linkLabel' => 'عرض التفاصيل'])
+    @include('crm.partials.stat-card', ['label' => 'الحالة', 'value' => $statusName, 'accent' => $statusAccent, 'compact' => true, 'href' => '#payment-details', 'linkLabel' => 'عرض التفاصيل'])
+    @include('crm.partials.stat-card', ['label' => 'تاريخ الدفعة', 'value' => $payment->payment_date->format('Y/m/d'), 'accent' => 'theme', 'compact' => true, 'href' => '#payment-details', 'linkLabel' => 'عرض التفاصيل'])
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6" id="payment-details">
     <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
         <div class="{{ $sectionHeader }}" style="{{ $headerStyle }}">تفاصيل الدفعة</div>
         <div class="p-5 sm:p-6">

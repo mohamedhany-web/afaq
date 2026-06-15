@@ -26,10 +26,7 @@ class DashboardController extends Controller
         }
 
         if ($user->isOperationsOnlyUser()) {
-            return app(\App\Http\Controllers\Operations\OperationsDashboardController::class)->index(
-                app(\App\Services\Compensation\CompensationPayrollService::class),
-                app(\App\Services\Compensation\CompensationKpiScoringService::class),
-            );
+            return app()->call([\App\Http\Controllers\Operations\OperationsDashboardController::class, 'index']);
         }
 
         if ($user->canAccessCrm()) {

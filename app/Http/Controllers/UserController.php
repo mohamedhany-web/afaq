@@ -27,6 +27,12 @@ class UserController extends Controller
                 });
             })
             ->when($request->role, fn ($q) => $q->role($request->role))
+            ->when($request->workspace, function ($q) use ($request) {
+                $roles = CrmRoleCatalogService::rolesForWorkspaceGroup($request->workspace);
+                if ($roles !== []) {
+                    $q->role($roles);
+                }
+            })
             ->when($request->status === 'verified', fn ($q) => $q->whereNotNull('email_verified_at'))
             ->when($request->status === 'pending', fn ($q) => $q->whereNull('email_verified_at'))
             ->when($request->status === 'with_employee', fn ($q) => $q->whereHas('employee'))
@@ -39,11 +45,13 @@ class UserController extends Controller
             'with_employee' => User::whereHas('employee')->count(),
             'admins' => User::role(['super_admin', 'admin'])->count(),
         ];
+        $workspaceStats = CrmRoleCatalogService::userCountsByWorkspaceGroup();
+        $workspaceGroups = CrmRoleCatalogService::workspaceGroups();
 
         $users = $query->paginate(15)->withQueryString();
         $assignableRoles = $this->assignableRolesForActor();
 
-        return view('users.index', compact('users', 'stats', 'assignableRoles'));
+        return view('users.index', compact('users', 'stats', 'workspaceStats', 'workspaceGroups', 'assignableRoles'));
     }
 
     public function create()
@@ -52,6 +60,8 @@ class UserController extends Controller
 
         return view('users.create', [
             'assignableRoles' => $this->assignableRolesForActor(),
+            'workspaceGroups' => CrmRoleCatalogService::workspaceGroups(),
+            'roleHints' => CrmRoleCatalogService::roleAssignmentHints(),
             'departments' => Department::where('is_active', true)->orderBy('name')->get(),
         ]);
     }
@@ -138,10 +148,17 @@ class UserController extends Controller
         $user->load(['employee.department', 'roles']);
 
         $displayRole = CrmRoleCatalogService::resolveUserDisplayRole($user);
+        $workspaceGroup = $displayRole
+            ? CrmRoleCatalogService::workspaceGroupForRole($displayRole)
+            : null;
 
         return view('users.show', [
             'user' => $user,
             'displayRole' => $displayRole,
+            'workspaceGroup' => $workspaceGroup,
+            'workspaceMeta' => $workspaceGroup
+                ? CrmRoleCatalogService::workspaceGroupMeta($workspaceGroup)
+                : null,
         ]);
     }
 
@@ -156,6 +173,8 @@ class UserController extends Controller
         return view('users.edit', [
             'user' => $user,
             'assignableRoles' => $this->assignableRolesForActor(),
+            'workspaceGroups' => CrmRoleCatalogService::workspaceGroups(),
+            'roleHints' => CrmRoleCatalogService::roleAssignmentHints(),
             'departments' => Department::where('is_active', true)->orderBy('name')->get(),
             'currentRole' => CrmRoleCatalogService::resolveUserDisplayRole($user),
         ]);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Crm;
 use App\Http\Controllers\Controller;
 use App\Models\DailySalesReport;
 use App\Models\User;
+use App\Services\Crm\CrmFilterService;
 use App\Services\CrmEmployeeService;
 use App\Services\CrmNotificationService;
 use App\Services\CrmRoleResolver;
@@ -165,7 +166,12 @@ class CrmDailySalesReportController extends Controller
 
     protected function applyIndexFilters($query, Request $request, CrmRoleResolver $role): void
     {
-        if ($request->filled('user_id') && ($role->isAdmin() || $role->isManager())) {
+        $filters = CrmFilterService::for($request->user());
+        $salesRepId = $filters->resolveSalesRepId($request);
+
+        if ($salesRepId && ($role->isAdmin() || $role->isManager())) {
+            $query->where('user_id', $salesRepId);
+        } elseif ($request->filled('user_id') && ($role->isAdmin() || $role->isManager())) {
             $query->where('user_id', $request->integer('user_id'));
         }
 

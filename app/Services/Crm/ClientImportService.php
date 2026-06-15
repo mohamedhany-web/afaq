@@ -23,6 +23,8 @@ class ClientImportService
         'company' => ['الشركة', 'اسم الشركة', 'company', 'company_name', 'organization'],
         'address' => ['العنوان', 'address', 'location', 'المدينة'],
         'notes' => ['ملاحظات', 'notes', 'note', 'تعليقات', 'comments'],
+        'client_type' => ['التصنيف', 'نوع العميل', 'تصنيف العميل', 'client_type', 'type'],
+        'lead_source' => ['المصدر', 'مصدر العميل', 'lead_source', 'source', 'مصدر'],
     ];
 
     public function downloadTemplate(): StreamedResponse
@@ -32,7 +34,7 @@ class ClientImportService
         $sheet->setRightToLeft(true);
         $sheet->setTitle('عملاء');
 
-        $headers = ['الاسم', 'الهاتف', 'البريد الإلكتروني', 'الشركة', 'العنوان', 'ملاحظات'];
+        $headers = ['الاسم', 'الهاتف', 'البريد الإلكتروني', 'الشركة', 'العنوان', 'ملاحظات', 'التصنيف', 'مصدر العميل'];
         foreach ($headers as $i => $header) {
             $col = chr(65 + $i);
             $sheet->setCellValue($col . '1', $header);
@@ -159,7 +161,8 @@ class ClientImportService
                     'notes' => trim((string) ($data['notes'] ?? '')) ?: null,
                     'status' => 'prospect',
                     'lead_stage' => 'lead',
-                    'client_type' => 'individual',
+                    'client_type' => Client::normalizeType($this->resolveImportedType($data['client_type'] ?? null)),
+                    'lead_source' => Client::normalizeLeadSource($this->resolveImportedLeadSource($data['lead_source'] ?? null)),
                     'assigned_to' => $user->employee?->id,
                     'created_by' => $user->id,
                 ]);
@@ -377,6 +380,45 @@ class ClientImportService
             }
         }
 
+        if (! empty($data['client_type']) && $client->client_type === 'individual') {
+            $updates['client_type'] = Client::normalizeType($this->resolveImportedType($data['client_type']));
+        }
+
+        if (! empty($data['lead_source']) && empty($client->lead_source)) {
+            $updates['lead_source'] = Client::normalizeLeadSource($this->resolveImportedLeadSource($data['lead_source']));
+        }
+
         $client->update($updates);
+    }
+
+    private function resolveImportedType(?string $raw): string
+    {
+        $value = Str::lower(trim((string) $raw));
+
+        if ($value === '') {
+            return 'individual';
+        }
+
+        if (array_key_exists($value, Client::typeLabels())) {
+            return $value;
+        }
+
+        $byLabel = collect(Client::typeLabels())
+            ->mapWithKeys(fn ($label, $key) => [Str::lower($label) => $key])
+            ->all();
+
+        return $byLabel[$value] ?? Client::normalizeType($value);
+    }
+
+    private function resolveImportedLeadSource(?string $raw): ?string
+    {
+        $value = trim((string) $raw);
+
+        if ($value === '') {
+            return null;
+        }
+
+        return Client::normalizeLeadSource($value)
+            ?? Client::normalizeLeadSource(Str::lower($value));
     }
 }

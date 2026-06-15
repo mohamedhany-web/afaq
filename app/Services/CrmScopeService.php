@@ -99,6 +99,10 @@ class CrmScopeService
 
     public function clientsQuery(): Builder
     {
+        if ($this->user->canAccessOperations() || $this->user->hasRole('hr')) {
+            return Client::query();
+        }
+
         return $this->applyClientVisibility(Client::query(), true);
     }
 

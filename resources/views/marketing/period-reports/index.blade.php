@@ -44,9 +44,9 @@
 </div>
 
 <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'مرفوعة', 'value' => $stats['submitted'], 'accent' => 'green'])
-    @include('crm.partials.stat-card', ['label' => 'مسودات', 'value' => $stats['draft'], 'accent' => 'amber'])
-    @include('crm.partials.stat-card', ['label' => 'القائمة', 'value' => $reports->total(), 'accent' => 'purple'])
+    @include('crm.partials.stat-card', ['label' => 'مرفوعة', 'value' => $stats['submitted'], 'accent' => 'green', 'href' => route('marketing.reports.index', ['status' => 'submitted']) . '#page-data', 'linkLabel' => 'عرض المرفوعة'])
+    @include('crm.partials.stat-card', ['label' => 'مسودات', 'value' => $stats['draft'], 'accent' => 'amber', 'href' => route('marketing.reports.index', ['status' => 'draft']) . '#page-data', 'linkLabel' => 'عرض المسودات'])
+    @include('crm.partials.stat-card', ['label' => 'القائمة', 'value' => $reports->total(), 'accent' => 'purple', 'href' => route('marketing.reports.index') . '#page-data', 'linkLabel' => 'عرض القائمة'])
 </div>
 
 @include('marketing.period-reports.partials.create-form', ['periodType' => $periodType, 'isManager' => $isManager])

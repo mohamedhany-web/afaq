@@ -36,10 +36,10 @@
 </div>
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'قواعد نشطة', 'value' => $stats['rules_active'], 'accent' => 'theme', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'خصومات اليوم', 'value' => $stats['applied_today'], 'accent' => 'red', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'إجمالي الشهر', 'value' => $money($stats['applied_month_amount']), 'accent' => 'amber', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'سجل العقوبات', 'value' => $stats['total_logs'], 'accent' => 'blue', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'قواعد نشطة', 'value' => $stats['rules_active'], 'accent' => 'theme', 'compact' => true, 'href' => route('admin.auto-penalties.index') . '#page-data', 'linkLabel' => 'عرض السجل'])
+    @include('crm.partials.stat-card', ['label' => 'خصومات اليوم', 'value' => $stats['applied_today'], 'accent' => 'red', 'compact' => true, 'href' => route('admin.auto-penalties.index') . '#page-data', 'linkLabel' => 'عرض السجل'])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي الشهر', 'value' => $money($stats['applied_month_amount']), 'accent' => 'amber', 'compact' => true, 'href' => route('admin.auto-penalties.index') . '#page-data', 'linkLabel' => 'عرض السجل'])
+    @include('crm.partials.stat-card', ['label' => 'سجل العقوبات', 'value' => $stats['total_logs'], 'accent' => 'blue', 'compact' => true, 'href' => route('admin.auto-penalties.index') . '#page-data', 'linkLabel' => 'عرض السجل'])
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

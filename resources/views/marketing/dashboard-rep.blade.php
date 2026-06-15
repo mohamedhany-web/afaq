@@ -29,10 +29,10 @@
 @endif
 
 <div class="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'مهام اليوم', 'value' => $k['activities_today'], 'accent' => 'purple', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />'])
-    @include('crm.partials.stat-card', ['label' => 'Leads اليوم', 'value' => $k['leads_today'], 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />'])
-    @include('crm.partials.stat-card', ['label' => 'متأخرة', 'value' => $k['activities_overdue'], 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />'])
-    @include('crm.partials.stat-card', ['label' => 'دورية نشطة', 'value' => $k['recurring_active'], 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />'])
+    @include('crm.partials.stat-card', ['label' => 'مهام اليوم', 'value' => $k['activities_today'], 'accent' => 'purple', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />', 'href' => route('marketing.activities.index'), 'linkLabel' => 'عرض المهام'])
+    @include('crm.partials.stat-card', ['label' => 'Leads اليوم', 'value' => $k['leads_today'], 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />', 'href' => route('marketing.leads.index'), 'linkLabel' => 'عرض Leads'])
+    @include('crm.partials.stat-card', ['label' => 'متأخرة', 'value' => $k['activities_overdue'], 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />', 'href' => route('marketing.activities.index', ['filter' => 'overdue']), 'linkLabel' => 'عرض المتأخرة'])
+    @include('crm.partials.stat-card', ['label' => 'دورية نشطة', 'value' => $k['recurring_active'], 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />', 'href' => route('marketing.activities.index', ['filter' => 'recurring']), 'linkLabel' => 'عرض الدورية'])
 </div>
 
 <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">

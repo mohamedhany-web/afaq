@@ -23,15 +23,29 @@
                     <?php endif; ?>
                 </div>
             </div>
-            <?php if(!empty($actionUrl)): ?>
-            <a href="<?php echo e($actionUrl); ?>" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all"
-               style="background: linear-gradient(135deg, <?php echo e($themeColor); ?> 0%, <?php echo e($themeColor); ?>dd 100%);">
-                <?php if(!empty($actionIcon)): ?>
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><?php echo $actionIcon; ?></svg>
-                <?php endif; ?>
-                <?php echo e($actionLabel ?? 'إضافة'); ?>
+            <?php if(!empty($actionUrl) || !empty($secondaryUrl)): ?>
+            <div class="flex flex-wrap items-center gap-2 shrink-0">
+                <?php if(!empty($secondaryUrl)): ?>
+                <a href="<?php echo e($secondaryUrl); ?>" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border-2 hover:bg-gray-50 transition-all"
+                   style="border-color: <?php echo e($themeColor); ?>40; color: <?php echo e($themeColor); ?>;">
+                    <?php if(!empty($secondaryIcon)): ?>
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><?php echo $secondaryIcon; ?></svg>
+                    <?php endif; ?>
+                    <?php echo e($secondaryLabel ?? 'عرض'); ?>
 
-            </a>
+                </a>
+                <?php endif; ?>
+                <?php if(!empty($actionUrl)): ?>
+                <a href="<?php echo e($actionUrl); ?>" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all"
+                   style="background: linear-gradient(135deg, <?php echo e($themeColor); ?> 0%, <?php echo e($themeColor); ?>dd 100%);">
+                    <?php if(!empty($actionIcon)): ?>
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><?php echo $actionIcon; ?></svg>
+                    <?php endif; ?>
+                    <?php echo e($actionLabel ?? 'إضافة'); ?>
+
+                </a>
+                <?php endif; ?>
+            </div>
             <?php endif; ?>
         </div>
     </div>

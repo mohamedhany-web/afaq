@@ -44,11 +44,11 @@
     @endif
 
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        @include('crm.partials.stat-card', ['compact' => true, 'label' => 'غير مقروءة', 'value' => $unreadCount, 'accent' => 'red', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'])
-        @include('crm.partials.stat-card', ['compact' => true, 'label' => 'اليوم', 'value' => $todayCount, 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>'])
-        @include('crm.partials.stat-card', ['compact' => true, 'label' => 'آخر 7 أيام', 'value' => $weekCount ?? 0, 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>'])
-        @include('crm.partials.stat-card', ['compact' => true, 'label' => 'CRM', 'value' => $crmCount, 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>'])
-        @include('crm.partials.stat-card', ['compact' => true, 'label' => 'الإجمالي', 'value' => number_format($totalCount), 'accent' => 'purple', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>'])
+        @include('crm.partials.stat-card', ['compact' => true, 'label' => 'غير مقروءة', 'value' => $unreadCount, 'accent' => 'red', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>', 'href' => route('notifications.index', $buildQuery('unread')) . '#page-data', 'linkLabel' => 'عرض غير المقروءة'])
+        @include('crm.partials.stat-card', ['compact' => true, 'label' => 'اليوم', 'value' => $todayCount, 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>', 'href' => route('notifications.index', $buildQuery('today')) . '#page-data', 'linkLabel' => 'عرض اليوم'])
+        @include('crm.partials.stat-card', ['compact' => true, 'label' => 'آخر 7 أيام', 'value' => $weekCount ?? 0, 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>', 'href' => route('notifications.index', $buildQuery('week')) . '#page-data', 'linkLabel' => 'عرض الأسبوع'])
+        @include('crm.partials.stat-card', ['compact' => true, 'label' => 'CRM', 'value' => $crmCount, 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>', 'href' => route('notifications.index', $buildQuery('crm')) . '#page-data', 'linkLabel' => 'عرض CRM'])
+        @include('crm.partials.stat-card', ['compact' => true, 'label' => 'الإجمالي', 'value' => number_format($totalCount), 'accent' => 'purple', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>', 'href' => route('notifications.index', $buildQuery('all')) . '#page-data', 'linkLabel' => 'عرض الكل'])
     </div>
 
     <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-5 space-y-4">
@@ -127,7 +127,7 @@
         </form>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+    <div id="page-data" class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
         @if($notifications->count() > 0)
             @foreach($grouped as $group)
             <div class="border-b border-gray-100 last:border-b-0">

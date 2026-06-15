@@ -670,4 +670,74 @@ class AutoPenaltyService
 
         return $id;
     }
+
+    /** خصم مرتبط بقرار مراجعة حضور/انصراف */
+    public function applyReviewPenalty(
+        User $user,
+        string $sourceType,
+        string $sourceKey,
+        string $title,
+        ?string $reviewNotes = null,
+        array $extra = [],
+    ): ?float {
+        $rule = AutoPenaltyRule::active()->where('source_type', $sourceType)->first();
+        if (!$rule || $this->workDay->isExempt($user)) {
+            return null;
+        }
+
+        $candidate = array_merge([
+            'user' => $user,
+            'source_type' => $sourceType,
+            'source_key' => $sourceKey,
+            'title' => $title,
+            'due_at' => now(),
+            'department_code' => $user->employee?->department?->code,
+        ], $extra);
+
+        if ($this->applyIfEligible($rule, $candidate)) {
+            $log = AutoPenaltyLog::query()
+                ->where('source_key', $sourceKey)
+                ->latest('id')
+                ->first();
+
+            if ($log && $reviewNotes) {
+                $log->update([
+                    'reason' => $log->reason . ' — ' . $reviewNotes,
+                ]);
+                $log->adjustment?->update([
+                    'reason' => $log->reason,
+                    'review_notes' => $reviewNotes,
+                ]);
+            }
+
+            return (float) ($log?->amount ?? $rule->amount);
+        }
+
+        return null;
+    }
+
+    /** إلغاء خصم سابق عند إلغاء الموافقة */
+    public function reverseBySourceKey(string $sourceKey, string $reason): bool
+    {
+        $log = AutoPenaltyLog::query()->where('source_key', $sourceKey)->first();
+        if (!$log) {
+            return false;
+        }
+
+        return (bool) DB::transaction(function () use ($log, $reason) {
+            if ($log->adjustment_id) {
+                CompAdjustment::query()
+                    ->where('id', $log->adjustment_id)
+                    ->update([
+                        'status' => 'rejected',
+                        'review_notes' => trim(($log->adjustment?->review_notes ?? '') . ' | إلغاء: ' . $reason),
+                        'reviewed_at' => now(),
+                    ]);
+            }
+
+            $log->delete();
+
+            return true;
+        });
+    }
 }

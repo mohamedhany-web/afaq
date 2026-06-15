@@ -27,10 +27,10 @@
 @endif
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
-    @include('crm.partials.stat-card', ['label' => 'المشاريع', 'value' => $stats['total'], 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16" />'])
-    @include('crm.partials.stat-card', ['label' => 'متاح للبيع', 'value' => $stats['active'], 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4" />'])
-    @include('crm.partials.stat-card', ['label' => 'قريباً', 'value' => $stats['upcoming'], 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />'])
-    @include('crm.partials.stat-card', ['label' => 'وحدات متاحة', 'value' => number_format($stats['available_units']), 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7" />'])
+    @include('crm.partials.stat-card', ['label' => 'المشاريع', 'value' => $stats['total'], 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16" />', 'href' => route('crm.projects.index') . '#page-data', 'linkLabel' => 'عرض المشاريع'])
+    @include('crm.partials.stat-card', ['label' => 'متاح للبيع', 'value' => $stats['active'], 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4" />', 'href' => route('crm.projects.index', ['listing_status' => 'active']) . '#page-data', 'linkLabel' => 'عرض المتاح'])
+    @include('crm.partials.stat-card', ['label' => 'قريباً', 'value' => $stats['upcoming'], 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />', 'href' => route('crm.projects.index', ['listing_status' => 'upcoming']) . '#page-data', 'linkLabel' => 'عرض قريباً'])
+    @include('crm.partials.stat-card', ['label' => 'وحدات متاحة', 'value' => number_format($stats['available_units']), 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7" />', 'href' => route('crm.projects.index', ['listing_status' => 'active']) . '#page-data', 'linkLabel' => 'عرض الوحدات'])
 </div>
 @if(!empty($stats['ownership']))
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
@@ -46,39 +46,9 @@
 </div>
 @endif
 
-<div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-5 mb-6">
-    <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:items-end">
-        <div class="lg:col-span-2">
-            <label class="block text-xs font-bold text-gray-500 mb-1.5 font-tajawal">بحث</label>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="اسم المشروع، المدينة..."
-                   class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 font-tajawal text-sm">
-        </div>
-        <div>
-            <label class="block text-xs font-bold text-gray-500 mb-1.5 font-tajawal">حالة العرض</label>
-            <select name="listing_status" class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 font-tajawal text-sm">
-                <option value="">الكل</option>
-                @foreach(\App\Models\Project::LISTING_STATUSES as $val => $txt)
-                    <option value="{{ $val }}" @selected(request('listing_status') === $val)>{{ $txt }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div>
-            <label class="block text-xs font-bold text-gray-500 mb-1.5 font-tajawal">نوع الملكية</label>
-            <select name="ownership_type" class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 font-tajawal text-sm">
-                <option value="">الكل</option>
-                @foreach(\App\Models\Project::OWNERSHIP_TYPES as $val => $txt)
-                    <option value="{{ $val }}" @selected(request('ownership_type') === $val)>{{ $txt }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div class="flex gap-2 sm:col-span-2 lg:col-span-1">
-            <button type="submit" class="flex-1 px-5 py-2.5 rounded-xl text-white text-sm font-semibold font-tajawal"
-                    style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">بحث</button>
-        </div>
-    </form>
-</div>
+@include('crm.partials.filter-bar')
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+<div id="page-data" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
     @forelse($projects as $project)
     <div class="bg-white rounded-2xl p-5 sm:p-6 border border-gray-200 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 flex flex-col h-full group">
         <div class="flex items-start justify-between gap-2 mb-3">

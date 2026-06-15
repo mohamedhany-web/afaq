@@ -15,6 +15,10 @@
     </div>
     @endcan
 
+    @if(auth()->user()?->canAccessCrm())
+    @include('crm.partials.reports-hub')
+    @endif
+
     <!-- Page Header -->
     <div class="mb-8">
         <div class="flex items-center justify-between mb-4">

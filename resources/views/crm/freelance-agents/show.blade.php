@@ -24,10 +24,10 @@
 </div>
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'التارجت الربع سنوي', 'value' => $contract->quarterly_target_deals ? $contract->quarterly_target_deals.' صفقة' : ($contract->quarterly_target_amount ? $money($contract->quarterly_target_amount) : '—'), 'accent' => 'theme', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'حالة التارجت', 'value' => $metTarget ? 'محقق' : 'غير محقق', 'accent' => $metTarget ? 'green' : 'amber', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'بداية العقد', 'value' => $contract->start_date?->format('Y/m/d'), 'accent' => 'blue', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'نهاية العقد', 'value' => $contract->end_date?->format('Y/m/d') ?? 'مفتوح', 'accent' => 'purple', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'التارجت الربع سنوي', 'value' => $contract->quarterly_target_deals ? $contract->quarterly_target_deals.' صفقة' : ($contract->quarterly_target_amount ? $money($contract->quarterly_target_amount) : '—'), 'accent' => 'theme', 'compact' => true, 'href' => route('crm.freelance-agents.index'), 'linkLabel' => 'عرض العقود'])
+    @include('crm.partials.stat-card', ['label' => 'حالة التارجت', 'value' => $metTarget ? 'محقق' : 'غير محقق', 'accent' => $metTarget ? 'green' : 'amber', 'compact' => true, 'href' => route('crm.freelance-agents.index'), 'linkLabel' => 'عرض العقود'])
+    @include('crm.partials.stat-card', ['label' => 'بداية العقد', 'value' => $contract->start_date?->format('Y/m/d'), 'accent' => 'blue', 'compact' => true, 'href' => route('crm.freelance-agents.index'), 'linkLabel' => 'عرض العقود'])
+    @include('crm.partials.stat-card', ['label' => 'نهاية العقد', 'value' => $contract->end_date?->format('Y/m/d') ?? 'مفتوح', 'accent' => 'purple', 'compact' => true, 'href' => route('crm.freelance-agents.index'), 'linkLabel' => 'عرض العقود'])
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

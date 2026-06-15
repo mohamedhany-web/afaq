@@ -14,10 +14,10 @@
 @include('accounting.partials.nav')
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'إجمالي المدفوعات', 'value' => $totalPayments, 'accent' => 'theme', 'compact' => true, 'footer' => '<span class="text-gray-500">'.$monthlyPayments.' هذا الشهر</span>'])
-    @include('crm.partials.stat-card', ['label' => 'واردة', 'value' => $incomingPayments, 'accent' => 'green', 'compact' => true, 'footer' => '<span class="text-green-600">'.$money($totalIncoming).'</span>'])
-    @include('crm.partials.stat-card', ['label' => 'صادرة', 'value' => $outgoingPayments, 'accent' => 'red', 'compact' => true, 'footer' => '<span class="text-red-600">'.$money($totalOutgoing).'</span>'])
-    @include('crm.partials.stat-card', ['label' => 'معلقة', 'value' => $pendingPayments, 'accent' => 'amber', 'compact' => true, 'footer' => '<span class="text-amber-600">'.$money($pendingAmount).'</span>'])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي المدفوعات', 'value' => $totalPayments, 'accent' => 'theme', 'compact' => true, 'footer' => '<span class="text-gray-500">'.$monthlyPayments.' هذا الشهر</span>', 'href' => route('payments.index') . '#page-data', 'linkLabel' => 'عرض المدفوعات'])
+    @include('crm.partials.stat-card', ['label' => 'واردة', 'value' => $incomingPayments, 'accent' => 'green', 'compact' => true, 'footer' => '<span class="text-green-600">'.$money($totalIncoming).'</span>', 'href' => route('payments.index') . '#page-data', 'linkLabel' => 'عرض المدفوعات'])
+    @include('crm.partials.stat-card', ['label' => 'صادرة', 'value' => $outgoingPayments, 'accent' => 'red', 'compact' => true, 'footer' => '<span class="text-red-600">'.$money($totalOutgoing).'</span>', 'href' => route('payments.index') . '#page-data', 'linkLabel' => 'عرض المدفوعات'])
+    @include('crm.partials.stat-card', ['label' => 'معلقة', 'value' => $pendingPayments, 'accent' => 'amber', 'compact' => true, 'footer' => '<span class="text-amber-600">'.$money($pendingAmount).'</span>', 'href' => route('payments.index') . '#page-data', 'linkLabel' => 'عرض المدفوعات'])
 </div>
 
 <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">

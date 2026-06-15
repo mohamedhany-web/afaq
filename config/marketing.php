@@ -63,13 +63,10 @@ return [
     ],
 
     'lead_sources' => [
-        'campaign' => 'حملة تسويقية',
-        'social' => 'وسائل التواصل',
-        'website' => 'الموقع',
-        'referral' => 'إحالة',
-        'event' => 'فعالية',
-        'import' => 'استيراد',
-        'manual' => 'يدوي',
-        'other' => 'أخرى',
+        'personal' => 'شخصي',
+        'referral' => 'ترشيح',
+        'event' => 'إيفينت',
+        'marketing' => 'ماركتينج',
+        'paid_ad' => 'إعلان ممول',
     ],
 ];

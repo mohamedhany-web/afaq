@@ -23,7 +23,7 @@ class CrmFollowUpService
         $query = CrmFollowUp::query();
         $userId = $this->scope->user()->id;
 
-        if ($this->scope->hasFullAccess()) {
+        if ($this->scope->hasFullAccess() || $this->scope->user()->canAccessOperations()) {
             return $query;
         }
 
@@ -117,7 +117,7 @@ class CrmFollowUpService
     {
         $scope = CrmScopeService::for($actor);
 
-        if ($scope->hasFullAccess()) {
+        if ($scope->hasFullAccess() || $scope->user()->canAccessOperations()) {
             return;
         }
 
@@ -198,7 +198,7 @@ class CrmFollowUpService
     {
         $scope = CrmScopeService::for($actor);
 
-        if ($scope->hasFullAccess()) {
+        if ($scope->hasFullAccess() || $scope->user()->canAccessOperations()) {
             return User::role(array_merge(
                 CrmEmployeeService::LEGACY_DEPARTMENT_HEAD_ROLES,
                 CrmEmployeeService::LEGACY_TEAM_LEADER_ROLES,

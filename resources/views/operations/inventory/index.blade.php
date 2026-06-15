@@ -16,15 +16,17 @@
 ])
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'إجمالي الوحدات', 'value' => $stats['total'], 'accent' => 'theme'])
-    @include('crm.partials.stat-card', ['label' => 'متاحة', 'value' => $stats['available'], 'accent' => 'green'])
-    @include('crm.partials.stat-card', ['label' => 'محجوزة', 'value' => $stats['reserved'], 'accent' => 'amber'])
-    @include('crm.partials.stat-card', ['label' => 'مباعة', 'value' => $stats['sold'], 'accent' => 'blue'])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي الوحدات', 'value' => $stats['total'], 'accent' => 'theme', 'href' => route('operations.inventory.index') . '#page-data', 'linkLabel' => 'عرض الوحدات'])
+    @include('crm.partials.stat-card', ['label' => 'متاحة', 'value' => $stats['available'], 'accent' => 'green', 'href' => route('operations.inventory.index', ['status' => 'available']) . '#page-data', 'linkLabel' => 'عرض المتاح'])
+    @include('crm.partials.stat-card', ['label' => 'محجوزة', 'value' => $stats['reserved'], 'accent' => 'amber', 'href' => route('operations.inventory.index', ['status' => 'reserved']) . '#page-data', 'linkLabel' => 'عرض المحجوز'])
+    @include('crm.partials.stat-card', ['label' => 'مباعة', 'value' => $stats['sold'], 'accent' => 'blue', 'href' => route('operations.inventory.index', ['status' => 'sold']) . '#page-data', 'linkLabel' => 'عرض المباع'])
 </div>
 
 @if($inventoryKpis)
-@include('operations.partials.kpi-group', ['group' => $inventoryKpis])
+@include('operations.partials.kpi-group', ['group' => $inventoryKpis, 'link' => route('operations.inventory.index') . '#page-data'])
 @endif
+
+@include('operations.partials.unit-inventory-cards', compact('units', 'projects', 'statusFilter', 'themeColor'))
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6 font-tajawal">
     <div class="bg-white rounded-2xl border overflow-hidden">
@@ -36,6 +38,7 @@
                     <th class="p-3 text-right">متاح</th>
                     <th class="p-3 text-right">محجوز</th>
                     <th class="p-3 text-right">مباع</th>
+                    <th class="p-3 text-right"></th>
                 </tr></thead>
                 <tbody>
                 @foreach($byProject as $project)
@@ -44,6 +47,9 @@
                     <td class="p-3 text-green-700 font-bold">{{ $project->available_count }}</td>
                     <td class="p-3 text-amber-700">{{ $project->reserved_count }}</td>
                     <td class="p-3 text-blue-700">{{ $project->sold_count }}</td>
+                    <td class="p-3">
+                        <a href="{{ route('crm.projects.show', $project) }}#building-units-root" class="text-xs font-bold hover:underline" style="color:{{ $themeColor }}">الوحدات</a>
+                    </td>
                 </tr>
                 @endforeach
                 </tbody>
@@ -55,7 +61,7 @@
         <ul class="divide-y">
             @forelse($missingPrice as $unit)
             <li class="p-4 text-sm">
-                <p class="font-semibold">{{ $unit->code }} — {{ $unit->project?->name }}</p>
+                <a href="{{ route('crm.projects.show', $unit->project_id) }}?unit={{ $unit->id }}#building-units-root" class="font-semibold hover:underline" style="color:{{ $themeColor }}">{{ $unit->code }} — {{ $unit->project?->name }}</a>
                 <p class="text-xs text-gray-500">{{ $unit->useTypeLabel() }} — {{ $unit->area_m2 }} م²</p>
             </li>
             @empty

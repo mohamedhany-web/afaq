@@ -99,7 +99,9 @@ Route::middleware(['auth', 'verified', 'verified.code'])->prefix('crm')->name('c
     Route::put('projects/{project}', [CrmProjectController::class, 'update'])->name('projects.update');
     Route::delete('projects/{project}', [CrmProjectController::class, 'destroy'])->name('projects.destroy');
     Route::post('projects/{project}/units/generate', [CrmProjectUnitController::class, 'generate'])->name('projects.units.generate');
+    Route::post('projects/{project}/units/renumber', [CrmProjectUnitController::class, 'renumber'])->name('projects.units.renumber');
     Route::patch('projects/{project}/units/{unit}', [CrmProjectUnitController::class, 'update'])->name('projects.units.update');
+    Route::get('projects/{project}/units/{unit}', [CrmProjectUnitController::class, 'show'])->name('projects.units.show');
 
     Route::get('teams', [SalesTeamController::class, 'index'])->name('teams.index');
     Route::get('teams/create', [SalesTeamController::class, 'create'])->name('teams.create');

@@ -19,24 +19,42 @@
     'actionIcon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />',
 ])
 
+@if(!empty($portalPulse))
+<div class="mb-6 font-tajawal">
+    <h2 class="text-sm font-bold text-gray-800 mb-2">بوابة العملاء — متابعة الإدارة</h2>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        @include('crm.partials.stat-card', ['label' => 'عملاء لديهم بوابة', 'value' => $portalPulse['clients_with_portal'], 'accent' => 'theme', 'href' => route('client-accounts.index'), 'linkLabel' => 'الحسابات'])
+        @include('crm.partials.stat-card', ['label' => 'اجتماعات معلّقة', 'value' => $portalPulse['pending_meetings'], 'accent' => 'purple', 'href' => route('client-meeting-requests.index'), 'linkLabel' => 'عرض'])
+        @include('crm.partials.stat-card', ['label' => 'بلاغات مفتوحة', 'value' => $portalPulse['open_issues'], 'accent' => 'amber', 'href' => route('client-website-issues.index'), 'linkLabel' => 'عرض'])
+        @include('crm.partials.stat-card', ['label' => 'تذاكر مفتوحة', 'value' => $portalPulse['open_tickets'], 'accent' => 'blue', 'href' => route('tickets.index'), 'linkLabel' => 'عرض'])
+    </div>
+</div>
+@endif
+
 {{-- KPIs — نفس أسلوب البطاقات السابق مع أحجام موحّدة --}}
 <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 mb-6 items-stretch">
-    @include('crm.partials.stat-card', ['label' => 'إجمالي العملاء', 'value' => number_format($k['total_leads']), 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />'])
-    @include('crm.partials.stat-card', ['label' => 'جدد اليوم', 'value' => $k['new_leads_today'], 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />'])
-    @include('crm.partials.stat-card', ['label' => 'فرص نشطة', 'value' => $k['active_opportunities'], 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" />'])
-    @include('crm.partials.stat-card', ['label' => 'صفقات الشهر', 'value' => $k['closed_deals_month'], 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />'])
-    @include('crm.partials.stat-card', ['label' => 'إيرادات الشهر', 'value' => $money($k['total_revenue']), 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />'])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي العملاء', 'value' => number_format($k['total_leads']), 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />', 'href' => auth()->user()->clientsHubUrl(), 'linkLabel' => 'عرض العملاء'])
+    @include('crm.partials.stat-card', ['label' => 'جدد اليوم', 'value' => $k['new_leads_today'], 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />', 'href' => auth()->user()->clientsHubUrl(), 'linkLabel' => 'عرض العملاء'])
+    @include('crm.partials.stat-card', ['label' => 'فرص نشطة', 'value' => $k['active_opportunities'], 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" />', 'href' => route('crm.pipeline.index', ['view' => 'deals']), 'linkLabel' => 'عرض الصفقات'])
+    @include('crm.partials.stat-card', ['label' => 'صفقات الشهر', 'value' => $k['closed_deals_month'], 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />', 'href' => route('crm.pipeline.index', ['view' => 'deals', 'stage' => 'closed_won']), 'linkLabel' => 'عرض الصفقات'])
+    @include('crm.partials.stat-card', ['label' => 'إيرادات الشهر', 'value' => $money($k['total_revenue']), 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />', 'href' => route('crm.pipeline.index', ['view' => 'deals', 'stage' => 'closed_won']), 'linkLabel' => 'عرض الإيرادات'])
 </div>
 
 @if(!$isRepOnly)
 <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 mb-6 items-stretch">
-    @include('crm.partials.stat-card', ['label' => 'عملاء مؤهلون', 'value' => $k['qualified_leads'], 'accent' => 'purple', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />'])
-    @include('crm.partials.stat-card', ['label' => 'قيمة المسار', 'value' => $money($k['pipeline_value']), 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />'])
-    @include('crm.partials.stat-card', ['label' => 'معدل التحويل', 'value' => $k['conversion_rate'] . '%', 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />'])
-    @include('crm.partials.stat-card', ['label' => 'متوسط الصفقة', 'value' => $money($k['avg_deal_value']), 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2" />'])
-    @include('crm.partials.stat-card', ['label' => 'تحقيق الهدف', 'value' => $k['target_achievement'] . '%', 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />'])
+    @include('crm.partials.stat-card', ['label' => 'عملاء مؤهلون', 'value' => $k['qualified_leads'], 'accent' => 'purple', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />', 'href' => auth()->user()->clientsHubUrl(['status' => 'active']), 'linkLabel' => 'عرض العملاء'])
+    @include('crm.partials.stat-card', ['label' => 'قيمة المسار', 'value' => $money($k['pipeline_value']), 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />', 'href' => route('crm.pipeline.index', ['view' => 'deals']), 'linkLabel' => 'عرض المسار'])
+    @include('crm.partials.stat-card', ['label' => 'معدل التحويل', 'value' => $k['conversion_rate'] . '%', 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />', 'href' => route('crm.intelligence.index'), 'linkLabel' => 'عرض التحليلات'])
+    @include('crm.partials.stat-card', ['label' => 'متوسط الصفقة', 'value' => $money($k['avg_deal_value']), 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2" />', 'href' => route('crm.pipeline.index', ['view' => 'deals']), 'linkLabel' => 'عرض الصفقات'])
+    @include('crm.partials.stat-card', ['label' => 'تحقيق الهدف', 'value' => $k['target_achievement'] . '%', 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />', 'href' => route('crm.compensation.dashboard'), 'linkLabel' => 'عرض التعويضات'])
 </div>
 @endif
+
+@if(!empty($crmPulse))
+@include('operations.partials.crm-pulse', ['crmPulse' => $crmPulse])
+@endif
+
+@include('crm.partials.reports-hub')
 
 {{-- رسوم بيانية --}}
 <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6 mb-6">
@@ -139,12 +157,12 @@
     <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden flex flex-col h-full">
         <div class="px-4 sm:px-5 py-3 border-b border-gray-200 flex justify-between items-center" style="{{ $headerStyle }}">
             <h3 class="font-bold text-sm text-gray-900 font-tajawal">{{ $list['title'] }}</h3>
-            <a href="{{ route('crm.clients.index') }}" class="text-[10px] font-semibold" style="color: {{ $themeColor }};">الكل</a>
+            <a href="{{ auth()->user()->clientsHubUrl() }}" class="text-[10px] font-semibold" style="color: {{ $themeColor }};">الكل</a>
         </div>
         <ul class="p-3 sm:p-4 space-y-2 flex-1">
             @forelse($list['items'] as $client)
             <li>
-                <a href="{{ route('crm.clients.show', $client) }}" class="block p-2.5 rounded-lg bg-gray-50 hover:bg-gray-100 transition text-sm font-tajawal">
+                <a href="{{ $client->profileUrl() }}" class="block p-2.5 rounded-lg bg-gray-50 hover:bg-gray-100 transition text-sm font-tajawal">
                     <span class="font-semibold text-gray-900">{{ $client->name }}</span>
                     <span class="block text-[10px] text-gray-500 mt-0.5" dir="ltr">{{ $client->phone }}</span>
                 </a>
@@ -174,10 +192,14 @@
                 </tr></thead>
                 <tbody>
                 @forelse($recentSales as $sale)
-                    <tr class="border-b border-gray-100 hover:bg-gray-50">
-                        <td class="py-2.5"><a href="{{ route('crm.clients.show', $sale->client) }}" class="font-medium font-tajawal" style="color: {{ $themeColor }};">{{ $sale->client?->name }}</a></td>
-                        <td class="text-gray-700 font-tajawal">{{ $sale->project?->name ?? '—' }}</td>
-                        <td class="text-gray-600 font-tajawal">{{ $sale->salesRep?->name ?? '—' }}</td>
+                    <tr class="border-b border-gray-100 hover:bg-gray-50 cursor-pointer" onclick="window.location='{{ route('crm.pipeline.show', $sale) }}'">
+                        <td class="py-2.5"><a href="{{ $sale->client?->profileUrl() }}" class="font-medium font-tajawal" style="color: {{ $themeColor }};" onclick="event.stopPropagation()">{{ $sale->client?->name }}</a></td>
+                        <td class="text-gray-700 font-tajawal" onclick="event.stopPropagation()">
+                            @include('crm.partials.entity-link', ['type' => 'project', 'entity' => $sale->project, 'linkClass' => 'hover:underline'])
+                        </td>
+                        <td class="text-gray-600 font-tajawal" onclick="event.stopPropagation()">
+                            @include('crm.partials.entity-link', ['type' => 'rep', 'entity' => $sale->salesRep, 'linkClass' => 'hover:underline'])
+                        </td>
                         <td class="font-semibold font-tajawal">{{ $money($sale->estimated_value) }}</td>
                     </tr>
                 @empty
@@ -211,7 +233,11 @@
             <div class="p-4 sm:p-5 space-y-2 max-h-64 overflow-y-auto">
                 @forelse($aiInsights['high_intent'] as $sale)
                 <div class="p-2.5 rounded-lg bg-gray-50 border border-gray-100 text-xs font-tajawal">
-                    <p class="font-semibold text-gray-900">{{ $sale->client?->name ?? $sale->product_service }}</p>
+                    @if($sale->client)
+                    <a href="{{ $sale->client->profileUrl() }}" class="font-semibold text-gray-900 hover:underline block">{{ $sale->client->name }}</a>
+                    @else
+                    <p class="font-semibold text-gray-900">{{ $sale->product_service }}</p>
+                    @endif
                     <p class="text-gray-500 mt-0.5">{{ $sale->probability_percentage ?? 0 }}% · {{ $sale->stage }}</p>
                 </div>
                 @empty

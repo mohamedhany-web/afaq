@@ -24,8 +24,8 @@
 @endif
 
 <div class="grid grid-cols-2 gap-3 sm:gap-4 mb-6 max-w-lg">
-    @include('crm.partials.stat-card', ['label' => 'قوالب المندوبين', 'value' => $repTemplates->count(), 'compact' => true, 'accent' => 'blue'])
-    @include('crm.partials.stat-card', ['label' => 'قوالب المديرين', 'value' => $mgrTemplates->count(), 'compact' => true, 'accent' => 'purple'])
+    @include('crm.partials.stat-card', ['label' => 'قوالب المندوبين', 'value' => $repTemplates->count(), 'compact' => true, 'accent' => 'blue', 'href' => route('crm.compensation.kpi.index') . '#page-data', 'linkLabel' => 'عرض القوالب'])
+    @include('crm.partials.stat-card', ['label' => 'قوالب المديرين', 'value' => $mgrTemplates->count(), 'compact' => true, 'accent' => 'purple', 'href' => route('crm.compensation.kpi.index') . '#page-data', 'linkLabel' => 'عرض القوالب'])
 </div>
 
 <div class="flex flex-wrap gap-2 mb-6 font-tajawal text-sm">

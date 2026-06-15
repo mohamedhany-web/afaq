@@ -33,10 +33,10 @@
 </div>
 
 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'مهام مكتملة', 'value' => $v('activities', 'completed'), 'accent' => 'purple'])
-    @include('crm.partials.stat-card', ['label' => 'Leads جديدة', 'value' => $v('leads', 'created'), 'accent' => 'blue'])
-    @include('crm.partials.stat-card', ['label' => 'مهام مجدولة', 'value' => $v('activities', 'assigned'), 'accent' => 'theme'])
-    @include('crm.partials.stat-card', ['label' => 'حملات نشطة', 'value' => $v('campaigns', 'active_involved'), 'accent' => 'green'])
+    @include('crm.partials.stat-card', ['label' => 'مهام مكتملة', 'value' => $v('activities', 'completed'), 'accent' => 'purple', 'href' => '#report-body', 'linkLabel' => 'عرض التقرير'])
+    @include('crm.partials.stat-card', ['label' => 'Leads جديدة', 'value' => $v('leads', 'created'), 'accent' => 'blue', 'href' => '#report-body', 'linkLabel' => 'عرض التقرير'])
+    @include('crm.partials.stat-card', ['label' => 'مهام مجدولة', 'value' => $v('activities', 'assigned'), 'accent' => 'theme', 'href' => '#report-body', 'linkLabel' => 'عرض التقرير'])
+    @include('crm.partials.stat-card', ['label' => 'حملات نشطة', 'value' => $v('campaigns', 'active_involved'), 'accent' => 'green', 'href' => '#report-body', 'linkLabel' => 'عرض التقرير'])
 </div>
 
 @if(!empty($m['team']))

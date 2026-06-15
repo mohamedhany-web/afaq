@@ -25,10 +25,10 @@
 @include('accounting.partials.report-toolbar', ['filterType' => 'date', 'date' => $date])
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 no-print">
-    @include('crm.partials.stat-card', ['label' => 'إجمالي المدين', 'value' => $money($totalDebit), 'accent' => 'green', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'إجمالي الدائن', 'value' => $money($totalCredit), 'accent' => 'blue', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'عدد الحسابات', 'value' => $accounts->count(), 'accent' => 'purple', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'التوازن', 'value' => $isBalanced ? 'متوازن' : 'غير متوازن', 'accent' => $isBalanced ? 'green' : 'red', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي المدين', 'value' => $money($totalDebit), 'accent' => 'green', 'compact' => true, 'href' => route('accounting.reports.trial-balance') . '#page-data', 'linkLabel' => 'عرض التقرير'])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي الدائن', 'value' => $money($totalCredit), 'accent' => 'blue', 'compact' => true, 'href' => route('accounting.reports.trial-balance') . '#page-data', 'linkLabel' => 'عرض التقرير'])
+    @include('crm.partials.stat-card', ['label' => 'عدد الحسابات', 'value' => $accounts->count(), 'accent' => 'purple', 'compact' => true, 'href' => route('accounting.reports.trial-balance') . '#page-data', 'linkLabel' => 'عرض التقرير'])
+    @include('crm.partials.stat-card', ['label' => 'التوازن', 'value' => $isBalanced ? 'متوازن' : 'غير متوازن', 'accent' => $isBalanced ? 'green' : 'red', 'compact' => true, 'href' => route('accounting.reports.trial-balance') . '#page-data', 'linkLabel' => 'عرض التقرير'])
 </div>
 
 <div id="report-document" class="font-tajawal">
@@ -118,6 +118,8 @@
                 'accent' => match($type) { 'asset','revenue' => 'green', 'liability' => 'amber', 'equity' => 'blue', 'expense' => 'red', default => 'theme' },
                 'compact' => true,
                 'footer' => '<span class="text-gray-500">' . $accountsByType[$type]->count() . ' حساب</span>',
+                'href' => route('accounting.reports.trial-balance') . '#page-data',
+                'linkLabel' => 'عرض التقرير',
             ])
             @endif
         @endforeach

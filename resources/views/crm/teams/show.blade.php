@@ -18,10 +18,10 @@
 ])
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'الأعضاء', 'value' => $team->members_count, 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />'])
-    @include('crm.partials.stat-card', ['label' => 'الصفقات', 'value' => $team->sales_count, 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" />'])
-    @include('crm.partials.stat-card', ['label' => 'قيمة المسار', 'value' => $money($pipelineValue), 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />'])
-    @include('crm.partials.stat-card', ['label' => 'صفقات مكتملة', 'value' => (int) ($salesStats->get('closed_won')?->cnt ?? 0), 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />'])
+    @include('crm.partials.stat-card', ['label' => 'الأعضاء', 'value' => $team->members_count, 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />', 'href' => '#team-members', 'linkLabel' => 'عرض الأعضاء'])
+    @include('crm.partials.stat-card', ['label' => 'الصفقات', 'value' => $team->sales_count, 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" />', 'href' => '#team-members', 'linkLabel' => 'عرض الأعضاء'])
+    @include('crm.partials.stat-card', ['label' => 'قيمة المسار', 'value' => $money($pipelineValue), 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />', 'href' => '#team-members', 'linkLabel' => 'عرض الأعضاء'])
+    @include('crm.partials.stat-card', ['label' => 'صفقات مكتملة', 'value' => (int) ($salesStats->get('closed_won')?->cnt ?? 0), 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />', 'href' => '#team-members', 'linkLabel' => 'عرض الأعضاء'])
 </div>
 
 @if($team->description)

@@ -49,8 +49,12 @@ class AuthServiceProvider extends ServiceProvider
 
         // التحقق من الصلاحيات المخصصة على مستوى المستخدم قبل صلاحيات الأدوار
         Gate::before(function ($user, string $ability, array $arguments = []) {
-            if ($arguments !== [] && ! is_string($arguments[0] ?? null)) {
-                return null;
+            if ($arguments !== []) {
+                $first = $arguments[0] ?? null;
+                // سياسات الموديل (كائن أو اسم كلاس) — لا تمر عبر user_permissions
+                if ($first !== null && (! is_string($first) || class_exists($first))) {
+                    return null;
+                }
             }
 
             // التحقق من وجود صلاحية مخصصة للمستخدم في جدول user_permissions

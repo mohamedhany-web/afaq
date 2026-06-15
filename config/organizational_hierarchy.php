@@ -35,7 +35,7 @@ return [
     ],
 
     /** من يراجع غياب الموظفين يومياً */
-    'attendance_reviewer_roles' => ['operation_manager', 'super_admin', 'admin'],
+    'attendance_reviewer_roles' => ['operation_manager', 'hr', 'super_admin', 'admin'],
 
     /** ربط القسم بالمدير المباشر الافتراضي (دور Spatie) */
     'department_default_manager_role' => [

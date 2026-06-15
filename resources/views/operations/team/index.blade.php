@@ -11,18 +11,18 @@
 ])
 
 <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'موظفون نشطون', 'value' => $activeEmployees, 'accent' => 'theme'])
-    @include('crm.partials.stat-card', ['label' => 'غياب بانتظار المراجعة', 'value' => $pendingAbsence, 'accent' => 'amber'])
-    @include('crm.partials.stat-card', ['label' => 'مديرو مبيعات', 'value' => $managers->count(), 'accent' => 'blue'])
+    @include('crm.partials.stat-card', ['label' => 'موظفون نشطون', 'value' => $activeEmployees, 'accent' => 'theme', 'href' => route('operations.team.index') . '#page-data', 'linkLabel' => 'عرض الفريق'])
+    @include('crm.partials.stat-card', ['label' => 'غياب بانتظار المراجعة', 'value' => $pendingAbsence, 'accent' => 'amber', 'href' => route('operations.attendance-reviews.index'), 'linkLabel' => 'عرض المراجعات'])
+    @include('crm.partials.stat-card', ['label' => 'مديرو مبيعات', 'value' => $managers->count(), 'accent' => 'blue', 'href' => route('operations.team.index') . '#page-data', 'linkLabel' => 'عرض المديرين'])
 </div>
 
 <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-6">
-    @if($teamKpis) @include('operations.partials.kpi-group', ['group' => $teamKpis]) @endif
-    @if($revenueKpis) @include('operations.partials.kpi-group', ['group' => $revenueKpis]) @endif
-    @if($reportingKpis) @include('operations.partials.kpi-group', ['group' => $reportingKpis]) @endif
+    @if($teamKpis) @include('operations.partials.kpi-group', ['group' => $teamKpis, 'link' => route('operations.team.index') . '#page-data']) @endif
+    @if($revenueKpis) @include('operations.partials.kpi-group', ['group' => $revenueKpis, 'link' => route('operations.crm.index')]) @endif
+    @if($reportingKpis) @include('operations.partials.kpi-group', ['group' => $reportingKpis, 'link' => route('operations.reports.index')]) @endif
 </div>
 
-<div class="bg-white rounded-2xl border overflow-hidden font-tajawal">
+<div class="bg-white rounded-2xl border overflow-hidden font-tajawal" id="page-data">
     <div class="px-5 py-4 border-b font-bold">مندوبو المبيعات — الالتزام</div>
     <div class="overflow-x-auto">
         <table class="w-full text-sm">

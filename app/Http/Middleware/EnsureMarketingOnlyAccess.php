@@ -18,6 +18,7 @@ class EnsureMarketingOnlyAccess
 
         $allowedPrefixes = [
             'marketing',
+            'crm/clients',
             'api',
             'profile',
             'logout',
@@ -28,6 +29,7 @@ class EnsureMarketingOnlyAccess
             'messages',
             'attendances',
             'leaves',
+            'hr/exit-permits',
         ];
 
         $path = trim($request->path(), '/');
@@ -38,7 +40,7 @@ class EnsureMarketingOnlyAccess
             }
         }
 
-        if ($request->routeIs('logout', 'profile.*', 'verification.*', 'notifications.*', 'messages.*', 'attendances.*', 'leaves.*', 'dashboard')) {
+        if ($request->routeIs('logout', 'profile.*', 'verification.*', 'notifications.*', 'messages.*', 'attendances.*', 'leaves.*', 'dashboard', 'crm.clients.*', 'hr.exit-permits.*')) {
             return $next($request);
         }
 

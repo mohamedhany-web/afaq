@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
 use App\Models\Project;
+use App\Http\Controllers\Crm\Concerns\UsesCrmFilters;
+use App\Support\ProjectUnitNumbering;
 use App\Services\CrmScopeService;
 use App\Services\ProjectApprovalService;
 use App\Services\ProjectManagementService;
@@ -13,6 +15,8 @@ use Illuminate\Support\Facades\Auth;
 
 class CrmProjectController extends Controller
 {
+    use UsesCrmFilters;
+
     public function __construct(
         protected ProjectManagementService $projects,
         protected ProjectApprovalService $approval,
@@ -23,20 +27,13 @@ class CrmProjectController extends Controller
         $user = Auth::user();
         abort_unless($this->projects->canViewAny($user), 403, 'لا تملك صلاحية عرض المشاريع.');
 
+        $filters = $this->crmFilters($request);
         $base = $this->projects->scopedQuery($user);
 
-        $projects = (clone $base)
-            ->when($request->search, fn ($q) => $q->where(function ($sub) use ($request) {
-                $sub->where('name', 'like', '%' . $request->search . '%')
-                    ->orWhere('location', 'like', '%' . $request->search . '%')
-                    ->orWhere('city', 'like', '%' . $request->search . '%')
-                    ->orWhere('developer_name', 'like', '%' . $request->search . '%');
-            }))
-            ->when($request->listing_status, fn ($q) => $q->where('listing_status', $request->listing_status))
-            ->when($request->property_type, fn ($q) => $q->where('property_type', $request->property_type))
-            ->when($request->ownership_type, fn ($q) => $q->where('ownership_type', $request->ownership_type))
-            ->with(['realEstateDeveloper'])
-            ->withCount(['mapPins', 'sales'])
+        $projects = $filters->applyProjectFilters(
+            (clone $base)->with(['realEstateDeveloper'])->withCount(['mapPins', 'sales']),
+            $request,
+        )
             ->orderByDesc('updated_at')
             ->paginate(12)
             ->withQueryString();
@@ -53,6 +50,8 @@ class CrmProjectController extends Controller
             'projects' => $projects,
             'stats' => $stats,
             'requiresApproval' => $this->approval->requiresApproval($user),
+            'clearUrl' => route('crm.projects.index'),
+            ...$this->projectFilterViewData($filters, $request),
         ]);
     }
 
@@ -98,9 +97,6 @@ class CrmProjectController extends Controller
     {
         abort_unless($this->projects->canView(Auth::user(), $project), 403);
 
-        $scopedSales = CrmScopeService::for(Auth::user())->salesQuery()
-            ->where('project_id', $project->id);
-
         $project->load([
             'projectManager',
             'department',
@@ -109,9 +105,18 @@ class CrmProjectController extends Controller
             'buildingFloors.units.paymentPlans',
         ]);
 
+        $unitGenerator = app(ProjectUnitGeneratorService::class);
+        if ($project->buildingFloors->isNotEmpty() && ProjectUnitNumbering::projectNeedsRenumbering($project)) {
+            $unitGenerator->applyAfaqNumbering($project);
+            $project->load(['buildingFloors.units.paymentPlans']);
+        }
+
+        $scopedSales = CrmScopeService::for(Auth::user())->salesQuery()
+            ->where('project_id', $project->id);
+
         $project->setRelation(
             'sales',
-            (clone $scopedSales)->with('client')->latest()->limit(5)->get()
+            (clone $scopedSales)->with(['client', 'salesRep'])->latest()->limit(5)->get()
         );
 
         $project->sales_count = (clone $scopedSales)->count();

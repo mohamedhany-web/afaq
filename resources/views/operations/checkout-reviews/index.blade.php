@@ -15,9 +15,9 @@
 @if(session('success'))<div class="mb-4 p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm font-tajawal">{{ session('success') }}</div>@endif
 
 <div class="grid grid-cols-3 gap-3 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'بانتظار الموافقة', 'value' => $stats['pending'], 'accent' => 'amber', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'معتمد اليوم', 'value' => $stats['approved'], 'accent' => 'green', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'مرفوض اليوم', 'value' => $stats['rejected'], 'accent' => 'red', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'بانتظار الموافقة', 'value' => $stats['pending'], 'accent' => 'amber', 'compact' => true, 'href' => route('operations.checkout-reviews.index', ['status' => 'pending']) . '#page-data', 'linkLabel' => 'عرض المعلّقة'])
+    @include('crm.partials.stat-card', ['label' => 'معتمد اليوم', 'value' => $stats['approved'], 'accent' => 'green', 'compact' => true, 'href' => route('operations.checkout-reviews.index', ['status' => 'approved']) . '#page-data', 'linkLabel' => 'عرض المعتمد'])
+    @include('crm.partials.stat-card', ['label' => 'مرفوض اليوم', 'value' => $stats['rejected'], 'accent' => 'red', 'compact' => true, 'href' => route('operations.checkout-reviews.index', ['status' => 'rejected']) . '#page-data', 'linkLabel' => 'عرض المرفوض'])
 </div>
 
 <div class="bg-white rounded-2xl border p-5 mb-6 font-tajawal">
@@ -32,6 +32,8 @@
                 <option value="">معلّقة</option>
                 <option value="approved" @selected(request('status') === 'approved')>معتمدة</option>
                 <option value="rejected" @selected(request('status') === 'rejected')>مرفوضة</option>
+                <option value="revoked" @selected(request('status') === 'revoked')>ملغاة الاعتماد</option>
+                <option value="cancelled" @selected(request('status') === 'cancelled')>ملغاة من الموظف</option>
                 <option value="pending" @selected(request('status') === 'pending')>كل المعلّقة</option>
             </select>
         </div>
@@ -39,7 +41,7 @@
     </form>
 </div>
 
-<div class="bg-white rounded-2xl shadow-lg border overflow-hidden font-tajawal">
+<div class="bg-white rounded-2xl shadow-lg border overflow-hidden font-tajawal" id="page-data">
     <div class="px-5 py-4 border-b font-bold">طلبات {{ $date->format('Y-m-d') }}</div>
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
@@ -64,7 +66,11 @@
                 <td class="p-3">{{ $review->total_hours_preview }}h
                     @if($review->is_early_departure)<span class="block text-xs text-red-600">مبكر</span>@endif
                 </td>
-                <td class="p-3">@include('attendances.partials.status-badge', ['label' => $review->statusLabel(), 'color' => $review->isPending() ? 'amber' : ($review->status === 'approved' ? 'green' : 'red')])</td>
+                <td class="p-3">@include('attendances.partials.status-badge', ['label' => $review->statusLabel(), 'color' => $review->isPending() ? 'amber' : (in_array($review->status, ['approved'], true) ? 'green' : 'red')])
+                    @if($review->deduction_amount)
+                    <span class="block text-xs text-red-600 mt-1">خصم: {{ number_format($review->deduction_amount, 2) }}</span>
+                    @endif
+                </td>
                 <td class="p-3">
                     @if($review->isPending())
                     <div class="flex flex-col gap-2 min-w-[200px]">
@@ -75,12 +81,19 @@
                         </form>
                         <form method="POST" action="{{ route('operations.checkout-reviews.reject', $review) }}" class="flex gap-1">
                             @csrf
-                            <input type="text" name="notes" required placeholder="سبب الرفض" class="flex-1 border rounded-lg px-2 py-1 text-xs">
+                            <input type="text" name="notes" required placeholder="سبب الرفض / الخصم" class="flex-1 border rounded-lg px-2 py-1 text-xs">
                             <button type="submit" class="px-3 py-1 rounded-lg bg-red-50 text-red-700 border border-red-200 text-xs font-bold">رفض</button>
                         </form>
                     </div>
-                    @elseif($review->review_notes)
+                    @elseif($review->isApproved())
+                    <form method="POST" action="{{ route('operations.checkout-reviews.revoke', $review) }}" class="flex gap-1 min-w-[200px]">
+                        @csrf
+                        <input type="text" name="notes" required placeholder="سبب إلغاء الاعتماد" class="flex-1 border rounded-lg px-2 py-1 text-xs">
+                        <button type="submit" class="px-3 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold whitespace-nowrap">إلغاء الاعتماد</button>
+                    </form>
+                    @elseif($review->review_notes || $review->deduction_reason)
                     <p class="text-xs text-gray-500">{{ $review->review_notes }}</p>
+                    @if($review->deduction_reason)<p class="text-xs text-red-600 mt-1">{{ $review->deduction_reason }}</p>@endif
                     @else
                     —
                     @endif

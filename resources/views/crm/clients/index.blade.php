@@ -4,7 +4,6 @@
 @section('content')
 @php
     $themeColor = \App\Helpers\SettingsHelper::getThemeColor();
-    $typeLabels = ['individual' => 'فرد', 'small_business' => 'شركة'];
 @endphp
 
 @include('crm.partials.page-header', [
@@ -53,39 +52,15 @@
 </div>
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'إجمالي العملاء', 'value' => $stats['total'], 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />'])
-    @include('crm.partials.stat-card', ['label' => 'عملاء محتملون', 'value' => $stats['prospect'], 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />'])
-    @include('crm.partials.stat-card', ['label' => 'عملاء نشطون', 'value' => $stats['active'], 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />'])
-    @include('crm.partials.stat-card', ['label' => 'لديهم صفقات', 'value' => $stats['with_deals'], 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" />'])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي العملاء', 'value' => $stats['total'], 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />', 'href' => route('crm.clients.index') . '#page-data', 'linkLabel' => 'عرض القائمة'])
+    @include('crm.partials.stat-card', ['label' => 'عملاء محتملون', 'value' => $stats['prospect'], 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />', 'href' => route('crm.clients.index', ['status' => 'prospect']) . '#page-data', 'linkLabel' => 'عرض المحتملين'])
+    @include('crm.partials.stat-card', ['label' => 'عملاء نشطون', 'value' => $stats['active'], 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />', 'href' => route('crm.clients.index', ['status' => 'active']) . '#page-data', 'linkLabel' => 'عرض النشطين'])
+    @include('crm.partials.stat-card', ['label' => 'لديهم صفقات', 'value' => $stats['with_deals'], 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" />', 'href' => route('crm.pipeline.index', ['has_deals' => '1']) . '#page-data', 'linkLabel' => 'عرض الصفقات'])
 </div>
 
-<div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-5 mb-6">
-    <form method="GET" class="flex flex-col lg:flex-row gap-3 lg:items-end">
-        <div class="flex-1">
-            <label class="block text-xs font-bold text-gray-500 mb-1.5 font-tajawal">بحث</label>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="الاسم، الهاتف، البريد، أو الشركة..."
-                   class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 font-tajawal text-sm">
-        </div>
-        <div class="w-full lg:w-48">
-            <label class="block text-xs font-bold text-gray-500 mb-1.5 font-tajawal">الحالة</label>
-            <select name="status" class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 font-tajawal text-sm">
-                <option value="">كل الحالات</option>
-                @foreach(['prospect' => 'محتمل', 'active' => 'نشط', 'inactive' => 'غير نشط', 'suspended' => 'موقوف'] as $val => $txt)
-                    <option value="{{ $val }}" @selected(request('status') === $val)>{{ $txt }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div class="flex gap-2">
-            <button type="submit" class="px-5 py-2.5 rounded-xl text-white text-sm font-semibold shadow-sm font-tajawal"
-                    style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">تطبيق</button>
-            @if(request()->hasAny(['search', 'status']))
-            <a href="{{ route('crm.clients.index') }}" class="px-5 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 font-tajawal">مسح</a>
-            @endif
-        </div>
-    </form>
-</div>
+@include('crm.partials.filter-bar')
 
-<div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full">
+<div id="page-data" class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full">
     <div class="px-5 sm:px-6 py-4 border-b border-gray-200 flex items-center justify-between"
          style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">
         <h2 class="font-bold text-gray-900 font-tajawal">قائمة العملاء</h2>
@@ -97,7 +72,8 @@
                 <tr class="text-gray-600">
                     <th class="text-right p-4 font-tajawal font-bold whitespace-nowrap">العميل</th>
                     <th class="text-right p-4 font-tajawal font-bold whitespace-nowrap">التواصل</th>
-                    <th class="text-right p-4 font-tajawal font-bold whitespace-nowrap">النوع</th>
+                    <th class="text-right p-4 font-tajawal font-bold whitespace-nowrap">التصنيف</th>
+                    <th class="text-right p-4 font-tajawal font-bold whitespace-nowrap">المصدر</th>
                     <th class="text-right p-4 font-tajawal font-bold whitespace-nowrap">الحالة</th>
                     <th class="text-right p-4 font-tajawal font-bold whitespace-nowrap">الصفقات</th>
                     <th class="text-right p-4 font-tajawal font-bold whitespace-nowrap">المسؤول</th>
@@ -120,7 +96,8 @@
                             <div class="text-xs text-gray-500 mt-0.5" dir="ltr">{{ $client->email }}</div>
                         @endif
                     </td>
-                    <td class="p-4 text-gray-600 font-tajawal whitespace-nowrap">{{ $typeLabels[$client->client_type] ?? 'فرد' }}</td>
+                    <td class="p-4 font-tajawal whitespace-nowrap">@include('crm.clients.partials.type-badge', ['type' => $client->client_type])</td>
+                    <td class="p-4 font-tajawal whitespace-nowrap">@include('crm.clients.partials.source-badge', ['source' => $client->lead_source])</td>
                     <td class="p-4">@include('crm.clients.partials.status-badge', ['status' => $client->status])</td>
                     <td class="p-4">
                         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold font-tajawal"
@@ -141,8 +118,11 @@
                     <td class="p-4">
                         <div class="flex items-center gap-2 flex-wrap">
                             <a href="{{ route('crm.clients.show', $client) }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold font-tajawal hover:opacity-80"
-                               style="background: {{ $themeColor }}15; color: {{ $themeColor }};">عرض</a>
+                               style="background: {{ $themeColor }}15; color: {{ $themeColor }};">عرض الملف</a>
+                            @can('update', $client)
                             <a href="{{ route('crm.clients.edit', $client) }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 font-tajawal">تعديل</a>
+                            @endcan
+                            @can('delete', $client)
                             @if($client->sales->isEmpty())
                             <form action="{{ route('crm.clients.destroy', $client) }}" method="POST"
                                   onsubmit="return confirm('هل أنت متأكد من حذف هذا العميل؟')">
@@ -150,6 +130,7 @@
                                 <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 font-tajawal">حذف</button>
                             </form>
                             @endif
+                            @endcan
                         </div>
                     </td>
                 </tr>

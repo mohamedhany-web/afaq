@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Models\Client;
 use App\Services\CrmEmployeeService;
 use App\Services\MarketingEmployeeService;
 use App\Services\OperationsEmployeeService;
@@ -113,6 +114,11 @@ class User extends Authenticatable
 
         if ($arguments !== []) {
             if (count($arguments) === 1 && is_string($arguments[0])) {
+                // فحص سياسة على مستوى الموديل (مثل Project::class) وليس guard Spatie
+                if (class_exists($arguments[0])) {
+                    return app(Gate::class)->forUser($this)->check($abilities, $arguments);
+                }
+
                 return $this->checkNamedPermission($abilities, $arguments[0]);
             }
 
@@ -388,6 +394,28 @@ class User extends Authenticatable
         ));
     }
 
+    public function usesHrWorkspace(): bool
+    {
+        if ($this->hasRole(['super_admin', 'admin'])) {
+            return false;
+        }
+
+        return $this->hasRole('hr');
+    }
+
+    public function isHrOnlyUser(): bool
+    {
+        return $this->usesHrWorkspace()
+            && !$this->usesCrmWorkspace()
+            && !$this->usesMarketingWorkspace()
+            && !$this->usesOperationsWorkspace();
+    }
+
+    public function canAccessHr(): bool
+    {
+        return $this->hasRole(['super_admin', 'admin', 'hr']);
+    }
+
     public function homeRoute(): string
     {
         if ($this->isMarketingOnlyUser()) {
@@ -398,10 +426,28 @@ class User extends Authenticatable
             return route('operations.dashboard');
         }
 
+        if ($this->isHrOnlyUser()) {
+            return route('hr.dashboard');
+        }
+
         if ($this->usesCrmWorkspace()) {
             return route('crm.dashboard');
         }
 
         return route('dashboard');
+    }
+
+    /** رابط قسم العملاء: قائمة كاملة للإدارة، مسار المبيعات لباقي الأدوار */
+    public function clientsHubUrl(array $query = []): string
+    {
+        if ($this->can('viewAny', Client::class)) {
+            return route('crm.clients.index', $query);
+        }
+
+        if ($this->canAccessOperations()) {
+            return route('operations.leads.index', $query);
+        }
+
+        return route('crm.pipeline.index', $query);
     }
 }

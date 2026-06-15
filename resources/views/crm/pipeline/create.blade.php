@@ -45,7 +45,7 @@
                 <label class="{{ $label }}">مصدر العميل</label>
                 <select name="lead_source" class="{{ $input }}">
                     <option value="">—</option>
-                    @foreach(['website' => 'الموقع', 'referral' => 'إحالة', 'walk_in' => 'زيارة مباشرة', 'social_media' => 'سوشيال', 'advertisement' => 'إعلان', 'call' => 'اتصال', 'other' => 'أخرى'] as $val => $txt)
+                    @foreach(\App\Models\Client::leadSourceLabels() as $val => $txt)
                         <option value="{{ $val }}" @selected(old('lead_source') == $val)>{{ $txt }}</option>
                     @endforeach
                 </select>

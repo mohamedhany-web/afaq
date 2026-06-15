@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'crm.only' => \App\Http\Middleware\EnsureCrmOnlyAccess::class,
             'marketing.only' => \App\Http\Middleware\EnsureMarketingOnlyAccess::class,
             'operations.only' => \App\Http\Middleware\EnsureOperationsOnlyAccess::class,
+            'hr.only' => \App\Http\Middleware\EnsureHrOnlyAccess::class,
             'crm.rep' => \App\Http\Middleware\EnsureCrmSalesRep::class,
             'redirect.crm' => \App\Http\Middleware\RedirectToCrmDashboard::class,
         ]);

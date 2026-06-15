@@ -20,6 +20,23 @@ class AttendanceAbsenceReviewPolicy
             return false;
         }
 
+        if ($user->canAccessHr()) {
+            return true;
+        }
+
         return app(OrganizationalHierarchyService::class)->canReviewAttendance($user);
+    }
+
+    public function revoke(User $user, AttendanceAbsenceReview $review): bool
+    {
+        if (! in_array($review->status, [
+            AttendanceAbsenceReview::STATUS_CONFIRMED_ABSENT,
+            AttendanceAbsenceReview::STATUS_AUTO_CONFIRMED,
+        ], true)) {
+            return false;
+        }
+
+        return app(OrganizationalHierarchyService::class)->canReviewAttendance($user)
+            || $user->canAccessHr();
     }
 }

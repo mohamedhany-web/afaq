@@ -13,9 +13,9 @@
 </form>
 
 <div class="grid md:grid-cols-3 gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'إجمالي الرواتب', 'value' => $money($runs->sum('net_pay')), 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'العمولات', 'value' => $money($runs->sum('commission_total')), 'compact' => true, 'accent' => 'green'])
-    @include('crm.partials.stat-card', ['label' => 'المكافآت المعتمدة', 'value' => $money($bonuses->sum('amount')), 'compact' => true, 'accent' => 'amber'])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي الرواتب', 'value' => $money($runs->sum('net_pay')), 'compact' => true, 'href' => route('crm.compensation.reports.index') . '#page-data', 'linkLabel' => 'عرض التقارير'])
+    @include('crm.partials.stat-card', ['label' => 'العمولات', 'value' => $money($runs->sum('commission_total')), 'compact' => true, 'accent' => 'green', 'href' => route('crm.compensation.reports.index') . '#page-data', 'linkLabel' => 'عرض التقارير'])
+    @include('crm.partials.stat-card', ['label' => 'المكافآت المعتمدة', 'value' => $money($bonuses->sum('amount')), 'compact' => true, 'accent' => 'amber', 'href' => route('crm.compensation.reports.index') . '#page-data', 'linkLabel' => 'عرض التقارير'])
 </div>
 
 <div class="bg-white rounded-2xl border p-5 font-tajawal text-sm mb-6">

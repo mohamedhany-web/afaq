@@ -62,8 +62,12 @@
                         <a href="{{ route('crm.pipeline.show', $deal) }}" class="font-medium font-tajawal" style="color: {{ $themeColor }};">{{ $deal->client?->name ?? '—' }}</a>
                     </td>
                     <td class="py-2.5 px-4 text-xs font-tajawal">{{ $stageLabels[$deal->stage] ?? $deal->stage }}</td>
-                    <td class="py-2.5 px-4 text-gray-700 font-tajawal truncate max-w-[12rem]">{{ $deal->project?->name ?? '—' }}</td>
-                    <td class="py-2.5 px-4 text-gray-600 font-tajawal">{{ $deal->salesRep?->name ?? '—' }}</td>
+                    <td class="py-2.5 px-4 text-gray-700 font-tajawal truncate max-w-[12rem]">
+                        @include('crm.partials.entity-link', ['type' => 'project', 'entity' => $deal->project, 'linkClass' => 'hover:underline'])
+                    </td>
+                    <td class="py-2.5 px-4 text-gray-600 font-tajawal">
+                        @include('crm.partials.entity-link', ['type' => 'rep', 'entity' => $deal->salesRep, 'linkClass' => 'hover:underline'])
+                    </td>
                     <td class="py-2.5 px-4 font-semibold font-tajawal">{{ $money($deal->estimated_value) }}</td>
                     <td class="py-2.5 px-4 tabular-nums">{{ $deal->probability_percentage }}%</td>
                     <td class="py-2.5 px-4 text-xs text-gray-500">{{ $deal->updated_at->diffForHumans() }}</td>

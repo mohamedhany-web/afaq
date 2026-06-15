@@ -99,7 +99,7 @@ class MarketingLeadController extends Controller
             'notes' => $data['notes'] ?? null,
             'status' => 'prospect',
             'lead_stage' => 'new',
-            'lead_source' => $data['lead_source'] ?? 'manual',
+            'lead_source' => $data['lead_source'] ?? 'personal',
             'marketing_campaign_id' => $data['marketing_campaign_id'] ?? null,
             'created_by' => Auth::id(),
             'client_type' => 'individual',

@@ -15,12 +15,12 @@
 @endif
 
 <div class="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'بانتظار الموافقة', 'value' => $stats['pending'], 'accent' => 'amber', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'معتمدة الشهر', 'value' => $stats['approved'], 'accent' => 'green', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'مرفوضة الشهر', 'value' => $stats['rejected'], 'accent' => 'red', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'بانتظار الموافقة', 'value' => $stats['pending'], 'accent' => 'amber', 'compact' => true, 'href' => route('crm.clients.approvals.index') . '#page-data', 'linkLabel' => 'عرض المعلّقة'])
+    @include('crm.partials.stat-card', ['label' => 'معتمدة الشهر', 'value' => $stats['approved'], 'accent' => 'green', 'compact' => true, 'href' => route('crm.clients.approvals.index', ['status' => 'approved']) . '#page-data', 'linkLabel' => 'عرض المعتمدة'])
+    @include('crm.partials.stat-card', ['label' => 'مرفوضة الشهر', 'value' => $stats['rejected'], 'accent' => 'red', 'compact' => true, 'href' => route('crm.clients.approvals.index', ['status' => 'rejected']) . '#page-data', 'linkLabel' => 'عرض المرفوضة'])
 </div>
 
-<div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+<div id="page-data" class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
     <div class="px-5 py-4 border-b flex flex-wrap gap-2 font-tajawal">
         <a href="{{ route('crm.clients.approvals.index') }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold {{ !request('status') ? 'text-white' : 'bg-gray-100 text-gray-600' }}"
            @if(!request('status')) style="background:{{ $themeColor }}" @endif>معلّقة</a>

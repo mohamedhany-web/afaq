@@ -34,7 +34,9 @@
                         <div class="kanban-card bg-white rounded-lg p-3 border-2 shadow-sm cursor-grab active:cursor-grabbing font-tajawal"
                              style="border-color: {{ $color['bg'] }};"
                              data-client-id="{{ $client->id }}">
-                            <p class="font-bold text-sm text-gray-900">{{ $client->name }}</p>
+                            <p class="font-bold text-sm text-gray-900">
+                                <a href="{{ $client->profileUrl() }}" class="hover:underline" style="color:{{ $themeColor }}">{{ $client->name }}</a>
+                            </p>
                             <p class="text-xs text-gray-500 mt-1" dir="ltr">{{ $client->phone }}</p>
                         </div>
                         @else

@@ -14,6 +14,7 @@ class AttendanceCheckoutReviewService
     public function __construct(
         protected EmployeeScheduleService $schedule,
         protected WorkDayService $workDay,
+        protected AutoPenaltyService $penalties,
     ) {}
 
     public function submit(Attendance $attendance, Employee $employee): AttendanceCheckoutReview
@@ -98,6 +99,14 @@ class AttendanceCheckoutReviewService
                 'review_notes' => $notes,
             ]);
 
+            $deduction = $this->applyApprovalPenalties($review, $attendance, $employee, $metrics, $notes);
+            if ($deduction) {
+                $review->update([
+                    'deduction_amount' => $deduction['amount'],
+                    'deduction_reason' => $deduction['reason'],
+                ]);
+            }
+
             $this->notifyEmployee(
                 $employee,
                 'checkout_approved',
@@ -126,6 +135,14 @@ class AttendanceCheckoutReviewService
                 'review_notes' => $notes,
             ]);
 
+            $deduction = $this->applyRejectPenalties($review, $attendance, $notes);
+            if ($deduction) {
+                $review->update([
+                    'deduction_amount' => $deduction['amount'],
+                    'deduction_reason' => $deduction['reason'],
+                ]);
+            }
+
             $this->notifyEmployee(
                 $review->employee,
                 'checkout_rejected',
@@ -133,6 +150,157 @@ class AttendanceCheckoutReviewService
                 $notes ?: 'راجع مدير العمليات لمزيد من التفاصيل',
             );
         });
+    }
+
+    public function revoke(AttendanceCheckoutReview $review, User $reviewer, string $notes): void
+    {
+        if (!$review->isApproved()) {
+            abort(422, 'يمكن إلغاء الاعتماد للطلبات المعتمدة فقط');
+        }
+
+        DB::transaction(function () use ($review, $reviewer, $notes) {
+            $attendance = $review->attendance()->lockForUpdate()->firstOrFail();
+
+            $this->penalties->reverseBySourceKey(
+                $review->penaltySourceKey(),
+                $notes,
+            );
+
+            $attendance->update([
+                'check_out' => null,
+                'total_hours' => null,
+                'work_day_locked' => false,
+                'current_status' => 'working',
+                'notes' => trim(($attendance->notes ? $attendance->notes . ' | ' : '') . 'إلغاء اعتماد الانصراف — ' . $notes),
+            ]);
+
+            $review->update([
+                'status' => AttendanceCheckoutReview::STATUS_REVOKED,
+                'reviewed_by' => $reviewer->id,
+                'reviewed_at' => now(),
+                'review_notes' => $notes,
+                'deduction_amount' => null,
+                'deduction_reason' => null,
+            ]);
+
+            $this->notifyEmployee(
+                $review->employee,
+                'checkout_revoked',
+                'تم إلغاء اعتماد الانصراف',
+                $notes,
+            );
+        });
+    }
+
+    public function cancelPending(AttendanceCheckoutReview $review, User $actor, string $notes): void
+    {
+        if (!$review->isPending()) {
+            abort(422, 'لا يمكن إلغاء هذا الطلب');
+        }
+
+        DB::transaction(function () use ($review, $actor, $notes) {
+            $attendance = $review->attendance;
+            if ($attendance && !$attendance->check_out) {
+                $attendance->update(['current_status' => 'working']);
+            }
+
+            $review->update([
+                'status' => AttendanceCheckoutReview::STATUS_CANCELLED,
+                'reviewed_by' => $actor->id,
+                'reviewed_at' => now(),
+                'review_notes' => $notes,
+            ]);
+        });
+    }
+
+    /** @return array{amount: float, reason: string}|null */
+    protected function applyApprovalPenalties(
+        AttendanceCheckoutReview $review,
+        Attendance $attendance,
+        Employee $employee,
+        array $metrics,
+        ?string $notes,
+    ): ?array {
+        $user = $employee->user;
+        if (!$user) {
+            return null;
+        }
+
+        $sourceKey = $review->penaltySourceKey();
+        $total = 0.0;
+        $reasons = [];
+
+        $lateMinutes = (int) ($attendance->late_minutes ?? 0);
+        if ($lateMinutes > 0 || $attendance->status === 'late') {
+            $amount = $this->penalties->applyReviewPenalty(
+                $user,
+                'attendance_late',
+                $sourceKey . ':late',
+                'تأخر حضور ' . Carbon::parse($attendance->date)->format('Y-m-d'),
+                $notes,
+                ['late_minutes' => max($lateMinutes, 1)],
+            );
+            if ($amount) {
+                $total += $amount;
+                $reasons[] = 'تأخر حضور';
+            }
+        }
+
+        if (!$metrics['met_required'] || $metrics['is_early']) {
+            $amount = $this->penalties->applyReviewPenalty(
+                $user,
+                'attendance_short_hours',
+                $sourceKey . ':short',
+                'ساعات عمل ناقصة ' . Carbon::parse($attendance->date)->format('Y-m-d'),
+                $notes,
+            );
+            if ($amount) {
+                $total += $amount;
+                $reasons[] = 'ساعات ناقصة / انصراف مبكر';
+            }
+        }
+
+        if ($total <= 0) {
+            return null;
+        }
+
+        return [
+            'amount' => $total,
+            'reason' => implode(' + ', $reasons),
+        ];
+    }
+
+    /** @return array{amount: float, reason: string}|null */
+    protected function applyRejectPenalties(
+        AttendanceCheckoutReview $review,
+        ?Attendance $attendance,
+        string $notes,
+    ): ?array {
+        $user = $review->employee?->user;
+        if (!$user || !$attendance) {
+            return null;
+        }
+
+        if (!$review->is_early_departure) {
+            return null;
+        }
+
+        $amount = $this->penalties->applyReviewPenalty(
+            $user,
+            'attendance_short_hours',
+            $review->penaltySourceKey() . ':reject',
+            'رفض انصراف مبكر ' . Carbon::parse($attendance->date)->format('Y-m-d'),
+            $notes,
+        );
+
+        if (!$amount) {
+            return null;
+        }
+
+        return [
+            'amount' => $amount,
+            'reason' => 'انصراف مبكر مرفوض',
+        ];
     }
 
     /** @return array{total_hours: float, is_early: bool, met_required: bool, final_status: string} */
@@ -165,6 +333,16 @@ class AttendanceCheckoutReviewService
             'met_required' => $metRequired,
             'final_status' => $finalStatus,
         ];
+    }
+
+    public function pendingCount(?Carbon $date = null): int
+    {
+        $date ??= Carbon::today();
+
+        return AttendanceCheckoutReview::query()
+            ->whereDate('review_date', $date)
+            ->where('status', AttendanceCheckoutReview::STATUS_PENDING)
+            ->count();
     }
 
     protected function notifyOperations(AttendanceCheckoutReview $review): void

@@ -14,6 +14,7 @@ class ClientAccountController extends Controller
     {
         $accounts = ClientAccount::query()
             ->with('client')
+            ->when($request->client_id, fn ($q) => $q->where('client_id', $request->integer('client_id')))
             ->when($request->search, function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->search . '%')
                     ->orWhere('email', 'like', '%' . $request->search . '%')
@@ -28,9 +29,11 @@ class ClientAccountController extends Controller
         return view('client-accounts.index', compact('accounts'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return view('client-accounts.create');
+        return view('client-accounts.create', [
+            'preselectedClientId' => $request->integer('client_id') ?: null,
+        ]);
     }
 
     public function store(Request $request)

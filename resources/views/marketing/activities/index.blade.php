@@ -14,16 +14,16 @@
 @if(session('success'))<div class="mb-4 p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm font-tajawal">{{ session('success') }}</div>@endif
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
-    @include('crm.partials.stat-card', ['label' => 'اليوم', 'value' => $stats['today'], 'accent' => 'purple', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'متأخرة', 'value' => $stats['overdue'], 'accent' => 'amber', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'دورية', 'value' => $stats['recurring'], 'accent' => 'blue', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'اليوم', 'value' => $stats['today'], 'accent' => 'purple', 'compact' => true, 'href' => route('marketing.activities.index', ['filter' => 'today']) . '#page-data', 'linkLabel' => 'عرض اليوم'])
+    @include('crm.partials.stat-card', ['label' => 'متأخرة', 'value' => $stats['overdue'], 'accent' => 'amber', 'compact' => true, 'href' => route('marketing.activities.index', ['filter' => 'overdue']) . '#page-data', 'linkLabel' => 'عرض المتأخرة'])
+    @include('crm.partials.stat-card', ['label' => 'دورية', 'value' => $stats['recurring'], 'accent' => 'blue', 'compact' => true, 'href' => route('marketing.activities.index', ['filter' => 'recurring']) . '#page-data', 'linkLabel' => 'عرض الدورية'])
     @if($isManager)
     <a href="{{ route('marketing.plans.index') }}" class="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-5 hover:shadow-xl transition-all flex flex-col justify-center font-tajawal h-full min-h-[108px]">
         <span class="text-xs text-gray-500">خطط الشهر</span>
         <span class="text-sm font-bold mt-1" style="color:{{ $themeColor }}">خطة التسويق ←</span>
     </a>
     @else
-    @include('crm.partials.stat-card', ['label' => 'مهامي', 'value' => $activities->total(), 'accent' => 'theme', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'مهامي', 'value' => $activities->total(), 'accent' => 'theme', 'compact' => true, 'href' => route('marketing.activities.index') . '#page-data', 'linkLabel' => 'عرض القائمة'])
     @endif
 </div>
 

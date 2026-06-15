@@ -88,7 +88,18 @@ class OperationsAttendanceReviewController extends Controller
 
         $this->reviews->excuse($attendanceAbsenceReview, Auth::user(), $request->notes);
 
-        return back()->with('success', 'تم تسجيل العذر — لن يُحتسب غياباً.');
+        return back()->with('success', 'تم تسجيل العذر — لن يُحتسب غياباً وتم إلغاء أي خصم مرتبط.');
+    }
+
+    public function revoke(Request $request, AttendanceAbsenceReview $attendanceAbsenceReview)
+    {
+        $this->authorize('revoke', $attendanceAbsenceReview);
+
+        $request->validate(['notes' => 'required|string|max:1000']);
+
+        $this->reviews->revokeConfirmation($attendanceAbsenceReview, Auth::user(), $request->notes);
+
+        return back()->with('success', 'تم إلغاء قرار الغياب وإعادة السجل للمراجعة.');
     }
 
     public function flagToday(AttendanceAbsenceReviewService $service)

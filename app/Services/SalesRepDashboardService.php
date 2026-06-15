@@ -171,7 +171,7 @@ class SalesRepDashboardService
                 'title' => $c->title ?? $c->contract_number,
                 'client' => $c->client?->name,
                 'date' => $c->end_date?->format('Y/m/d') ?? '—',
-                'url' => route('crm.clients.show', $c->client_id),
+                'url' => $c->client?->profileUrl() ?? '#',
             ]);
 
         return [
@@ -225,7 +225,7 @@ class SalesRepDashboardService
                 'name' => $client->name,
                 'phone' => $client->phone,
                 'stage' => $client->lead_stage,
-                'url' => route('crm.clients.show', $client),
+                'url' => $client->profileUrl(),
             ];
             $grouped[$bucket]->push($row);
 

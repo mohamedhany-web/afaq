@@ -26,7 +26,7 @@
     @include('crm.clients.partials.form', ['client' => $client])
 
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
-        <a href="{{ route('crm.clients.show', $client) }}" class="inline-flex items-center justify-center px-6 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 font-tajawal">
+        <a href="{{ $client->profileUrl() }}" class="inline-flex items-center justify-center px-6 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 font-tajawal">
             إلغاء والعودة لملف العميل
         </a>
         <button type="submit" class="inline-flex items-center justify-center px-8 py-3 rounded-xl text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all font-tajawal"

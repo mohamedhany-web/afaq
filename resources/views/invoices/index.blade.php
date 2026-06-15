@@ -19,13 +19,13 @@
 @include('accounting.partials.nav')
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'إجمالي الفواتير', 'value' => $totalInvoices, 'accent' => 'theme', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'مدفوعة', 'value' => $paidInvoices, 'accent' => 'green', 'compact' => true, 'footer' => '<span class="text-gray-500">'.($totalInvoices > 0 ? round(($paidInvoices / $totalInvoices) * 100) : 0).'%</span>'])
-    @include('crm.partials.stat-card', ['label' => 'معلقة', 'value' => $pendingInvoices, 'accent' => 'amber', 'compact' => true, 'footer' => '<span class="text-amber-600">'.$money($pendingAmount).'</span>'])
-    @include('crm.partials.stat-card', ['label' => 'إجمالي الإيرادات', 'value' => $money($totalRevenue), 'accent' => 'purple', 'compact' => true, 'footer' => '<span class="text-gray-500">'.$money($monthlyRevenue).' هذا الشهر</span>'])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي الفواتير', 'value' => $totalInvoices, 'accent' => 'theme', 'compact' => true, 'href' => ($isFinancial ? route('financial-invoices.index') : route('invoices.index')) . '#page-data', 'linkLabel' => 'عرض القائمة'])
+    @include('crm.partials.stat-card', ['label' => 'مدفوعة', 'value' => $paidInvoices, 'accent' => 'green', 'compact' => true, 'footer' => '<span class="text-gray-500">'.($totalInvoices > 0 ? round(($paidInvoices / $totalInvoices) * 100) : 0).'%</span>', 'href' => ($isFinancial ? route('financial-invoices.index', ['status' => 'paid']) : route('invoices.index', ['status' => 'paid'])) . '#page-data', 'linkLabel' => 'عرض المدفوعة'])
+    @include('crm.partials.stat-card', ['label' => 'معلقة', 'value' => $pendingInvoices, 'accent' => 'amber', 'compact' => true, 'footer' => '<span class="text-amber-600">'.$money($pendingAmount).'</span>', 'href' => ($isFinancial ? route('financial-invoices.index', ['status' => 'pending']) : route('invoices.index', ['status' => 'pending'])) . '#page-data', 'linkLabel' => 'عرض المعلّقة'])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي الإيرادات', 'value' => $money($totalRevenue), 'accent' => 'purple', 'compact' => true, 'footer' => '<span class="text-gray-500">'.$money($monthlyRevenue).' هذا الشهر</span>', 'href' => ($isFinancial ? route('financial-invoices.index', ['status' => 'paid']) : route('invoices.index', ['status' => 'paid'])) . '#page-data', 'linkLabel' => 'عرض الإيرادات'])
 </div>
 
-<div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+<div id="page-data" class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
         <div class="px-5 py-4 border-b font-bold font-tajawal flex justify-between items-center" style="{{ $headerStyle }}">
                 <h3>قائمة الفواتير</h3>
                 <span class="text-xs px-3 py-1 rounded-full font-medium" style="background:{{ $themeColor }}15;color:{{ $themeColor }};">{{ $invoices->total() }}</span>

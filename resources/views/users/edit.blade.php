@@ -42,8 +42,14 @@
     </div>
 
     <div class="bg-white rounded-2xl border p-5 sm:p-6">
-        <h2 class="font-bold mb-4">الدور</h2>
-        @include('users.partials.role-picker', ['assignableRoles' => $assignableRoles, 'selected' => old('role', $currentRole)])
+        <h2 class="font-bold mb-1">الدور</h2>
+        <p class="text-sm text-gray-500 mb-4">تغيير الدور يُحدّث الصلاحيات ومساحة العمل تلقائياً</p>
+        @include('users.partials.role-picker', [
+            'assignableRoles' => $assignableRoles,
+            'workspaceGroups' => $workspaceGroups,
+            'roleHints' => $roleHints,
+            'selected' => old('role', $currentRole),
+        ])
     </div>
 
     @if($user->employee)

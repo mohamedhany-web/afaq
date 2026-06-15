@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CrmTask;
 use App\Models\Project;
 use App\Models\User;
+use App\Http\Controllers\Crm\Concerns\UsesCrmFilters;
 use App\Services\CrmScopeService;
 use App\Services\Tasks\CrmTaskDashboardService;
 use App\Services\Tasks\CrmTaskService;
@@ -14,9 +15,12 @@ use Illuminate\Support\Facades\Auth;
 
 class CrmTaskController extends Controller
 {
+    use UsesCrmFilters;
+
     public function index(Request $request, CrmTaskService $tasks, CrmTaskDashboardService $dashboard)
     {
         $user = Auth::user();
+        $filters = $this->crmFilters($request);
         $query = $tasks->tasksQuery($user);
 
         if ($filter = $request->get('filter')) {
@@ -32,18 +36,30 @@ class CrmTaskController extends Controller
             $query->active();
         }
 
-        if ($request->filled('assignee') && $tasks->canAssignTo($user, (int) $request->assignee)) {
-            $query->where('assigned_to', $request->assignee);
+        $salesRepId = $filters->resolveSalesRepId($request);
+        if ($salesRepId && $tasks->canAssignTo($user, $salesRepId)) {
+            $query->where('assigned_to', $salesRepId);
         }
 
         if ($request->filled('priority')) {
             $query->where('priority', $request->priority);
         }
 
+        if ($request->filled('search')) {
+            $search = '%' . $request->search . '%';
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', $search)
+                    ->orWhere('description', 'like', $search)
+                    ->orWhereHas('client', fn ($c) => $c->where('name', 'like', $search));
+            });
+        }
+
         $taskList = $query->orderByRaw("FIELD(priority, 'critical', 'high', 'medium', 'low')")
             ->orderBy('due_at')
             ->paginate(20)
             ->withQueryString();
+
+        $taskFilterKeys = ['search', 'sales_rep', 'priority', 'filter', 'advanced'];
 
         return view('crm.tasks.index', [
             'tasks' => $taskList,
@@ -54,6 +70,15 @@ class CrmTaskController extends Controller
             'canCreate' => $tasks->assignableUsers($user)->isNotEmpty(),
             'assignableUsers' => $tasks->assignableUsers($user),
             'filter' => $filter ?? 'active',
+            'clearUrl' => route('crm.tasks.index'),
+            'filterKeys' => $taskFilterKeys,
+            'advancedKeys' => ['priority'],
+            'hasActive' => $filters->hasActiveFilters($request, $taskFilterKeys),
+            'salesReps' => $filters->salesReps(),
+            'showSalesRepFilter' => $filters->showSalesRepFilter(),
+            'priorityOptions' => config('crm_tasks.priority_labels', []),
+            'searchPlaceholder' => 'عنوان المهمة، الوصف، أو اسم العميل...',
+            'preserve' => $filter ? ['filter' => $filter] : [],
         ]);
     }
 

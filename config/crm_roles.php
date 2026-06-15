@@ -23,6 +23,57 @@ return [
         'employee' => 'sales_rep',
     ],
 
+    /*
+    | مجموعات مساحات العمل — لعرض وفلترة المستخدمين في /users
+    */
+    'workspace_groups' => [
+        'admin' => [
+            'label' => 'الإدارة',
+            'description' => 'مدير النظام والإدارة العامة — صلاحيات شاملة',
+            'color' => '#4f46e5',
+            'roles' => ['super_admin', 'admin'],
+            'needs_employee' => false,
+        ],
+        'sales' => [
+            'label' => 'المبيعات',
+            'description' => 'مدير مبيعات، قادة الفرق، وموظفي المبيعات — CRM والصفقات',
+            'color' => '#0ea5e9',
+            'roles' => ['sales_manager', 'sales_team_leader', 'sales_rep'],
+            'needs_employee' => true,
+            'default_department' => 'المبيعات',
+        ],
+        'marketing' => [
+            'label' => 'التسويق',
+            'description' => 'مدير التسويق وموظفي التسويق — الحملات والمحتوى',
+            'color' => '#8b5cf6',
+            'roles' => ['marketing_manager', 'marketing_rep'],
+            'needs_employee' => true,
+            'default_department' => 'التسويق',
+        ],
+        'operations' => [
+            'label' => 'العمليات',
+            'description' => 'مدير العمليات — المشاريع، المطورين، الحضور والتقارير',
+            'color' => '#059669',
+            'roles' => ['operation_manager'],
+            'needs_employee' => true,
+            'default_department' => 'العمليات',
+        ],
+        'hr' => [
+            'label' => 'الموارد البشرية',
+            'description' => 'الموظفين، الحضور، الإجازات والرواتب',
+            'color' => '#9333ea',
+            'roles' => ['hr'],
+            'needs_employee' => true,
+        ],
+        'clients' => [
+            'label' => 'العملاء',
+            'description' => 'بوابة العميل — مشاريعه وفواتيره',
+            'color' => '#10b981',
+            'roles' => ['client'],
+            'needs_employee' => false,
+        ],
+    ],
+
     'roles' => [
         'super_admin' => [
             'label' => 'مدير النظام',

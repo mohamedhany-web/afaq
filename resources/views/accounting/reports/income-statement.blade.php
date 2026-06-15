@@ -19,16 +19,18 @@
 ])
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 no-print">
-    @include('crm.partials.stat-card', ['label' => 'إجمالي الإيرادات', 'value' => $money($totalRevenue), 'accent' => 'green', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'إجمالي المصروفات', 'value' => $money($totalExpenses), 'accent' => 'red', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي الإيرادات', 'value' => $money($totalRevenue), 'accent' => 'green', 'compact' => true, 'href' => route('accounting.reports.income-statement') . '#page-data', 'linkLabel' => 'عرض التقرير'])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي المصروفات', 'value' => $money($totalExpenses), 'accent' => 'red', 'compact' => true, 'href' => route('accounting.reports.income-statement') . '#page-data', 'linkLabel' => 'عرض التقرير'])
     @include('crm.partials.stat-card', [
         'label' => $netIncome >= 0 ? 'صافي الربح' : 'صافي الخسارة',
         'value' => $money(abs($netIncome)),
         'accent' => $netIncome >= 0 ? 'blue' : 'red',
         'compact' => true,
         'footer' => $totalRevenue > 0 ? '<span class="text-gray-500">هامش: ' . number_format($profitMargin, 1) . '%</span>' : null,
+        'href' => route('accounting.reports.income-statement') . '#page-data',
+        'linkLabel' => 'عرض التقرير',
     ])
-    @include('crm.partials.stat-card', ['label' => 'الفترة', 'value' => $reportStartDate->format('Y/m/d') . ' — ' . $reportEndDate->format('Y/m/d'), 'accent' => 'theme', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'الفترة', 'value' => $reportStartDate->format('Y/m/d') . ' — ' . $reportEndDate->format('Y/m/d'), 'accent' => 'theme', 'compact' => true, 'href' => route('accounting.reports.income-statement') . '#page-data', 'linkLabel' => 'عرض التقرير'])
 </div>
 
 <div id="report-document" class="font-tajawal">

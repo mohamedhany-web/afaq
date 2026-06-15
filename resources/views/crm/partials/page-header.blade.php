@@ -23,14 +23,27 @@
                     @endif
                 </div>
             </div>
-            @if(!empty($actionUrl))
-            <a href="{{ $actionUrl }}" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all"
-               style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">
-                @if(!empty($actionIcon))
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">{!! $actionIcon !!}</svg>
+            @if(!empty($actionUrl) || !empty($secondaryUrl))
+            <div class="flex flex-wrap items-center gap-2 shrink-0">
+                @if(!empty($secondaryUrl))
+                <a href="{{ $secondaryUrl }}" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border-2 hover:bg-gray-50 transition-all"
+                   style="border-color: {{ $themeColor }}40; color: {{ $themeColor }};">
+                    @if(!empty($secondaryIcon))
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">{!! $secondaryIcon !!}</svg>
+                    @endif
+                    {{ $secondaryLabel ?? 'عرض' }}
+                </a>
                 @endif
-                {{ $actionLabel ?? 'إضافة' }}
-            </a>
+                @if(!empty($actionUrl))
+                <a href="{{ $actionUrl }}" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all"
+                   style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">
+                    @if(!empty($actionIcon))
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">{!! $actionIcon !!}</svg>
+                    @endif
+                    {{ $actionLabel ?? 'إضافة' }}
+                </a>
+                @endif
+            </div>
             @endif
         </div>
     </div>

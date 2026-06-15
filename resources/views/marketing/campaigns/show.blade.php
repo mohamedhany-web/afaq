@@ -12,10 +12,10 @@
 ])
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'Leads', 'value' => $campaign->leads_count, 'accent' => 'blue'])
-    @include('crm.partials.stat-card', ['label' => 'المهام', 'value' => $campaign->activities_count, 'accent' => 'purple'])
-    @include('crm.partials.stat-card', ['label' => 'الميزانية', 'value' => number_format($campaign->budget ?? 0), 'accent' => 'amber'])
-    @include('crm.partials.stat-card', ['label' => 'المصروف', 'value' => number_format($campaign->spent_amount ?? 0), 'accent' => 'theme'])
+    @include('crm.partials.stat-card', ['label' => 'Leads', 'value' => $campaign->leads_count, 'accent' => 'blue', 'href' => '#campaign-details', 'linkLabel' => 'عرض التفاصيل'])
+    @include('crm.partials.stat-card', ['label' => 'المهام', 'value' => $campaign->activities_count, 'accent' => 'purple', 'href' => '#campaign-details', 'linkLabel' => 'عرض التفاصيل'])
+    @include('crm.partials.stat-card', ['label' => 'الميزانية', 'value' => number_format($campaign->budget ?? 0), 'accent' => 'amber', 'href' => '#campaign-details', 'linkLabel' => 'عرض التفاصيل'])
+    @include('crm.partials.stat-card', ['label' => 'المصروف', 'value' => number_format($campaign->spent_amount ?? 0), 'accent' => 'theme', 'href' => '#campaign-details', 'linkLabel' => 'عرض التفاصيل'])
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">

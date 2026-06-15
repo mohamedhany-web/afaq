@@ -17,10 +17,10 @@
 @include('accounting.partials.nav')
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
-    @include('crm.partials.stat-card', ['label' => 'إجمالي الأصول', 'value' => $money($totalAssets), 'accent' => 'green', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'إجمالي الخصوم', 'value' => $money($totalLiabilities), 'accent' => 'amber', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'صافي الدخل', 'value' => $money(abs($netIncome)), 'accent' => $netIncome >= 0 ? 'green' : 'red', 'compact' => true, 'footer' => $netIncome >= 0 ? '<span class="text-green-600">ربح</span>' : '<span class="text-red-600">خسارة</span>'])
-    @include('crm.partials.stat-card', ['label' => 'الرصيد المتاح', 'value' => $money($totalAssets - $totalLiabilities), 'accent' => 'blue', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي الأصول', 'value' => $money($totalAssets), 'accent' => 'green', 'compact' => true, 'href' => route('accounting.index') . '#page-data', 'linkLabel' => 'عرض التفاصيل'])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي الخصوم', 'value' => $money($totalLiabilities), 'accent' => 'amber', 'compact' => true, 'href' => route('accounting.index') . '#page-data', 'linkLabel' => 'عرض التفاصيل'])
+    @include('crm.partials.stat-card', ['label' => 'صافي الدخل', 'value' => $money(abs($netIncome)), 'accent' => $netIncome >= 0 ? 'green' : 'red', 'compact' => true, 'footer' => $netIncome >= 0 ? '<span class="text-green-600">ربح</span>' : '<span class="text-red-600">خسارة</span>', 'href' => route('accounting.index') . '#page-data', 'linkLabel' => 'عرض التفاصيل'])
+    @include('crm.partials.stat-card', ['label' => 'الرصيد المتاح', 'value' => $money($totalAssets - $totalLiabilities), 'accent' => 'blue', 'compact' => true, 'href' => route('accounting.index') . '#page-data', 'linkLabel' => 'عرض التفاصيل'])
 </div>
 
 <div class="w-full">
@@ -141,11 +141,11 @@
     </div>
 
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-8 font-tajawal">
-        @include('crm.partials.stat-card', ['label' => 'الأصول', 'value' => $money($totalAssets), 'accent' => 'green', 'compact' => true])
-        @include('crm.partials.stat-card', ['label' => 'الخصوم', 'value' => $money($totalLiabilities), 'accent' => 'amber', 'compact' => true])
-        @include('crm.partials.stat-card', ['label' => 'حقوق الملكية', 'value' => $money($totalEquity ?? 0), 'accent' => 'blue', 'compact' => true])
-        @include('crm.partials.stat-card', ['label' => 'الإيرادات', 'value' => $money($totalRevenue ?? 0), 'accent' => 'purple', 'compact' => true])
-        @include('crm.partials.stat-card', ['label' => 'المصروفات', 'value' => $money($totalExpenses ?? 0), 'accent' => 'red', 'compact' => true])
+        @include('crm.partials.stat-card', ['label' => 'الأصول', 'value' => $money($totalAssets), 'accent' => 'green', 'compact' => true, 'href' => route('accounting.index') . '#page-data', 'linkLabel' => 'عرض التفاصيل'])
+        @include('crm.partials.stat-card', ['label' => 'الخصوم', 'value' => $money($totalLiabilities), 'accent' => 'amber', 'compact' => true, 'href' => route('accounting.index') . '#page-data', 'linkLabel' => 'عرض التفاصيل'])
+        @include('crm.partials.stat-card', ['label' => 'حقوق الملكية', 'value' => $money($totalEquity ?? 0), 'accent' => 'blue', 'compact' => true, 'href' => route('accounting.index') . '#page-data', 'linkLabel' => 'عرض التفاصيل'])
+        @include('crm.partials.stat-card', ['label' => 'الإيرادات', 'value' => $money($totalRevenue ?? 0), 'accent' => 'purple', 'compact' => true, 'href' => route('accounting.index') . '#page-data', 'linkLabel' => 'عرض التفاصيل'])
+        @include('crm.partials.stat-card', ['label' => 'المصروفات', 'value' => $money($totalExpenses ?? 0), 'accent' => 'red', 'compact' => true, 'href' => route('accounting.index') . '#page-data', 'linkLabel' => 'عرض التفاصيل'])
     </div>
 
     <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden font-tajawal">

@@ -18,25 +18,32 @@ class ClientSearchController extends Controller
         }
 
         $user = $request->user();
-        $useCrmScope = $request->boolean('crm_scope')
-            || ($user && $user->canAccessCrm() && $user->usesCrmWorkspace());
 
-        $query = $useCrmScope && $user
-            ? CrmScopeService::for($user)->clientsQuery()
-            : Client::query();
+        if (! $user || (! $user->can('view-clients') && ! $user->can('viewAny', Client::class))) {
+            return response()->json(['clients' => []]);
+        }
+
+        $query = $user->can('viewAny', Client::class)
+            ? Client::query()
+            : CrmScopeService::for($user)->clientsQuery();
 
         $like = '%' . $term . '%';
 
         $clients = $query
-            ->where(function ($q) use ($like) {
+            ->where(function ($q) use ($like, $user) {
                 $q->where('name', 'like', $like)
                     ->orWhere('phone', 'like', $like)
-                    ->orWhere('email', 'like', $like)
                     ->orWhere('company_name', 'like', $like);
+
+                if ($user->can('viewAny', Client::class)) {
+                    $q->orWhere('email', 'like', $like);
+                }
             })
             ->orderBy('name')
             ->limit(30)
-            ->get(['id', 'name', 'phone', 'company_name', 'email']);
+            ->get($user->can('viewAny', Client::class)
+                ? ['id', 'name', 'phone', 'company_name', 'email']
+                : ['id', 'name', 'phone', 'company_name']);
 
         return response()->json([
             'clients' => $clients->map(fn (Client $c) => [

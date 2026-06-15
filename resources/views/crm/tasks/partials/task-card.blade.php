@@ -22,7 +22,7 @@
             <p>المكلف: <strong class="text-gray-700">{{ $task->assignee?->name }}</strong></p>
             <p>الموعد: <strong class="tabular-nums {{ $isOverdue ? 'text-red-600' : '' }}">{{ $task->due_at->format('Y/m/d H:i') }}</strong></p>
             @if($task->client)
-            <p>العميل: <a href="{{ route('crm.clients.show', $task->client) }}" class="font-semibold" style="color:{{ $themeColor }}">{{ $task->client->name }}</a></p>
+            <p>العميل: <a href="{{ $task->client->profileUrl() }}" class="font-semibold" style="color:{{ $themeColor }}">{{ $task->client->name }}</a></p>
             @endif
         </div>
         @if($task->performance_score && $task->status === 'completed')

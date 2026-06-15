@@ -17,6 +17,9 @@
     'actionLabel' => auth()->user()?->hasRole(['super_admin', 'admin']) ? 'قواعد العقوبات' : null,
 ]))
 
+@if($mode === 'manager')
+@include('crm.partials.filter-bar')
+@else
 <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-5 mb-6">
     <form method="GET" class="flex flex-col lg:flex-row gap-3 lg:items-end font-tajawal">
         <div><label class="text-xs font-bold text-gray-500 mb-1 block">من</label><input type="date" name="from" value="{{ $start->toDateString() }}" class="border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm"></div>
@@ -24,13 +27,14 @@
         <button type="submit" class="px-5 py-2.5 rounded-xl text-white text-sm font-semibold" style="background:linear-gradient(135deg,{{ $themeColor }} 0%,{{ $themeColor }}dd 100%);">تطبيق</button>
     </form>
 </div>
+@endif
 
 @if($mode === 'manager')
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'حجم الفريق', 'value' => $stats['team_size'], 'accent' => 'theme', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'ملتزمون', 'value' => $stats['excellent'], 'accent' => 'green', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'يحتاج متابعة', 'value' => $stats['critical'], 'accent' => 'amber', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'عقوبات الشهر', 'value' => $money($stats['penalties_month']), 'accent' => 'red', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'حجم الفريق', 'value' => $stats['team_size'], 'accent' => 'theme', 'compact' => true, 'href' => route('crm.employee-compliance.index') . '#page-data', 'linkLabel' => 'عرض القائمة'])
+    @include('crm.partials.stat-card', ['label' => 'ملتزمون', 'value' => $stats['excellent'], 'accent' => 'green', 'compact' => true, 'href' => route('crm.employee-compliance.index') . '#page-data', 'linkLabel' => 'عرض القائمة'])
+    @include('crm.partials.stat-card', ['label' => 'يحتاج متابعة', 'value' => $stats['critical'], 'accent' => 'amber', 'compact' => true, 'href' => route('crm.employee-compliance.index') . '#page-data', 'linkLabel' => 'عرض القائمة'])
+    @include('crm.partials.stat-card', ['label' => 'عقوبات الشهر', 'value' => $money($stats['penalties_month']), 'accent' => 'red', 'compact' => true, 'href' => route('crm.employee-compliance.index') . '#page-data', 'linkLabel' => 'عرض القائمة'])
 </div>
 
 <div class="bg-white rounded-2xl shadow-lg border overflow-hidden">
@@ -69,10 +73,10 @@
 @else
 @php $s = $self; @endphp
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'التقييم الإجمالي', 'value' => $s['overall_score'].'%', 'accent' => $s['status']['color'] === 'green' ? 'green' : 'amber', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'التقارير', 'value' => $s['reports']['submitted'].' / '.$s['reports']['expected'], 'accent' => 'blue', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'الحضور', 'value' => $s['attendance_compliance'].'%', 'accent' => 'purple', 'compact' => true])
-    @include('crm.partials.stat-card', ['label' => 'أيام إجازة', 'value' => $s['period']['leave_days'], 'accent' => 'theme', 'compact' => true])
+    @include('crm.partials.stat-card', ['label' => 'التقييم الإجمالي', 'value' => $s['overall_score'].'%', 'accent' => $s['status']['color'] === 'green' ? 'green' : 'amber', 'compact' => true, 'href' => route('crm.employee-compliance.index') . '#page-data', 'linkLabel' => 'عرض القائمة'])
+    @include('crm.partials.stat-card', ['label' => 'التقارير', 'value' => $s['reports']['submitted'].' / '.$s['reports']['expected'], 'accent' => 'blue', 'compact' => true, 'href' => route('crm.employee-compliance.index') . '#page-data', 'linkLabel' => 'عرض القائمة'])
+    @include('crm.partials.stat-card', ['label' => 'الحضور', 'value' => $s['attendance_compliance'].'%', 'accent' => 'purple', 'compact' => true, 'href' => route('crm.employee-compliance.index') . '#page-data', 'linkLabel' => 'عرض القائمة'])
+    @include('crm.partials.stat-card', ['label' => 'أيام إجازة', 'value' => $s['period']['leave_days'], 'accent' => 'theme', 'compact' => true, 'href' => route('crm.employee-compliance.index') . '#page-data', 'linkLabel' => 'عرض القائمة'])
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">

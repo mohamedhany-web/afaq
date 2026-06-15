@@ -7,12 +7,12 @@
 @include('crm.partials.page-header', ['title' => 'تحليلات التسويق', 'subtitle' => 'أداء الحملات والقنوات', 'actionUrl' => route('marketing.reports.index'), 'actionLabel' => 'التقارير الدورية'])
 
 <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'الحملات', 'value' => $summary['campaigns'], 'accent' => 'purple'])
-    @include('crm.partials.stat-card', ['label' => 'Leads', 'value' => $summary['leads'], 'accent' => 'blue'])
-    @include('crm.partials.stat-card', ['label' => 'نشطة', 'value' => $summary['active'], 'accent' => 'green'])
-    @include('crm.partials.stat-card', ['label' => 'الميزانية', 'value' => number_format($summary['budget']), 'accent' => 'amber'])
-    @include('crm.partials.stat-card', ['label' => 'المصروف', 'value' => number_format($summary['spent']), 'accent' => 'theme'])
-    @include('crm.partials.stat-card', ['label' => 'عملاء نشطون', 'value' => $summary['conversion_hint'], 'accent' => 'green'])
+    @include('crm.partials.stat-card', ['label' => 'الحملات', 'value' => $summary['campaigns'], 'accent' => 'purple', 'href' => route('marketing.analytics.index') . '#page-data', 'linkLabel' => 'عرض التحليلات'])
+    @include('crm.partials.stat-card', ['label' => 'Leads', 'value' => $summary['leads'], 'accent' => 'blue', 'href' => route('marketing.analytics.index') . '#page-data', 'linkLabel' => 'عرض التحليلات'])
+    @include('crm.partials.stat-card', ['label' => 'نشطة', 'value' => $summary['active'], 'accent' => 'green', 'href' => route('marketing.analytics.index') . '#page-data', 'linkLabel' => 'عرض التحليلات'])
+    @include('crm.partials.stat-card', ['label' => 'الميزانية', 'value' => number_format($summary['budget']), 'accent' => 'amber', 'href' => route('marketing.analytics.index') . '#page-data', 'linkLabel' => 'عرض التحليلات'])
+    @include('crm.partials.stat-card', ['label' => 'المصروف', 'value' => number_format($summary['spent']), 'accent' => 'theme', 'href' => route('marketing.analytics.index') . '#page-data', 'linkLabel' => 'عرض التحليلات'])
+    @include('crm.partials.stat-card', ['label' => 'عملاء نشطون', 'value' => $summary['conversion_hint'], 'accent' => 'green', 'href' => route('marketing.analytics.index') . '#page-data', 'linkLabel' => 'عرض التحليلات'])
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">

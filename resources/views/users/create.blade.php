@@ -49,8 +49,13 @@
 
     <div class="bg-white rounded-2xl border p-5 sm:p-6">
         <h2 class="font-bold text-gray-900 mb-1">الدور في النظام *</h2>
-        <p class="text-sm text-gray-500 mb-4">اختر دوراً واحداً يحدد صلاحيات المستخدم ومساحة عمله</p>
-        @include('users.partials.role-picker', ['assignableRoles' => $assignableRoles, 'selected' => old('role')])
+        <p class="text-sm text-gray-500 mb-4">اختر القسم ثم الدور — يُحدَّد تلقائياً مساحة العمل والصلاحيات والقسم التوظيفي</p>
+        @include('users.partials.role-picker', [
+            'assignableRoles' => $assignableRoles,
+            'workspaceGroups' => $workspaceGroups,
+            'roleHints' => $roleHints,
+            'selected' => old('role'),
+        ])
     </div>
 
     <div class="bg-white rounded-2xl border p-5 sm:p-6">
