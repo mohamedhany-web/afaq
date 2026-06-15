@@ -154,17 +154,39 @@ class CrmRoleCatalogService
 
         foreach (self::workspaceGroups() as $key => $group) {
             $roleNames = self::rolesForWorkspaceGroup($key);
+            $existingRoles = $roleNames === []
+                ? []
+                : Role::query()
+                    ->where('guard_name', 'web')
+                    ->whereIn('name', $roleNames)
+                    ->pluck('name')
+                    ->all();
+
             $result[$key] = [
                 'label' => $group['label'],
                 'description' => $group['description'] ?? '',
                 'color' => $group['color'] ?? '#6b7280',
-                'count' => $roleNames === []
+                'count' => $existingRoles === []
                     ? 0
-                    : \App\Models\User::role($roleNames)->count(),
+                    : \App\Models\User::role($existingRoles)->count(),
             ];
         }
 
         return $result;
+    }
+
+    /** @return list<string> */
+    public static function existingRoleNames(array $roleNames, string $guard = 'web'): array
+    {
+        if ($roleNames === []) {
+            return [];
+        }
+
+        return Role::query()
+            ->where('guard_name', $guard)
+            ->whereIn('name', $roleNames)
+            ->pluck('name')
+            ->all();
     }
 
     /** @return array<string, array<string, mixed>> */
@@ -192,7 +214,7 @@ class CrmRoleCatalogService
         $priority = ['super_admin', 'admin', 'sales_manager', 'manager', 'sales_team_leader', 'marketing_manager', 'operation_manager', 'sales_rep', 'sales_agent', 'marketing_rep', 'employee', 'hr', 'client'];
 
         foreach ($priority as $name) {
-            if ($user->hasRole($name)) {
+            if (Role::where('name', $name)->where('guard_name', 'web')->exists() && $user->hasRole($name)) {
                 return self::canonicalRole($name);
             }
         }

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Department;
 use App\Models\User;
+use Spatie\Permission\Models\Role;
 
 class MarketingEmployeeService
 {
@@ -56,6 +57,8 @@ class MarketingEmployeeService
                 $user->removeRole($name);
             }
         }
+
+        Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
 
         $user->assignRole($role);
     }

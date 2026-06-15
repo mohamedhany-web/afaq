@@ -26,9 +26,16 @@ class UserController extends Controller
                     $sub->where('name', 'like', $s)->orWhere('email', 'like', $s);
                 });
             })
-            ->when($request->role, fn ($q) => $q->role($request->role))
+            ->when($request->role, function ($q) use ($request) {
+                $existing = CrmRoleCatalogService::existingRoleNames([$request->role]);
+                if ($existing !== []) {
+                    $q->role($existing);
+                }
+            })
             ->when($request->workspace, function ($q) use ($request) {
-                $roles = CrmRoleCatalogService::rolesForWorkspaceGroup($request->workspace);
+                $roles = CrmRoleCatalogService::existingRoleNames(
+                    CrmRoleCatalogService::rolesForWorkspaceGroup($request->workspace)
+                );
                 if ($roles !== []) {
                     $q->role($roles);
                 }
