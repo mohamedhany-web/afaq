@@ -26,6 +26,7 @@ class CrmTaskController extends Controller
         if ($filter = $request->get('filter')) {
             match ($filter) {
                 'today' => $query->active()->dueToday(),
+                'tomorrow' => $query->active()->whereDate('due_at', today()->addDay()),
                 'overdue' => $query->overdue(),
                 'critical' => $query->active()->where('priority', 'critical'),
                 'completed' => $query->whereIn('status', [CrmTask::STATUS_COMPLETED, CrmTask::STATUS_VERIFIED]),

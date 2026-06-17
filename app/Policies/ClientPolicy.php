@@ -10,10 +10,17 @@ class ClientPolicy
 {
     public function __construct(protected CrmRecordApprovalService $approval) {}
 
-    /** قائمة كل العملاء المدخلين — الإدارة العليا فقط */
     public function viewAny(User $user): bool
     {
-        return $this->approval->executesDirectly($user);
+        if ($this->approval->executesDirectly($user)) {
+            return true;
+        }
+
+        if (! $user->can('view-clients')) {
+            return false;
+        }
+
+        return $this->approval->canSubmitChanges($user) || $user->canAccessOperations();
     }
 
     /** عرض عميل واحد ضمن نطاق الصلاحيات */
@@ -52,7 +59,7 @@ class ClientPolicy
 
     public function create(User $user): bool
     {
-        return $this->approval->canSubmitChanges($user);
+        return $user->can('create-clients') && $this->approval->canSubmitChanges($user);
     }
 
     public function update(User $user, Client $client): bool

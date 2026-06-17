@@ -65,7 +65,8 @@ class CrmClientController extends Controller
         return view('crm.clients.index', [
             'clients' => $clients,
             'stats' => $stats,
-            'requiresApproval' => $this->approval->requiresApproval(Auth::user()),
+            'requiresApproval' => $this->approval->requiresMutationApproval(Auth::user()),
+            'requiresMutationApproval' => $this->approval->requiresMutationApproval(Auth::user()),
             'clearUrl' => route('crm.clients.index'),
             ...$this->clientFilterViewData($filters, $request, $stageLabels, $statusLabels),
         ]);
@@ -76,7 +77,8 @@ class CrmClientController extends Controller
         abort_unless($this->clients->canCreate(Auth::user()), 403);
 
         return view('crm.clients.create', [
-            'requiresApproval' => $this->approval->requiresApproval(Auth::user()),
+            'requiresApproval' => false,
+            'requiresMutationApproval' => $this->approval->requiresMutationApproval(Auth::user()),
         ]);
     }
 
@@ -96,12 +98,6 @@ class CrmClientController extends Controller
             'file.required' => 'يرجى اختيار ملف Excel أو CSV.',
             'file.mimes' => 'الصيغ المدعومة: xlsx, xls, csv',
         ]);
-
-        if ($this->approval->requiresApproval(Auth::user())) {
-            return redirect()
-                ->route('crm.clients.create', ['tab' => 'import'])
-                ->with('error', 'استيراد العملاء يتطلب صلاحية الإدارة — استخدم الإدخال اليدوي لإرسال طلبات فردية.');
-        }
 
         $result = $import->import(
             $request->file('file'),
@@ -127,13 +123,6 @@ class CrmClientController extends Controller
     {
         $user = Auth::user();
         abort_unless($this->clients->canCreate($user), 403);
-
-        if ($this->approval->requiresApproval($user)) {
-            $this->approval->submitCreate($request, $user);
-
-            return redirect()->route('crm.clients.approvals.index')
-                ->with('success', 'تم إرسال طلب إضافة العميل — بانتظار موافقة الإدارة.');
-        }
 
         $data = $this->clients->prepareData($this->clients->validate($request), $user, true);
         $client = Client::create($data);
@@ -180,7 +169,8 @@ class CrmClientController extends Controller
             'lostReasons' => $lostReasons,
             'relatedProjects' => $relatedProjects,
             'pendingChange' => $this->approval->pendingForClient($client),
-            'requiresApproval' => $this->approval->requiresApproval(Auth::user()),
+            'requiresApproval' => $this->approval->requiresMutationApproval(Auth::user()),
+            'requiresMutationApproval' => $this->approval->requiresMutationApproval(Auth::user()),
         ]);
     }
 
@@ -191,7 +181,8 @@ class CrmClientController extends Controller
 
         return view('crm.clients.edit', [
             'client' => $client,
-            'requiresApproval' => $this->approval->requiresApproval(Auth::user()),
+            'requiresApproval' => $this->approval->requiresMutationApproval(Auth::user()),
+            'requiresMutationApproval' => $this->approval->requiresMutationApproval(Auth::user()),
         ]);
     }
 
@@ -201,16 +192,16 @@ class CrmClientController extends Controller
         $this->authorizeClient($client);
         abort_unless($this->clients->canUpdate($user, $client), 403);
 
-        if ($this->approval->requiresApproval($user)) {
+        if ($this->approval->requiresMutationApproval($user)) {
             $this->approval->submitUpdate($request, $client, $user);
 
             return redirect()->route('crm.clients.approvals.index')
-                ->with('success', 'تم إرسال طلب التعديل — بانتظار موافقة الإدارة.');
+                ->with('success', 'تم إرسال طلب التعديل — بانتظار موافقة العمليات.');
         }
 
         $client->update($this->clients->prepareData($this->clients->validate($request), $user, false));
 
-        return redirect()->route('crm.clients.show', $client)->with('success', 'تم تحديث بيانات العميل');
+        return $this->redirectAfterClientMutation($client, 'تم تحديث بيانات العميل');
     }
 
     public function updateLeadStage(Request $request, Client $client)
@@ -301,7 +292,7 @@ class CrmClientController extends Controller
         $this->authorizeClient($client);
         abort_unless($this->clients->canDelete($user, $client), 403);
 
-        if ($this->approval->requiresApproval($user)) {
+        if ($this->approval->requiresMutationApproval($user)) {
             $request->validate([
                 'delete_reason' => 'required|string|min:10|max:1000',
             ], [
@@ -312,7 +303,7 @@ class CrmClientController extends Controller
             $this->approval->submitDelete($client, $user, $request->input('delete_reason'));
 
             return redirect()->route('crm.clients.approvals.index')
-                ->with('success', 'تم إرسال طلب الحذف — بانتظار موافقة الإدارة.');
+                ->with('success', 'تم إرسال طلب الحذف — بانتظار موافقة العمليات.');
         }
 
         $this->clients->deleteClient($client);

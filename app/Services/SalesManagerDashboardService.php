@@ -18,7 +18,7 @@ class SalesManagerDashboardService
         'lead' => 'عملاء جدد',
         'prospect' => 'تم التواصل',
         'qualified' => 'عملاء مؤهلون',
-        'proposal' => 'معاينات عقار',
+        'proposal' => 'اجتماعات عقارية',
         'negotiation' => 'تفاوض',
         'closed_won' => 'تم الإغلاق',
         'closed_lost' => 'خسارة',
@@ -392,7 +392,7 @@ class SalesManagerDashboardService
                     'title' => match ($type) {
                         'won' => 'صفقة مغلقة: ' . ($s->client?->name ?? '—'),
                         'lost' => 'فرصة خاسرة: ' . ($s->client?->name ?? '—'),
-                        'tour' => 'معاينة عقار: ' . ($s->client?->name ?? '—'),
+                        'tour' => 'اجتماع عقاري: ' . ($s->client?->name ?? '—'),
                         default => 'تحديث صفقة: ' . ($s->client?->name ?? '—'),
                     },
                     'meta' => $s->salesRep?->name ?? '—',

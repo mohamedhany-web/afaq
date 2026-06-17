@@ -19,6 +19,10 @@
     'actionIcon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />',
 ])
 
+<div class="flex flex-wrap items-center gap-3 mb-6 font-tajawal">
+    @include('partials.ui-compact-toggle', ['themeColor' => $themeColor])
+</div>
+
 @if(!empty($portalPulse))
 <div class="mb-6 font-tajawal">
     <h2 class="text-sm font-bold text-gray-800 mb-2">بوابة العملاء — متابعة الإدارة</h2>
@@ -41,7 +45,7 @@
 </div>
 
 @if(!$isRepOnly)
-<div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 mb-6 items-stretch">
+<div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 mb-6 items-stretch ui-compact-hidden">
     @include('crm.partials.stat-card', ['label' => 'عملاء مؤهلون', 'value' => $k['qualified_leads'], 'accent' => 'purple', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />', 'href' => auth()->user()->clientsHubUrl(['status' => 'active']), 'linkLabel' => 'عرض العملاء'])
     @include('crm.partials.stat-card', ['label' => 'قيمة المسار', 'value' => $money($k['pipeline_value']), 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />', 'href' => route('crm.pipeline.index', ['view' => 'deals']), 'linkLabel' => 'عرض المسار'])
     @include('crm.partials.stat-card', ['label' => 'معدل التحويل', 'value' => $k['conversion_rate'] . '%', 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />', 'href' => route('crm.intelligence.index'), 'linkLabel' => 'عرض التحليلات'])
@@ -266,7 +270,7 @@
         </div>
         @php $act = $managerCenter['daily_activity']; @endphp
         <div class="lg:col-span-2 grid grid-cols-2 sm:grid-cols-5 gap-2">
-            @foreach(['calls' => 'مكالمات', 'meetings' => 'اجتماعات', 'tours' => 'معاينات', 'follow_ups' => 'متابعات', 'negotiations' => 'تفاوض'] as $key => $label)
+            @foreach(['calls' => 'مكالمات', 'meetings' => 'اجتماعات', 'tours' => 'اجتماعات عقارية', 'follow_ups' => 'متابعات', 'negotiations' => 'تفاوض'] as $key => $label)
             <div class="text-center p-2.5 sm:p-3 rounded-xl bg-gray-50 border border-gray-100">
                 <p class="text-lg sm:text-xl font-bold text-gray-900 tabular-nums">{{ $act[$key] }}</p>
                 <p class="text-[10px] text-gray-500 font-tajawal">{{ $label }}</p>
@@ -284,7 +288,7 @@
         <a href="{{ route('crm.projects.index') }}" class="text-sm font-semibold font-tajawal" style="color: {{ $themeColor }};">كل المشاريع</a>
     </div>
     <div class="p-4 sm:p-6">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
             @foreach($portfolio['by_ownership'] as $row)
             <div class="p-4 rounded-xl border border-gray-200 bg-gray-50 font-tajawal">
                 <div class="flex justify-between items-start mb-2">
@@ -310,9 +314,9 @@
                 </div>
             </div>
             <div>
-                <h4 class="text-sm font-bold text-gray-700 mb-2 font-tajawal">آخر مشاريع المطورين الخارجيين</h4>
+                <h4 class="text-sm font-bold text-gray-700 mb-2 font-tajawal">آخر مشاريع المطورين</h4>
                 <div class="space-y-2">
-                    @forelse($portfolio['recent_by_ownership']['developer_third_party'] ?? [] as $p)
+                    @forelse($portfolio['recent_by_ownership']['developer'] ?? [] as $p)
                     <a href="{{ route('crm.projects.show', $p) }}" class="block p-2.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-sm font-tajawal">
                         <span class="font-semibold">{{ $p->name }}</span>
                         <span class="block text-xs text-gray-500">{{ $p->city }} · {{ $p->available_units }} وحدة</span>
@@ -370,7 +374,7 @@
     </div>
     <div class="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         @foreach([
-            ['title' => 'معاينات', 'items' => $calendar['meetings'], 'date' => 'viewing_date'],
+            ['title' => 'اجتماعات', 'items' => $calendar['meetings'], 'date' => 'viewing_date'],
             ['title' => 'متابعات', 'items' => $calendar['follow_ups'], 'date' => 'expected_close_date'],
             ['title' => 'تفاوض', 'items' => $calendar['deadlines'], 'date' => 'expected_close_date'],
         ] as $col)

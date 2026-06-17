@@ -31,14 +31,30 @@
             <label class="{{ $label }}">مساحة الأرض (م²)</label>
             <input type="number" name="land_area_m2" min="0" step="0.01" value="{{ old('land_area_m2', $project->land_area_m2 ?? '') }}" class="{{ $input }}" placeholder="31000">
         </div>
-        <div>
-            <label class="{{ $label }}">نوع العقار *</label>
-            <select name="property_type" required class="{{ $input }}">
+        <div class="sm:col-span-2">
+            <label class="{{ $label }}">نوع العقار * <span class="font-normal text-gray-400">(يمكن اختيار أكثر من نوع)</span></label>
+            @php
+                $selectedPropertyTypes = old(
+                    'property_types',
+                    isset($project) ? $project->resolvedPropertyTypes() : ['residential']
+                );
+                if (! is_array($selectedPropertyTypes)) {
+                    $selectedPropertyTypes = \App\Models\Project::normalizePropertyTypes($selectedPropertyTypes);
+                }
+            @endphp
+            <div class="mt-2 flex flex-wrap gap-2">
                 @foreach(\App\Models\Project::PROPERTY_TYPES as $val => $txt)
-                    <option value="{{ $val }}" @selected(old('property_type', $project->property_type ?? 'residential') === $val)>{{ $txt }}</option>
+                    <label class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border-2 cursor-pointer text-sm font-tajawal transition
+                        {{ in_array($val, $selectedPropertyTypes, true) ? 'border-current bg-opacity-10' : 'border-gray-200 bg-gray-50' }}"
+                        style="{{ in_array($val, $selectedPropertyTypes, true) ? 'border-color: ' . ($themeColor ?? '#4f46e5') . '; background: ' . ($themeColor ?? '#4f46e5') . '12; color: ' . ($themeColor ?? '#4f46e5') : '' }}">
+                        <input type="checkbox" name="property_types[]" value="{{ $val }}" class="rounded border-gray-300"
+                               @checked(in_array($val, $selectedPropertyTypes, true))>
+                        <span>{{ $txt }}</span>
+                    </label>
                 @endforeach
-            </select>
-            @error('property_type')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
+            </div>
+            @error('property_types')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
+            @error('property_types.*')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
         </div>
         <div>
             <label class="{{ $label }}">نوع التطوير</label>

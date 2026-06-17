@@ -199,7 +199,13 @@ class CrmFilterService
                     ->orWhere('developer_name', 'like', '%' . $request->search . '%');
             }))
             ->when($request->listing_status, fn ($q) => $q->where('listing_status', $request->listing_status))
-            ->when($request->property_type, fn ($q) => $q->where('property_type', $request->property_type))
+            ->when($request->property_type, function ($q) use ($request) {
+                $type = $request->property_type;
+                $q->where(function ($inner) use ($type) {
+                    $inner->where('property_type', $type)
+                        ->orWhereJsonContains('property_types', $type);
+                });
+            })
             ->when($request->ownership_type, fn ($q) => $q->where('ownership_type', $request->ownership_type))
             ->when($request->city, fn ($q) => $q->where('city', 'like', '%' . $request->city . '%'));
     }

@@ -48,22 +48,30 @@
 @endif
 
 <div class="bg-white rounded-2xl shadow-lg border overflow-hidden font-tajawal" id="page-data">
-    <div class="px-5 py-4 border-b font-bold">قائمة التقارير</div>
+    <div class="px-5 py-4 border-b font-bold">قائمة التقارير — {{ $periodLabels[$periodType] ?? '' }}</div>
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="bg-gray-50"><tr>
                 @if($resolver->isAdmin())<th class="p-3 text-right">مدير العمليات</th>@endif
                 <th class="p-3 text-right">الفترة</th>
                 <th class="p-3 text-right">النوع</th>
+                <th class="p-3 text-right">ملاحظات</th>
                 <th class="p-3 text-right">الحالة</th>
                 <th class="p-3 text-right">إجراء</th>
             </tr></thead>
             <tbody>
             @forelse($reports as $report)
-            <tr class="border-t border-gray-100">
+            <tr class="border-t border-gray-100 hover:bg-gray-50">
                 @if($resolver->isAdmin())<td class="p-3">{{ $report->author?->name }}</td>@endif
                 <td class="p-3">{{ $report->periodRangeLabel() }}</td>
                 <td class="p-3">{{ $report->periodLabel() }}</td>
+                <td class="p-3 text-gray-600 max-w-xs">
+                    @if($report->notes)
+                    <span class="line-clamp-2 text-xs" title="{{ $report->notes }}">{{ Str::limit($report->notes, 80) }}</span>
+                    @else
+                    <span class="text-gray-400 text-xs">—</span>
+                    @endif
+                </td>
                 <td class="p-3">
                     <span class="px-2 py-1 rounded-full text-xs font-bold {{ $report->isSubmitted() ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800' }}">
                         {{ $report->isSubmitted() ? 'مرفوع' : 'مسودة' }}
@@ -72,11 +80,71 @@
                 <td class="p-3"><a href="{{ route('operations.reports.show', $report) }}" class="font-bold" style="color: {{ $themeColor }};">عرض</a></td>
             </tr>
             @empty
-            <tr><td colspan="5" class="p-6 text-center text-gray-500">لا توجد تقارير بعد.</td></tr>
+            <tr><td colspan="{{ $resolver->isAdmin() ? 6 : 5 }}" class="p-6 text-center text-gray-500">لا توجد تقارير بعد.</td></tr>
             @endforelse
             </tbody>
         </table>
     </div>
     @if($reports->hasPages())<div class="p-4">{{ $reports->links() }}</div>@endif
 </div>
+
+@if(($salesRepRows ?? collect())->isNotEmpty())
+<div class="mt-6 bg-white rounded-2xl shadow-lg border overflow-hidden font-tajawal">
+    <div class="px-5 py-4 border-b flex flex-wrap items-center justify-between gap-2" style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, transparent 100%);">
+        <div>
+            <p class="font-bold text-gray-900">مندوبو المبيعات</p>
+            <p class="text-xs text-gray-500 mt-0.5">حالة تقاريرهم اليومية للفترة المحددة</p>
+        </div>
+        <form method="GET" class="flex items-center gap-2">
+            <input type="hidden" name="period" value="{{ $periodType }}">
+            @if(request('status'))<input type="hidden" name="status" value="{{ request('status') }}">@endif
+            <input type="date" name="anchor_date" value="{{ request('anchor_date', today()->toDateString()) }}" max="{{ today()->toDateString() }}" class="border rounded-lg px-3 py-1.5 text-xs">
+            <button type="submit" class="px-3 py-1.5 rounded-lg text-white text-xs font-bold" style="background:{{ $themeColor }}">تحديث</button>
+        </form>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="p-3 text-right">اسم السيلز</th>
+                    <th class="p-3 text-right">حالة التقرير</th>
+                    <th class="p-3 text-right">ملاحظات</th>
+                    <th class="p-3 text-right">إجراء</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @foreach($salesRepRows as $row)
+                <tr class="hover:bg-gray-50">
+                    <td class="p-3 font-semibold text-gray-900">{{ $row['user']->name }}</td>
+                    <td class="p-3">
+                        @if($row['submitted'])
+                        <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 font-bold">مرفوع</span>
+                        @if($periodType !== 'daily' && ($row['reports_count'] ?? 0) > 0)
+                        <span class="text-[10px] text-gray-500 mr-1">({{ $row['reports_count'] }})</span>
+                        @endif
+                        @else
+                        <span class="text-xs px-2 py-1 rounded-full bg-red-100 text-red-800 font-bold">لم يُرفع</span>
+                        @endif
+                    </td>
+                    <td class="p-3 text-xs text-gray-600 max-w-md">
+                        @if($row['notes'])
+                        <span class="line-clamp-2" title="{{ $row['notes'] }}">{{ Str::limit($row['notes'], 100) }}</span>
+                        @else
+                        <span class="text-gray-400">—</span>
+                        @endif
+                    </td>
+                    <td class="p-3">
+                        @if($row['report_url'])
+                        <a href="{{ $row['report_url'] }}" class="text-xs font-bold" style="color:{{ $themeColor }}">عرض التقرير</a>
+                        @else
+                        <span class="text-xs text-gray-400">—</span>
+                        @endif
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
 @endsection

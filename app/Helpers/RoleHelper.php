@@ -114,7 +114,29 @@ class RoleHelper
             'create-clients' => 'إنشاء عملاء',
             'edit-clients' => 'تعديل عملاء',
             'delete-clients' => 'حذف عملاء',
-            
+            'approve-client-changes' => 'موافقة تعديل/حذف العملاء',
+
+            'view-developers' => 'عرض المطورين العقاريين',
+            'manage-developers' => 'إدارة المطورين العقاريين',
+
+            'view-marketing' => 'عرض التسويق',
+            'create-marketing' => 'إنشاء حملات تسويق',
+            'edit-marketing' => 'تعديل التسويق',
+            'delete-marketing' => 'حذف التسويق',
+            'manage-marketing' => 'إدارة التسويق',
+
+            'access-crm' => 'الوصول لمساحة CRM',
+            'view-crm-clients' => 'عرض عملاء CRM',
+            'view-crm-pipeline' => 'عرض مسار CRM',
+            'view-team-sales' => 'عرض مبيعات الفريق',
+            'manage-sales-teams' => 'إدارة فرق المبيعات',
+
+            'view-design' => 'عرض التصميم',
+            'create-design' => 'إنشاء تصميم',
+            'edit-design' => 'تعديل التصميم',
+            'delete-design' => 'حذف التصميم',
+            'manage-design' => 'إدارة التصميم',
+
             // Sales Management
             'view-sales' => 'عرض المبيعات',
             'create-sales' => 'إنشاء مبيعات',
@@ -145,9 +167,16 @@ class RoleHelper
             'view-salaries' => 'عرض الرواتب',
             'create-salaries' => 'إنشاء رواتب',
             'edit-salaries' => 'تعديل رواتب',
-            'delete-salaries' => 'حذف رواتب',
+            'approve-salaries' => 'اعتماد الرواتب',
             
-            // Invoices
+            // Client portal
+            'view-client-portal' => 'بوابة العميل',
+            'view-client-projects' => 'مشاريع العميل (بوابة)',
+            'view-client-invoices' => 'فواتير العميل (بوابة)',
+            'view-client-tickets' => 'تذاكر العميل (بوابة)',
+            'create-client-tickets' => 'إنشاء تذكرة (بوابة)',
+            
+            // Sales Management
             'view-invoices' => 'عرض الفواتير',
             'create-invoices' => 'إنشاء فواتير',
             'edit-invoices' => 'تعديل فواتير',

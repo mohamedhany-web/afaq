@@ -8,38 +8,57 @@
     'title' => 'مراجعة الغياب اليومية',
     'subtitle' => 'جميع غيابات الموظفين تمر على مدير العمليات للتأكيد أو الاعتماد',
     'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>',
-    'actionUrl' => route('operations.attendance-reviews.flag'),
-    'actionLabel' => 'تحديث القائمة',
 ])
+
+@php
+    $filterDate = $date->toDateString();
+    $filterParams = ['date' => $filterDate];
+    $statusFilter = $status ?? '';
+@endphp
 
 @if(session('success'))<div class="mb-4 p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm font-tajawal">{{ session('success') }}</div>@endif
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'بانتظار المراجعة', 'value' => $stats['pending'], 'accent' => 'amber', 'href' => route('operations.attendance-reviews.index', ['status' => 'pending']) . '#page-data', 'linkLabel' => 'عرض المعلّقة'])
-    @include('crm.partials.stat-card', ['label' => 'غياب مؤكد', 'value' => $stats['confirmed_absent'], 'accent' => 'red', 'href' => route('operations.attendance-reviews.index', ['status' => 'confirmed_absent']) . '#page-data', 'linkLabel' => 'عرض الغياب'])
-    @include('crm.partials.stat-card', ['label' => 'حضور مؤكد', 'value' => $stats['confirmed_present'], 'accent' => 'green', 'href' => route('operations.attendance-reviews.index', ['status' => 'confirmed_present']) . '#page-data', 'linkLabel' => 'عرض الحضور'])
-    @include('crm.partials.stat-card', ['label' => 'معذور', 'value' => $stats['excused'], 'accent' => 'blue', 'href' => route('operations.attendance-reviews.index', ['status' => 'excused']) . '#page-data', 'linkLabel' => 'عرض المعذور'])
+    @include('crm.partials.stat-card', ['label' => 'بانتظار المراجعة', 'value' => $stats['pending'], 'accent' => 'amber', 'href' => route('operations.attendance-reviews.index', array_merge($filterParams, ['status' => 'pending'])) . '#page-data', 'linkLabel' => 'عرض المعلّقة'])
+    @include('crm.partials.stat-card', ['label' => 'غياب مؤكد', 'value' => $stats['confirmed_absent'], 'accent' => 'red', 'href' => route('operations.attendance-reviews.index', array_merge($filterParams, ['status' => 'confirmed_absent'])) . '#page-data', 'linkLabel' => 'عرض الغياب'])
+    @include('crm.partials.stat-card', ['label' => 'حضور مؤكد', 'value' => $stats['confirmed_present'], 'accent' => 'green', 'href' => route('operations.attendance-reviews.index', array_merge($filterParams, ['status' => 'confirmed_present'])) . '#page-data', 'linkLabel' => 'عرض الحضور'])
+    @include('crm.partials.stat-card', ['label' => 'معذور', 'value' => $stats['excused'], 'accent' => 'blue', 'href' => route('operations.attendance-reviews.index', array_merge($filterParams, ['status' => 'excused'])) . '#page-data', 'linkLabel' => 'عرض المعذور'])
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 font-tajawal">
     <div class="lg:col-span-2 bg-white rounded-2xl border p-5">
-        <form method="GET" class="flex flex-wrap gap-3 items-end">
-            <div>
-                <label class="block text-xs font-bold text-gray-500 mb-1">تاريخ المراجعة</label>
-                <input type="date" name="date" value="{{ $date->toDateString() }}" class="border-2 border-gray-200 rounded-xl px-4 py-2 text-sm">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-gray-500 mb-1">الحالة</label>
-                <select name="status" class="border-2 border-gray-200 rounded-xl px-4 py-2 text-sm">
-                    <option value="">الكل</option>
-                    <option value="pending" @selected(request('status') === 'pending')>بانتظار المراجعة</option>
-                    <option value="confirmed_absent" @selected(request('status') === 'confirmed_absent')>غياب مؤكد</option>
-                    <option value="confirmed_present" @selected(request('status') === 'confirmed_present')>حضور مؤكد</option>
-                    <option value="excused" @selected(request('status') === 'excused')>معذور</option>
-                </select>
-            </div>
-            <button type="submit" class="px-5 py-2.5 rounded-xl text-white text-sm font-bold" style="background:{{ $themeColor }}">عرض</button>
-        </form>
+        <div class="flex flex-wrap gap-3 items-end">
+            <form method="GET" action="{{ route('operations.attendance-reviews.index') }}" class="flex flex-wrap gap-3 items-end flex-1">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">تاريخ المراجعة</label>
+                    <input type="date" name="date" value="{{ $filterDate }}" class="border-2 border-gray-200 rounded-xl px-4 py-2 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">الحالة</label>
+                    <select name="status" class="border-2 border-gray-200 rounded-xl px-4 py-2 text-sm">
+                        <option value="" @selected($statusFilter === '')>الكل</option>
+                        <option value="pending" @selected($statusFilter === 'pending')>بانتظار المراجعة</option>
+                        <option value="confirmed_absent" @selected($statusFilter === 'confirmed_absent')>غياب مؤكد</option>
+                        <option value="confirmed_present" @selected($statusFilter === 'confirmed_present')>حضور مؤكد</option>
+                        <option value="excused" @selected($statusFilter === 'excused')>معذور</option>
+                    </select>
+                </div>
+                <button type="submit" class="px-5 py-2.5 rounded-xl text-white text-sm font-bold" style="background:{{ $themeColor }}">عرض</button>
+            </form>
+            <form method="POST" action="{{ route('operations.attendance-reviews.flag') }}">
+                @csrf
+                <input type="hidden" name="date" value="{{ $filterDate }}">
+                <button type="submit" class="px-5 py-2.5 rounded-xl border-2 text-sm font-bold hover:bg-gray-50" style="border-color:{{ $themeColor }}40;color:{{ $themeColor }}">
+                    تحديث القائمة لهذا التاريخ
+                </button>
+            </form>
+        </div>
+        <p class="text-xs text-gray-500 mt-3">
+            عرض {{ $reviews->total() }} من {{ $stats['total'] }} سجل
+            @if($statusFilter !== '')
+                — فلتر الحالة: <strong>{{ $statusFilter }}</strong>
+            @endif
+        </p>
     </div>
     <div class="bg-white rounded-2xl border p-5">
         <p class="font-bold text-gray-900 mb-3">الهرم الوظيفي</p>
@@ -125,7 +144,19 @@
                 </td>
             </tr>
             @empty
-            <tr><td colspan="6" class="p-8 text-center text-gray-500">لا توجد سجلات غياب لهذا التاريخ.</td></tr>
+            <tr><td colspan="6" class="p-8 text-center text-gray-500">
+                لا توجد سجلات غياب لتاريخ <strong>{{ $filterDate }}</strong>
+                @if($statusFilter !== '')
+                    بالحالة المحددة.
+                @else
+                    .
+                @endif
+                @if($stats['total'] === 0)
+                    <span class="block mt-2 text-xs text-gray-400">اضغط «تحديث القائمة لهذا التاريخ» لإنشاء سجلات الغياب المحتمل تلقائياً.</span>
+                @elseif($reviews->total() === 0)
+                    <span class="block mt-2 text-xs text-gray-400">يوجد {{ $stats['total'] }} سجل لهذا التاريخ — جرّب اختيار «الكل» من فلتر الحالة.</span>
+                @endif
+            </td></tr>
             @endforelse
             </tbody>
         </table>

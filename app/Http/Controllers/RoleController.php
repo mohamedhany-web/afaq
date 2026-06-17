@@ -4,29 +4,56 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\CrmRoleCatalogService;
+use App\Services\PermissionRegistryService;
+use App\Services\PermissionVisibilityService;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
-    public function index()
+    public function index(Request $request, PermissionRegistryService $registry)
     {
+        $registry->ensureRegisteredInDatabase();
+        $permissionSyncReport = $registry->syncReport();
+
         $roles = CrmRoleCatalogService::activeRoles();
-        $users = User::with('roles')->orderBy('name')->get();
+        $workspaceGroups = CrmRoleCatalogService::workspaceGroups();
+        $workspaceFilter = $request->get('workspace');
+        $search = trim((string) $request->get('q', ''));
+
+        $usersQuery = User::with(['roles', 'employee.department'])->orderBy('name');
+
+        if ($workspaceFilter && isset($workspaceGroups[$workspaceFilter])) {
+            $roleNames = CrmRoleCatalogService::rolesForWorkspaceGroup($workspaceFilter);
+            if ($roleNames !== []) {
+                $usersQuery->role($roleNames);
+            }
+        }
+
+        if ($search !== '') {
+            $usersQuery->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $users = $usersQuery->get();
+        $workspaceCounts = CrmRoleCatalogService::userCountsByWorkspaceGroup();
 
         $stats = [
             'total_roles' => $roles->count(),
             'total_permissions' => CrmRoleCatalogService::activePermissions()->count(),
-            'total_users' => $users->count(),
-            'crm_users' => $users->filter(fn (User $u) => in_array(
-                CrmRoleCatalogService::resolveUserDisplayRole($u),
-                ['sales_manager', 'sales_rep', 'admin', 'super_admin'],
-                true
-            ))->count(),
+            'total_users' => User::count(),
+            'workspace_users' => $workspaceFilter && isset($workspaceCounts[$workspaceFilter])
+                ? $workspaceCounts[$workspaceFilter]['count']
+                : $users->count(),
         ];
 
-        return view('roles.index', compact('roles', 'users', 'stats'));
+        return view('roles.index', compact(
+            'roles', 'users', 'stats', 'workspaceGroups',
+            'workspaceFilter', 'search', 'workspaceCounts', 'permissionSyncReport'
+        ));
     }
 
     public function assignRole(Request $request, User $user)
@@ -43,7 +70,7 @@ class RoleController extends Controller
 
         CrmRoleCatalogService::assignRoleToUser($user, $request->role);
 
-        return redirect()->back()->with('success', 'تم تعيين الدور: ' . CrmRoleCatalogService::roleLabel($request->role));
+        return redirect()->route('roles.user-permissions', $user)->with('success', 'تم تعيين الدور: ' . CrmRoleCatalogService::roleLabel($request->role));
     }
 
     public function assignCustomPermissions(Request $request, User $user)
@@ -58,8 +85,14 @@ class RoleController extends Controller
         $allPermissions = $activeKeys;
         $selectedPermissions = $request->permissions ?? [];
 
+        $displayRoleName = CrmRoleCatalogService::resolveUserDisplayRole($user);
         $rolePermissions = [];
-        if ($user->roles->first()) {
+        if ($displayRoleName) {
+            $role = Role::where('name', $displayRoleName)->first();
+            if ($role) {
+                $rolePermissions = $role->permissions->pluck('name')->toArray();
+            }
+        } elseif ($user->roles->first()) {
             $rolePermissions = $user->roles->first()->permissions->pluck('name')->toArray();
         }
 
@@ -97,7 +130,7 @@ class RoleController extends Controller
 
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        return redirect()->back()->with('success', 'تم تحديث الصلاحيات بنجاح');
+        return redirect()->route('roles.user-permissions', $user)->with('success', 'تم تحديث الصلاحيات بنجاح');
     }
 
     public function updateRolePermissions(Request $request, Role $role)
@@ -116,17 +149,33 @@ class RoleController extends Controller
         $role->syncPermissions($request->permissions ?? []);
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        return redirect()->back()->with('success', 'تم تحديث صلاحيات الدور بنجاح');
+        return redirect()->route('roles.role-permissions', $role)->with('success', 'تم تحديث صلاحيات الدور بنجاح');
     }
 
-    public function userPermissions(User $user)
+    public function rolePermissions(Role $role, PermissionRegistryService $registry)
     {
-        $roles = CrmRoleCatalogService::assignableRoles();
+        $registry->ensureRegisteredInDatabase();
+        $permissionSyncReport = $registry->syncReport();
+
+        if (!in_array($role->name, array_keys(config('crm_roles.roles', [])), true)) {
+            abort(403, 'لا يمكن تعديل هذا الدور القديم من الواجهة.');
+        }
+
         $permissions = CrmRoleCatalogService::activePermissions();
         $permissionGroups = CrmRoleCatalogService::permissionGroups();
-        $displayRole = CrmRoleCatalogService::resolveUserDisplayRole($user);
-        $userRole = $roles->firstWhere('name', $displayRole) ?? $user->roles->first();
+        $permissionModules = CrmRoleCatalogService::permissionModules();
+        $rolePermissions = $role->permissions->pluck('name')->toArray();
+        $meta = CrmRoleCatalogService::roleMeta($role->name);
 
+        return view('roles.role-permissions', compact(
+            'role', 'permissions', 'permissionGroups', 'permissionModules',
+            'rolePermissions', 'meta', 'permissionSyncReport'
+        ));
+    }
+
+    /** @return array{rolePermissions: list<string>, userPermissions: list<string>, customPermissionsMap: array<string, bool>} */
+    protected function buildUserPermissionState(User $user, $permissions, ?Role $userRole): array
+    {
         $rolePermissions = $userRole ? $userRole->permissions->pluck('name')->toArray() : [];
         $userDirectPermissions = $user->getAllPermissions()->pluck('name')->toArray();
 
@@ -151,10 +200,35 @@ class RoleController extends Controller
             }
         }
 
+        return compact('rolePermissions', 'userPermissions', 'customPermissionsMap');
+    }
+
+    public function userPermissions(User $user, PermissionVisibilityService $visibility, PermissionRegistryService $registry)
+    {
+        $registry->ensureRegisteredInDatabase();
+        $permissionSyncReport = $registry->syncReport();
+
+        $roles = CrmRoleCatalogService::assignableRoles();
+        $permissions = CrmRoleCatalogService::activePermissions();
+        $permissionGroups = CrmRoleCatalogService::permissionGroups();
+        $permissionModules = CrmRoleCatalogService::permissionModules();
+        $displayRole = CrmRoleCatalogService::resolveUserDisplayRole($user);
+        $userRole = $roles->firstWhere('name', $displayRole) ?? $user->roles->first();
+
+        $state = $this->buildUserPermissionState($user, $permissions, $userRole);
+        $rolePermissions = $state['rolePermissions'];
+        $userPermissions = $state['userPermissions'];
+        $customPermissionsMap = $state['customPermissionsMap'];
+
+        $sidebarPreview = $visibility->sidebarPreview($user);
+        $workspaceGroup = $displayRole ? CrmRoleCatalogService::workspaceGroupForRole($displayRole) : null;
+        $workspaceMeta = $workspaceGroup ? CrmRoleCatalogService::workspaceGroupMeta($workspaceGroup) : null;
+
         return view('roles.user-permissions', compact(
-            'user', 'roles', 'permissions', 'permissionGroups',
+            'user', 'roles', 'permissions', 'permissionGroups', 'permissionModules',
             'userRole', 'userPermissions', 'rolePermissions',
-            'customPermissionsMap', 'displayRole'
+            'customPermissionsMap', 'displayRole', 'sidebarPreview',
+            'workspaceGroup', 'workspaceMeta', 'permissionSyncReport'
         ));
     }
 }

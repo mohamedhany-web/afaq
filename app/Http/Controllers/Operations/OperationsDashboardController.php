@@ -13,6 +13,7 @@ use App\Services\AttendanceCheckoutReviewService;
 use App\Services\Operations\OperationsDashboardMetricsService;
 use App\Services\Operations\OperationsKpiService;
 use App\Services\Operations\OperationsLeadDistributionService;
+use App\Services\Operations\OperationsWorkspaceService;
 use App\Services\OperationsRoleResolver;
 use Illuminate\Support\Facades\Auth;
 
@@ -37,6 +38,7 @@ class OperationsDashboardController extends Controller
         OperationsKpiService $opsKpis,
         OperationsLeadDistributionService $leads,
         OperationsDashboardMetricsService $crmPulseMetrics,
+        OperationsWorkspaceService $workspace,
     ) {
         $user = Auth::user();
         $resolver = OperationsRoleResolver::for($user);
@@ -67,7 +69,23 @@ class OperationsDashboardController extends Controller
         }
 
         $crmPulse = $crmPulseMetrics->snapshot();
+        $workspaceSections = $workspace->dashboardSections();
+        $absenceReviewsDate = $absenceReviews->latestDateForStatus('pending');
+        $absenceReviewsLink = route('operations.attendance-reviews.index', array_filter([
+            'status' => 'pending',
+            'date' => $absenceReviewsDate?->toDateString(),
+        ]));
 
-        return view('operations.dashboard', compact('user', 'resolver', 'stats', 'kpi', 'period', 'kpiGroups', 'crmPulse'));
+        return view('operations.dashboard', compact(
+            'user',
+            'resolver',
+            'stats',
+            'kpi',
+            'period',
+            'kpiGroups',
+            'crmPulse',
+            'workspaceSections',
+            'absenceReviewsLink',
+        ));
     }
 }

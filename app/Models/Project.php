@@ -36,15 +36,33 @@ class Project extends Model
     ];
 
     public const OWNERSHIP_TYPES = [
-        'owned' => 'مشروع خاص — ملك لنا',
-        'partnership' => 'مشاركة',
-        'developer_third_party' => 'مشروع مطور خارجي',
+        'direct_owner' => 'مالك مباشر',
+        'trader' => 'تاجر',
+        'broker' => 'وسيط',
+        'investor' => 'مستثمر',
+        'developer' => 'مطور',
+        'afaq_private' => 'خاص بأفاق',
+        'partnership' => 'مشاركات',
+        'property_management' => 'إدارة ممتلكات',
     ];
 
+    /** قيم قديمة → التصنيف الجديد */
+    public const LEGACY_OWNERSHIP_TYPES = [
+        'owned' => 'afaq_private',
+        'developer_third_party' => 'developer',
+    ];
+
+    public const OWNERSHIP_REQUIRES_DEVELOPER = ['developer'];
+
     public const OWNERSHIP_DETAIL_FIELDS = [
-        'owned' => ['internal_entity', 'acquisition_date', 'investment_amount', 'management_notes'],
+        'direct_owner' => ['contact_name', 'contact_phone', 'contract_ref', 'notes'],
+        'trader' => ['contact_name', 'contact_phone', 'commission_percent', 'contract_ref', 'notes'],
+        'broker' => ['contact_name', 'contact_phone', 'commission_percent', 'contract_ref', 'notes'],
+        'investor' => ['contact_name', 'contact_phone', 'investment_amount', 'share_percent', 'notes'],
+        'developer' => [],
+        'afaq_private' => ['internal_entity', 'acquisition_date', 'investment_amount', 'management_notes'],
         'partnership' => ['partner_name', 'partner_phone', 'partner_contact', 'our_share_percent', 'partner_share_percent', 'contract_ref', 'partnership_start', 'partnership_notes'],
-        'developer_third_party' => ['commission_percent', 'exclusivity', 'exclusivity_until', 'contract_ref', 'contact_person', 'contact_phone', 'listing_terms', 'developer_notes'],
+        'property_management' => ['contact_name', 'contact_phone', 'fee_percent', 'contract_ref', 'notes'],
     ];
 
     protected $fillable = [
@@ -67,6 +85,7 @@ class Project extends Model
         'map_zoom',
         'city',
         'property_type',
+        'property_types',
         'total_units',
         'available_units',
         'sold_units',
@@ -95,6 +114,7 @@ class Project extends Model
         'available_units' => 'integer',
         'sold_units' => 'integer',
         'ownership_details' => 'array',
+        'property_types' => 'array',
         'land_area_m2' => 'decimal:2',
         'building_config' => 'array',
     ];
@@ -190,9 +210,72 @@ class Project extends Model
         };
     }
 
+    /** @return list<string> */
+    public static function normalizePropertyTypes(mixed $value): array
+    {
+        $allowed = array_keys(self::PROPERTY_TYPES);
+
+        if (is_array($value)) {
+            return array_values(array_unique(array_intersect(
+                array_map('strval', $value),
+                $allowed
+            )));
+        }
+
+        if (! is_string($value) || trim($value) === '') {
+            return [];
+        }
+
+        $trimmed = trim($value);
+        if (str_starts_with($trimmed, '[')) {
+            $decoded = json_decode($trimmed, true);
+
+            return is_array($decoded) ? self::normalizePropertyTypes($decoded) : [];
+        }
+
+        if (str_contains($trimmed, ',')) {
+            return self::normalizePropertyTypes(explode(',', $trimmed));
+        }
+
+        return in_array($trimmed, $allowed, true) ? [$trimmed] : [];
+    }
+
+    /** @return list<string> */
+    public function resolvedPropertyTypes(): array
+    {
+        $fromJson = self::normalizePropertyTypes($this->property_types);
+
+        if ($fromJson !== []) {
+            return $fromJson;
+        }
+
+        return self::normalizePropertyTypes($this->property_type);
+    }
+
     public function getPropertyTypeNameAttribute(): string
     {
-        return self::PROPERTY_TYPES[$this->property_type] ?? ($this->property_type ?: '—');
+        $types = $this->resolvedPropertyTypes();
+
+        if ($types === []) {
+            return '—';
+        }
+
+        return collect($types)
+            ->map(fn (string $key) => self::PROPERTY_TYPES[$key] ?? $key)
+            ->implode('، ');
+    }
+
+    public static function formatPropertyTypesLabel(mixed $value): string
+    {
+        $types = self::normalizePropertyTypes($value);
+
+        if ($types === []) {
+            return '—';
+        }
+
+        return collect($types)
+            ->map(fn (string $key) => self::PROPERTY_TYPES[$key] ?? $key)
+            ->implode('، ');
     }
 
     public function getDevelopmentTypeNameAttribute(): string
@@ -207,7 +290,27 @@ class Project extends Model
 
     public function getOwnershipTypeNameAttribute(): string
     {
-        return self::OWNERSHIP_TYPES[$this->ownership_type] ?? ($this->ownership_type ?: '—');
+        $type = self::normalizeOwnershipType($this->ownership_type);
+
+        return self::OWNERSHIP_TYPES[$type] ?? ($this->ownership_type ?: '—');
+    }
+
+    public static function normalizeOwnershipType(?string $type): ?string
+    {
+        if ($type === null || $type === '') {
+            return null;
+        }
+
+        return self::LEGACY_OWNERSHIP_TYPES[$type] ?? $type;
+    }
+
+    public function requiresRegisteredDeveloper(): bool
+    {
+        return in_array(
+            self::normalizeOwnershipType($this->ownership_type),
+            self::OWNERSHIP_REQUIRES_DEVELOPER,
+            true
+        );
     }
 
     public function ownershipDetail(string $key, mixed $default = null): mixed

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Operations;
 use App\Http\Controllers\Controller;
 use App\Models\OperationsPeriodReport;
 use App\Models\User;
+use App\Services\Operations\OperationsReportTeamStatusService;
 use App\Services\OperationsReportMetricsService;
 use App\Services\OperationsRoleResolver;
 use App\Services\OperationsScopeService;
@@ -16,6 +17,7 @@ class OperationsPeriodReportController extends Controller
 {
     public function __construct(
         protected OperationsReportMetricsService $metricsService,
+        protected OperationsReportTeamStatusService $teamStatus,
     ) {}
 
     public function index(Request $request)
@@ -52,8 +54,13 @@ class OperationsPeriodReportController extends Controller
                 ->get(['id', 'name']);
         }
 
+        $anchor = $request->filled('anchor_date')
+            ? Carbon::parse($request->anchor_date)
+            : now();
+        $salesRepRows = $this->teamStatus->salesRepsForPeriod($periodType, $anchor);
+
         return view('operations.reports.index', compact(
-            'reports', 'authors', 'stats', 'resolver', 'periodType'
+            'reports', 'authors', 'stats', 'resolver', 'periodType', 'salesRepRows'
         ));
     }
 
@@ -128,6 +135,7 @@ class OperationsPeriodReportController extends Controller
             'obstacles' => 'nullable|string|max:10000',
             'support_required' => 'nullable|string|max:10000',
             'next_period_plan' => 'nullable|string|max:10000',
+            'notes' => 'nullable|string|max:10000',
         ]);
 
         $operationsPeriodReport->update($validated);
@@ -176,6 +184,7 @@ class OperationsPeriodReportController extends Controller
             'obstacles' => 'nullable|string|max:10000',
             'support_required' => 'nullable|string|max:10000',
             'next_period_plan' => 'nullable|string|max:10000',
+            'notes' => 'nullable|string|max:10000',
         ]);
 
         $author = User::findOrFail($operationsPeriodReport->user_id);

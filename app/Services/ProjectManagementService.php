@@ -84,7 +84,8 @@ class ProjectManagementService
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
             'map_zoom' => 'nullable|integer|between:3,20',
-            'property_type' => ['required', Rule::in(array_keys(Project::PROPERTY_TYPES))],
+            'property_types' => 'required|array|min:1',
+            'property_types.*' => ['required', Rule::in(array_keys(Project::PROPERTY_TYPES))],
             'project_type' => ['nullable', Rule::in(array_keys(Project::DEVELOPMENT_TYPES))],
             'listing_status' => ['required', Rule::in(array_keys(Project::LISTING_STATUSES))],
             'total_units' => 'nullable|integer|min:0',
@@ -115,7 +116,7 @@ class ProjectManagementService
                 $v->errors()->add('ownership_details.partner_name', 'اسم الشريك مطلوب في مشاريع المشاركة.');
             }
 
-            if ($type === 'developer_third_party') {
+            if (in_array(Project::normalizeOwnershipType($type), Project::OWNERSHIP_REQUIRES_DEVELOPER, true)) {
                 if (!$request->filled('real_estate_developer_id')) {
                     $v->errors()->add('real_estate_developer_id', 'اختر مطوراً عقارياً مسجلاً بتعاقد نشط من لوحة الإدارة.');
                 } elseif (!RealEstateDeveloper::contracted()->whereKey($request->input('real_estate_developer_id'))->exists()) {
@@ -165,14 +166,22 @@ class ProjectManagementService
             $data['longitude'] = null;
         }
 
-        if (($data['ownership_type'] ?? '') === 'developer_third_party') {
+        $ownershipType = Project::normalizeOwnershipType($data['ownership_type'] ?? '') ?? 'developer';
+
+        if (in_array($ownershipType, Project::OWNERSHIP_REQUIRES_DEVELOPER, true)) {
             $data['ownership_details'] = null;
         } else {
             $data['ownership_details'] = $this->filterOwnershipDetails(
-                $data['ownership_type'] ?? 'developer_third_party',
+                $ownershipType,
                 $data['ownership_details'] ?? []
             );
         }
+
+        $data['ownership_type'] = $ownershipType;
+
+        $propertyTypes = Project::normalizePropertyTypes($data['property_types'] ?? []);
+        $data['property_types'] = $propertyTypes;
+        $data['property_type'] = $propertyTypes[0] ?? null;
 
         unset($data['map_pins']);
 
@@ -181,7 +190,9 @@ class ProjectManagementService
 
     public function resolveDeveloper(array $data, User $user): array
     {
-        if (($data['ownership_type'] ?? '') !== 'developer_third_party') {
+        $ownershipType = Project::normalizeOwnershipType($data['ownership_type'] ?? '') ?? 'developer';
+
+        if (!in_array($ownershipType, Project::OWNERSHIP_REQUIRES_DEVELOPER, true)) {
             $data['real_estate_developer_id'] = null;
             $data['developer_name'] = null;
 

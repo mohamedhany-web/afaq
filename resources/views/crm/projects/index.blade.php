@@ -58,7 +58,7 @@
                 @include('projects.partials.ownership-badge', ['type' => $project->ownership_type])
             </div>
         </div>
-        @if($project->ownership_type === 'developer_third_party' && $project->displayDeveloperName() !== '—')
+        @if($project->requiresRegisteredDeveloper() && $project->displayDeveloperName() !== '—')
         <p class="text-xs text-emerald-700 font-tajawal mb-1">{{ $project->displayDeveloperName() }}</p>
         @endif
         <p class="text-sm text-gray-500 font-tajawal">{{ $project->city }} @if($project->location)— {{ $project->location }}@endif</p>

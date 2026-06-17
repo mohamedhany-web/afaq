@@ -22,7 +22,7 @@
         <p><span class="text-gray-500">المرحلة:</span> <span class="px-2 py-1 rounded-lg text-xs font-medium" style="background: {{ $themeColor }}15; color: {{ $themeColor }};">{{ $sale->stage }}</span></p>
         <p><span class="text-gray-500">القيمة:</span> <strong class="text-gray-900">{{ \App\Helpers\SettingsHelper::formatMoney($sale->estimated_value) }}</strong></p>
         <p><span class="text-gray-500">نوع الوحدة:</span> {{ $sale->unit_type ?? '—' }}</p>
-        <p><span class="text-gray-500">معاينة:</span> {{ $sale->viewing_date?->format('Y-m-d') ?? '—' }}</p>
+        <p><span class="text-gray-500">اجتماع:</span> {{ $sale->viewing_date?->format('Y-m-d') ?? '—' }}</p>
         <p><span class="text-gray-500">مندوب المبيعات:</span>
             @include('crm.partials.entity-link', ['type' => 'rep', 'entity' => $sale->salesRep])
         </p>

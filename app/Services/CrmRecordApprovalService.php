@@ -26,14 +26,34 @@ class CrmRecordApprovalService
         return $user->usesCrmWorkspace() || $user->usesMarketingWorkspace();
     }
 
-    /** يحتاج موافقة الإدارة قبل التنفيذ */
+    /** يحتاج موافقة الإدارة قبل التنفيذ — للمشاريع (التسويق فقط) */
     public function requiresApproval(User $user): bool
     {
         if ($this->executesDirectly($user) || $user->canAccessOperations()) {
             return false;
         }
 
+        if ($user->usesCrmWorkspace()) {
+            return false;
+        }
+
         return $this->canSubmitChanges($user);
+    }
+
+    /** إضافة عميل/ليد — مباشرة بدون موافقة */
+    public function requiresClientCreateApproval(User $user): bool
+    {
+        return false;
+    }
+
+    /** تعديل أو حذف عميل — موافقة مدير العمليات */
+    public function requiresClientMutationApproval(User $user): bool
+    {
+        if ($this->executesDirectly($user) || $user->canAccessOperations()) {
+            return false;
+        }
+
+        return $user->usesCrmWorkspace() || $user->usesMarketingWorkspace();
     }
 
     public function canApproveProjects(User $user): bool
@@ -45,6 +65,6 @@ class CrmRecordApprovalService
     public function canApproveClients(User $user): bool
     {
         return $this->executesDirectly($user)
-            || $user->hasPermissionTo('approve-client-changes');
+            || $user->canAccessOperations();
     }
 }

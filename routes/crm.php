@@ -7,6 +7,7 @@ use App\Http\Controllers\Crm\CrmDashboardController;
 use App\Http\Controllers\Crm\CrmClientApprovalController;
 use App\Http\Controllers\Crm\CrmClientController;
 use App\Http\Controllers\Crm\CrmFollowUpController;
+use App\Http\Controllers\Crm\CrmLeadDistributionController;
 use App\Http\Controllers\Crm\CrmIntelligenceController;
 use App\Http\Controllers\Crm\CrmPipelineController;
 use App\Http\Controllers\Crm\CrmProjectApprovalController;
@@ -47,6 +48,11 @@ Route::middleware(['auth', 'verified', 'verified.code'])->prefix('crm')->name('c
     Route::patch('clients/{client}/lead-stage', [CrmClientController::class, 'updateLeadStage'])->name('clients.update-lead-stage');
     Route::post('clients/{client}/interaction', [CrmClientController::class, 'logInteraction'])->name('clients.log-interaction');
     Route::delete('clients/{client}', [CrmClientController::class, 'destroy'])->name('clients.destroy');
+
+    Route::get('leads/distribution', [CrmLeadDistributionController::class, 'index'])->name('leads.distribution');
+    Route::post('leads/{client}/assign', [CrmLeadDistributionController::class, 'assign'])->name('leads.assign');
+    Route::post('leads/distribute-batch', [CrmLeadDistributionController::class, 'distributeBatch'])->name('leads.distribute-batch');
+    Route::post('leads/auto-distribute', [CrmLeadDistributionController::class, 'autoDistribute'])->name('leads.auto-distribute');
 
     Route::get('daily-reports', [CrmDailySalesReportController::class, 'index'])->name('daily-reports.index');
     Route::get('daily-reports/{dailySalesReport}', [CrmDailySalesReportController::class, 'show'])->name('daily-reports.show');

@@ -53,6 +53,11 @@ class Client extends Model
         return $this->hasMany(Sale::class);
     }
 
+    public function followUps(): HasMany
+    {
+        return $this->hasMany(CrmFollowUp::class);
+    }
+
     public function contracts(): HasMany
     {
         return $this->hasMany(Contract::class);

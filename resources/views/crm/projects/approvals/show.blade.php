@@ -30,7 +30,7 @@
         <div class="border-t pt-4 space-y-2 text-sm">
             <p><span class="text-gray-500">الاسم:</span> <strong>{{ $projectData['name'] ?? '—' }}</strong></p>
             <p><span class="text-gray-500">المدينة:</span> {{ $projectData['city'] ?? '—' }}</p>
-            <p><span class="text-gray-500">نوع العقار:</span> {{ \App\Models\Project::PROPERTY_TYPES[$projectData['property_type'] ?? ''] ?? '—' }}</p>
+            <p><span class="text-gray-500">نوع العقار:</span> {{ \App\Models\Project::formatPropertyTypesLabel($projectData['property_types'] ?? $projectData['property_type'] ?? null) }}</p>
             <p><span class="text-gray-500">حالة العرض:</span> {{ \App\Models\Project::LISTING_STATUSES[$projectData['listing_status'] ?? ''] ?? '—' }}</p>
             <p><span class="text-gray-500">الوحدات:</span> {{ $projectData['total_units'] ?? 0 }} (متاح: {{ $projectData['available_units'] ?? 0 }})</p>
             @if(!empty($projectData['description']))

@@ -18,7 +18,17 @@ class ClientApprovalService
 
     public function requiresApproval(User $user): bool
     {
-        return $this->approval->requiresApproval($user);
+        return $this->requiresMutationApproval($user);
+    }
+
+    public function requiresCreateApproval(User $user): bool
+    {
+        return $this->approval->requiresClientCreateApproval($user);
+    }
+
+    public function requiresMutationApproval(User $user): bool
+    {
+        return $this->approval->requiresClientMutationApproval($user);
     }
 
     public function canApprove(User $user): bool
@@ -210,11 +220,15 @@ class ClientApprovalService
 
     protected function notifyApprovers(ClientChangeRequest $change): void
     {
-        $approvers = User::permission('approve-client-changes')->get()
-            ->merge(User::role(['super_admin', 'admin'])->get())
-            ->unique('id');
+        $approvers = User::role(array_merge(
+            ['super_admin', 'admin'],
+            \App\Services\OperationsEmployeeService::LEGACY_MANAGER_ROLES
+        ))->get()->unique('id');
 
         foreach ($approvers as $admin) {
+            if (!$this->canApprove($admin)) {
+                continue;
+            }
             CrmNotificationService::notify(
                 $admin->id,
                 'client_change_pending',

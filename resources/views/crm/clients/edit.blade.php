@@ -16,7 +16,7 @@
 
 @if($requiresApproval ?? false)
 <div class="mb-4 p-4 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-900 font-tajawal">
-    سيتم إرسال التعديلات للإدارة للموافقة قبل تطبيقها على ملف العميل.
+    سيتم إرسال التعديلات لـ <strong>مدير العمليات</strong> للموافقة قبل تطبيقها على ملف العميل.
 </div>
 @endif
 

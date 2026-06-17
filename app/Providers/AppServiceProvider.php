@@ -9,6 +9,7 @@ use App\Models\FinancialInvoice;
 use App\Models\Invoice;
 use App\Observers\FinancialInvoiceObserver;
 use App\Observers\InvoiceObserver;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -37,6 +38,25 @@ class AppServiceProvider extends ServiceProvider
 
         Route::bind('sharedDocument', function (string $value) {
             return ClientSharedDocument::where('id', $value)->firstOrFail();
+        });
+
+        // إظهار/إخفاء عناصر السايدبار حسب الصلاحيات (أي صلاحية من الممرّرة تكفي)
+        Blade::if('canNav', function (...$permissions) {
+            $user = auth()->user();
+            if (! $user) {
+                return false;
+            }
+
+            foreach ($permissions as $permission) {
+                foreach (preg_split('/[|,]/', (string) $permission) as $key) {
+                    $key = trim($key);
+                    if ($key !== '' && $user->can($key)) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         });
 
         View::composer([

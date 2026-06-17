@@ -18,7 +18,7 @@ class CrmDashboardAnalyticsService
     public const FUNNEL_STAGES = [
         'lead' => 'عميل جديد',
         'prospect' => 'تم التواصل',
-        'proposal' => 'معاينة عقار',
+        'proposal' => 'اجتماع',
         'negotiation' => 'تفاوض',
         'closed_won' => 'تم الإغلاق',
         'closed_lost' => 'خسارة',
@@ -439,8 +439,9 @@ class CrmDashboardAnalyticsService
             'by_ownership' => $ownershipRows,
             'top_developers' => $topDevelopers,
             'recent_by_ownership' => $recentByOwnership,
-            'developer_projects' => (clone $projects)->where('ownership_type', 'developer_third_party')->count(),
-            'owned_projects' => (clone $projects)->where('ownership_type', 'owned')->count(),
+            'developer_projects' => (clone $projects)->where('ownership_type', 'developer')->count(),
+            'afaq_projects' => (clone $projects)->where('ownership_type', 'afaq_private')->count(),
+            'owned_projects' => (clone $projects)->where('ownership_type', 'afaq_private')->count(),
             'partnership_projects' => (clone $projects)->where('ownership_type', 'partnership')->count(),
         ];
     }

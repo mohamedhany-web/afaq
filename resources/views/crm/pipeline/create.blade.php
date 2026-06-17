@@ -106,12 +106,12 @@
                 <input name="expected_close_date" type="date" value="{{ old('expected_close_date') }}" class="{{ $input }}">
             </div>
             <div>
-                <label class="{{ $label }}">موعد المعاينة</label>
+                <label class="{{ $label }}">موعد الاجتماع</label>
                 <input name="viewing_date" type="date" value="{{ old('viewing_date') }}" class="{{ $input }}">
             </div>
             <div class="sm:col-span-2 lg:col-span-3">
-                <label class="{{ $label }}">ملاحظات المعاينة</label>
-                <input name="viewing_notes" value="{{ old('viewing_notes') }}" class="{{ $input }}" placeholder="تفاصيل موعد المعاينة...">
+                <label class="{{ $label }}">ملاحظات الاجتماع</label>
+                <input name="viewing_notes" value="{{ old('viewing_notes') }}" class="{{ $input }}" placeholder="تفاصيل موعد الاجتماع...">
             </div>
             <div class="sm:col-span-2 lg:col-span-3">
                 <label class="{{ $label }}">ملاحظات عامة</label>

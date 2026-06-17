@@ -538,7 +538,7 @@ class CrmPipelineController extends Controller
         return [
             'call' => 'مكالمة',
             'meeting' => 'اجتماع',
-            'viewing' => 'معاينة عقار',
+            'viewing' => 'اجتماع عقاري',
             'follow_up' => 'متابعة',
             'note' => 'ملاحظة',
         ];

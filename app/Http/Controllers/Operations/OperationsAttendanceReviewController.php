@@ -29,31 +29,25 @@ class OperationsAttendanceReviewController extends Controller
     {
         $this->authorize('viewAny', AttendanceAbsenceReview::class);
 
-        $date = $request->filled('date')
-            ? Carbon::parse($request->date)->startOfDay()
-            : Carbon::yesterday()->startOfDay();
+        $date = $this->reviews->resolveDisplayDate($request->query('date'));
+        $status = $request->query('status');
 
-        $query = AttendanceAbsenceReview::query()
+        $reviews = AttendanceAbsenceReview::query()
             ->with(['employee.department', 'employee.user', 'lineManager', 'reviewer'])
-            ->whereDate('review_date', $date);
+            ->forReviewDate($date)
+            ->withStatusFilter($status)
+            ->orderBy('status')
+            ->orderBy('employee_id')
+            ->paginate(30)
+            ->withQueryString();
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        $reviews = $query->orderBy('status')->orderBy('employee_id')->paginate(30)->withQueryString();
-
-        $stats = [
-            'pending' => AttendanceAbsenceReview::whereDate('review_date', $date)->where('status', 'pending')->count(),
-            'confirmed_absent' => AttendanceAbsenceReview::whereDate('review_date', $date)->whereIn('status', ['confirmed_absent', 'auto_confirmed'])->count(),
-            'confirmed_present' => AttendanceAbsenceReview::whereDate('review_date', $date)->where('status', 'confirmed_present')->count(),
-            'excused' => AttendanceAbsenceReview::whereDate('review_date', $date)->where('status', 'excused')->count(),
-        ];
+        $stats = $this->statsForDate($date);
 
         return view('operations.attendance-reviews.index', [
             'reviews' => $reviews,
             'stats' => $stats,
             'date' => $date,
+            'status' => $status,
             'hierarchy' => $this->hierarchy->hierarchyChart(),
         ]);
     }
@@ -102,12 +96,33 @@ class OperationsAttendanceReviewController extends Controller
         return back()->with('success', 'تم إلغاء قرار الغياب وإعادة السجل للمراجعة.');
     }
 
-    public function flagToday(AttendanceAbsenceReviewService $service)
+    public function flagToday(Request $request)
     {
         $this->authorize('viewAny', AttendanceAbsenceReview::class);
 
-        $count = $service->flagAbsencesForDate(Carbon::yesterday());
+        $date = $request->filled('date')
+            ? Carbon::parse($request->date)->startOfDay()
+            : $this->reviews->resolveDisplayDate(null);
 
-        return back()->with('success', "تم تحديث قائمة الغياب — {$count} سجل جديد.");
+        $count = $this->reviews->flagAbsencesForDate($date);
+
+        return back()->with('success', "تم تحديث قائمة الغياب لتاريخ {$date->format('Y-m-d')} — {$count} سجل جديد.");
+    }
+
+    /** @return array<string, int> */
+    protected function statsForDate(Carbon $date): array
+    {
+        $base = AttendanceAbsenceReview::query()->forReviewDate($date);
+
+        return [
+            'pending' => (clone $base)->where('status', AttendanceAbsenceReview::STATUS_PENDING)->count(),
+            'confirmed_absent' => (clone $base)->whereIn('status', [
+                AttendanceAbsenceReview::STATUS_CONFIRMED_ABSENT,
+                AttendanceAbsenceReview::STATUS_AUTO_CONFIRMED,
+            ])->count(),
+            'confirmed_present' => (clone $base)->where('status', AttendanceAbsenceReview::STATUS_CONFIRMED_PRESENT)->count(),
+            'excused' => (clone $base)->where('status', AttendanceAbsenceReview::STATUS_EXCUSED)->count(),
+            'total' => (clone $base)->count(),
+        ];
     }
 }

@@ -120,7 +120,7 @@ return [
         'lead_leakage_rate' => 'نسبة العملاء المفقودين %',
         'crm_compliance_rate' => 'التزام CRM %',
         'pipeline_update_rate' => 'تحديث Pipeline %',
-        'lead_to_meeting_conversion' => 'تحويل لمعاينة %',
+        'lead_to_meeting_conversion' => 'تحويل لاجتماع %',
         'reservation_to_contract_conversion' => 'تحويل لتعاقد %',
         'inventory_accuracy' => 'دقة المخزون %',
         'follow_up_compliance' => 'التزام المتابعات %',

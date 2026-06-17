@@ -26,41 +26,10 @@ class OperationsLeadController extends Controller
 
     public function index(Request $request)
     {
-        $filter = $request->get('filter', 'unassigned');
-
-        $baseQuery = match ($filter) {
-            'stale' => Client::query()
-                ->whereNull('assigned_to')
-                ->where('updated_at', '<', now()->subDays(3))
-                ->orderByDesc('updated_at'),
-            default => $this->distribution->unassignedLeadsQuery(),
-        };
-
-        $leads = (clone $baseQuery)
-            ->when($request->search, fn ($q) => $q->where(function ($q) use ($request) {
-                $s = '%' . $request->search . '%';
-                $q->where('name', 'like', $s)->orWhere('phone', 'like', $s);
-            }))
-            ->paginate(20)
-            ->withQueryString();
-
-        $kpiData = $this->kpis->collect();
-        $leadGroup = $kpiData['groups']['lead_management'] ?? null;
-
-        return view('operations.leads.index', [
-            'leads' => $leads,
-            'filter' => $filter,
-            'reps' => $this->distribution->assignableReps(),
-            'repLoads' => $this->distribution->repLoads(),
-            'leadKpis' => $leadGroup,
-            'stats' => [
-                'unassigned' => $this->distribution->unassignedLeadsQuery()->count(),
-                'stale' => Client::query()
-                    ->whereNull('assigned_to')
-                    ->where('updated_at', '<', now()->subDays(3))
-                    ->count(),
-            ],
-        ]);
+        return redirect()->route('operations.clients.index', array_merge(
+            ['view' => 'distribution', 'filter' => $request->get('filter', 'unassigned')],
+            $request->only('search'),
+        ));
     }
 
     public function assign(Request $request, Client $client)
@@ -73,7 +42,7 @@ class OperationsLeadController extends Controller
 
         $this->distribution->assignTo($client, (int) $request->employee_id, Auth::user());
 
-        return back()->with('success', 'تم ترحيل العميل إلى المندوب.');
+        return redirect()->route('operations.clients.index', ['view' => 'distribution'])->with('success', 'تم ترحيل العميل إلى المندوب.');
     }
 
     public function distributeBatch(Request $request)
@@ -90,7 +59,7 @@ class OperationsLeadController extends Controller
             $request->employee_id ? (int) $request->employee_id : null,
         );
 
-        return back()->with('success', "تم توزيع {$result['assigned']} عميل — متخطى: {$result['skipped']}.");
+        return redirect()->route('operations.clients.index', ['view' => 'distribution'])->with('success', "تم توزيع {$result['assigned']} عميل — متخطى: {$result['skipped']}.");
     }
 
     public function autoDistribute(Request $request)
@@ -102,6 +71,6 @@ class OperationsLeadController extends Controller
 
         $result = $this->distribution->distributeBatch($ids, Auth::user());
 
-        return back()->with('success', "توزيع تلقائي: {$result['assigned']} عميل — متخطى: {$result['skipped']}.");
+        return redirect()->route('operations.clients.index', ['view' => 'distribution'])->with('success', "توزيع تلقائي: {$result['assigned']} عميل — متخطى: {$result['skipped']}.");
     }
 }

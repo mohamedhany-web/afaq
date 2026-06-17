@@ -2,11 +2,13 @@
 
 use App\Http\Controllers\Operations\OperationsAttendanceReviewController;
 use App\Http\Controllers\Operations\OperationsCheckoutReviewController;
+use App\Http\Controllers\Operations\OperationsClientController;
 use App\Http\Controllers\Operations\OperationsCrmController;
 use App\Http\Controllers\Operations\OperationsDashboardController;
 use App\Http\Controllers\Operations\OperationsFollowUpController;
 use App\Http\Controllers\Operations\OperationsInventoryController;
 use App\Http\Controllers\Operations\OperationsLeadController;
+use App\Http\Controllers\Operations\OperationsRepController;
 use App\Http\Controllers\Operations\OperationsPeriodReportController;
 use App\Http\Controllers\Operations\OperationsTeamController;
 use Illuminate\Support\Facades\Route;
@@ -15,6 +17,9 @@ Route::middleware(['auth', 'verified', 'verified.code'])->prefix('operations')->
     Route::get('/', [OperationsDashboardController::class, 'index'])->name('dashboard');
 
     Route::get('leads', [OperationsLeadController::class, 'index'])->name('leads.index');
+    Route::get('clients', [OperationsClientController::class, 'index'])->name('clients.index');
+    Route::get('reps/search', [OperationsRepController::class, 'search'])->name('reps.search');
+    Route::get('reps/{rep}', [OperationsRepController::class, 'show'])->name('reps.show');
     Route::post('leads/{client}/assign', [OperationsLeadController::class, 'assign'])->name('leads.assign');
     Route::post('leads/distribute-batch', [OperationsLeadController::class, 'distributeBatch'])->name('leads.distribute-batch');
     Route::post('leads/auto-distribute', [OperationsLeadController::class, 'autoDistribute'])->name('leads.auto-distribute');

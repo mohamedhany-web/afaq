@@ -375,8 +375,8 @@ class OperationsKpiService
                 $direction = $kpi['direction'] ?? 'higher';
                 $items[] = [
                     'slug' => $slug,
-                    'label' => $kpi['label'],
-                    'unit' => $kpi['unit'],
+                    'label' => __('operations.kpi_items.' . $slug),
+                    'unit' => $this->localizedUnit($kpi['unit'] ?? ''),
                     'value' => $value,
                     'target' => $target,
                     'direction' => $direction,
@@ -386,7 +386,7 @@ class OperationsKpiService
             }
             $groups[$key] = [
                 'key' => $key,
-                'label' => $meta['label'],
+                'label' => __('operations.kpi_groups.' . $key),
                 'icon' => $meta['icon'] ?? 'chart',
                 'items' => $items,
                 'score' => count($items) > 0
@@ -396,6 +396,18 @@ class OperationsKpiService
         }
 
         return $groups;
+    }
+
+    protected function localizedUnit(string $unit): string
+    {
+        return match ($unit) {
+            'دقيقة' => __('operations.units.minute'),
+            '%' => __('operations.units.percent'),
+            'يوم' => __('operations.units.day'),
+            'عدد' => __('operations.units.count'),
+            'نقطة' => __('operations.units.point'),
+            default => $unit,
+        };
     }
 
     protected function achievement(float $value, float $target, string $direction): float

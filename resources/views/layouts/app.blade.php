@@ -1,5 +1,9 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="rtl">
+@php
+    $pageLocale = app()->getLocale();
+    $pageDir = $pageLocale === 'en' ? 'ltr' : 'rtl';
+@endphp
+<html lang="{{ str_replace('_', '-', $pageLocale) }}" dir="{{ $pageDir }}">
 <head>
     <meta charset="utf-8mb4">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -52,6 +56,9 @@
     <style>
         .font-tajawal {
             font-family: 'Tajawal', sans-serif;
+        }
+        body.ui-compact-mode .ui-compact-hidden {
+            display: none !important;
         }
         .sidebar-scroll::-webkit-scrollbar {
             width: 4px;
@@ -131,6 +138,37 @@
             letter-spacing: 0.5px;
             margin: 16px 0 8px 0;
         }
+
+        /* LTR layout (English) */
+        html[dir="ltr"] #sidebar {
+            border-left: none;
+            border-right: 1px solid #334155;
+        }
+
+        html[dir="ltr"] .sidebar-link svg.ml-3 {
+            margin-left: 0;
+            margin-right: 0.75rem;
+        }
+
+        html[dir="ltr"] .sidebar-logo-gap {
+            margin-left: 0;
+            margin-right: 1rem;
+        }
+
+        html[dir="ltr"] .app-top-header .header-inner {
+            direction: ltr;
+        }
+
+        html[dir="ltr"] .operations-locale-surface,
+        html[dir="ltr"] .operations-locale-surface .stat-card,
+        html[dir="ltr"] .operations-locale-surface .operations-kpi-card {
+            direction: ltr;
+            text-align: start;
+        }
+
+        html[dir="ltr"] .operations-locale-surface .stat-card-link-icon {
+            transform: none;
+        }
         
         /* Mobile Responsive Sidebar */
         @media (max-width: 768px) {
@@ -172,6 +210,20 @@
             
             .main-content-mobile {
                 margin-right: 0;
+            }
+
+            html[dir="ltr"] .sidebar-bg {
+                right: auto;
+                left: 0;
+                transform: translateX(-100%);
+            }
+
+            html[dir="ltr"] .sidebar-bg.mobile-open {
+                transform: translateX(0);
+            }
+
+            html[dir="ltr"] .main-content-mobile {
+                margin-left: 0;
             }
         }
         
@@ -234,6 +286,10 @@
         $workDayService = app(\App\Services\WorkDayService::class);
         $workDayStatus = $webUser ? $workDayService->statusFor($webUser) : ['show_button' => false, 'must_start' => false, 'on_leave' => false, 'required' => false];
         $themeColorWd = \App\Helpers\SettingsHelper::getThemeColor();
+        $showLocaleToggle = $webUser && (
+            request()->routeIs('operations.*')
+            || $webUser->usesOperationsWorkspace()
+        );
     @endphp
     <div class="flex h-screen">
         <!-- Mobile Overlay -->
@@ -251,12 +307,12 @@
                     
                     @if($logoUrl)
                         <!-- Custom Logo -->
-                        <div class="{{ $logoSize }} rounded-xl overflow-hidden ml-4 shadow-xl">
+                        <div class="{{ $logoSize }} rounded-xl overflow-hidden ml-4 sidebar-logo-gap shadow-xl">
                             <img src="{{ $logoUrl }}" alt="Logo" class="w-full h-full object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                         </div>
                     @else
                         <!-- Default Logo with Enhanced Design -->
-                        <div class="{{ $logoSize }} rounded-xl flex items-center justify-center ml-4 shadow-xl overflow-hidden relative" style="background: linear-gradient(135deg, {{ \App\Helpers\SettingsHelper::getThemeColor() }} 0%, {{ \App\Helpers\SettingsHelper::getThemeColor() }}cc 100%);">
+                        <div class="{{ $logoSize }} rounded-xl flex items-center justify-center ml-4 sidebar-logo-gap shadow-xl overflow-hidden relative" style="background: linear-gradient(135deg, {{ \App\Helpers\SettingsHelper::getThemeColor() }} 0%, {{ \App\Helpers\SettingsHelper::getThemeColor() }}cc 100%);">
                             <div class="relative">
                                 <!-- Gear Icon -->
                                 <svg class="h-6 w-6 text-white absolute top-0 right-0 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -846,6 +902,9 @@
                         
                         <!-- Right Side - Actions -->
                         <div class="flex items-center gap-1.5 sm:gap-2">
+                            @if($showLocaleToggle)
+                                @include('layouts.partials.locale-toggle')
+                            @endif
                             @hasSection('header-actions')
                                 @yield('header-actions')
                             @endif
@@ -2148,6 +2207,7 @@ setInterval(updateUnreadNotificationsCount, 10000);
 
 @include('partials.client-search-select-scripts')
 @include('partials.developer-search-select-scripts')
+@include('partials.ui-compact-scripts')
 @stack('scripts')
 </body>
 </html>

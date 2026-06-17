@@ -60,7 +60,7 @@
                     <span class="shrink-0 text-[9px] text-gray-400 tabular-nums">{{ $sale->probability_percentage }}%</span>
                 </div>
                 @if($sale->viewing_date)
-                <p class="text-[9px] text-amber-700 mt-0.5">معاينة: {{ \Carbon\Carbon::parse($sale->viewing_date)->format('Y/m/d') }}</p>
+                <p class="text-[9px] text-amber-700 mt-0.5">اجتماع: {{ \Carbon\Carbon::parse($sale->viewing_date)->format('Y/m/d') }}</p>
                 @endif
             </div>
             @empty
@@ -98,7 +98,7 @@
             </select>
             @endif
             <input type="date" name="viewing_date" class="w-full rounded-md border border-gray-200 px-2 py-1 text-[10px] font-tajawal interaction-viewing-date hidden">
-            <textarea name="notes" rows="2" required placeholder="اكتب تفاصيل المكالمة، المعاينة، أو الملاحظة..."
+            <textarea name="notes" rows="2" required placeholder="اكتب تفاصيل المكالمة، الاجتماع، أو الملاحظة..."
                       class="w-full rounded-md border border-gray-200 px-2 py-1 text-[10px] font-tajawal resize-none"></textarea>
             <button type="submit" class="w-full py-1.5 rounded-md text-[10px] font-bold text-white transition hover:opacity-90 disabled:opacity-50"
                     style="background: {{ $accent }};">حفظ</button>

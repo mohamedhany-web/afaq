@@ -445,7 +445,10 @@ class User extends Authenticatable
         }
 
         if ($this->canAccessOperations()) {
-            return route('operations.leads.index', $query);
+            $bucket = $query['bucket'] ?? ((($query['status'] ?? null) === 'prospect') ? 'interested' : 'all');
+            unset($query['status'], $query['bucket']);
+
+            return route('operations.clients.index', array_merge(['bucket' => $bucket], $query));
         }
 
         return route('crm.pipeline.index', $query);

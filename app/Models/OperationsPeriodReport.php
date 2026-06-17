@@ -18,7 +18,7 @@ class OperationsPeriodReport extends Model
     protected $fillable = [
         'user_id', 'period_type', 'period_start', 'period_end', 'metrics',
         'operations_summary', 'projects_progress', 'team_coordination',
-        'obstacles', 'support_required', 'next_period_plan', 'admin_notes',
+        'obstacles', 'support_required', 'next_period_plan', 'notes', 'admin_notes',
         'status', 'submitted_at',
     ];
 

@@ -19,6 +19,10 @@
     'actionIcon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />',
 ])
 
+<div class="flex flex-wrap items-center gap-3 mb-6 font-tajawal">
+    @include('partials.ui-compact-toggle', ['themeColor' => $themeColor])
+</div>
+
 {{-- 1. Executive KPIs --}}
 <div class="mb-2">
     <h2 class="text-sm font-bold text-gray-500 font-tajawal px-1">مؤشرات تنفيذية</h2>
@@ -30,7 +34,7 @@
     @include('crm.partials.stat-card', ['label' => 'عملاء مؤهلون', 'value' => number_format($k['qualified_leads']), 'accent' => 'purple', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />', 'href' => auth()->user()->clientsHubUrl(['status' => 'active']), 'linkLabel' => 'عرض المؤهّلين'])
     @include('crm.partials.stat-card', ['label' => 'فرص نشطة', 'value' => number_format($k['active_opportunities']), 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" />', 'href' => route('crm.pipeline.index', ['view' => 'deals']), 'linkLabel' => 'عرض الصفقات'])
 </div>
-<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 items-stretch">
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 items-stretch ui-compact-hidden">
     @include('crm.partials.stat-card', ['label' => 'معدل التحويل', 'value' => $k['conversion_rate'] . '%', 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />', 'href' => route('crm.intelligence.index'), 'linkLabel' => 'عرض التحليلات'])
     @include('crm.partials.stat-card', ['label' => 'صفقات الشهر', 'value' => $k['closed_deals_month'], 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />', 'href' => route('crm.pipeline.index', ['view' => 'deals', 'stage' => 'closed_won']), 'linkLabel' => 'عرض الصفقات'])
     @include('crm.partials.stat-card', ['label' => 'متوسط الصفقة', 'value' => $money($k['avg_deal_value']), 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2" />', 'href' => route('crm.pipeline.index', ['view' => 'deals']), 'linkLabel' => 'عرض الصفقات'])
@@ -194,7 +198,7 @@
                         <th class="text-right px-3 py-2">المندوب</th>
                         <th class="text-center px-2 py-2">اتصالات</th>
                         <th class="text-center px-2 py-2">اجتماعات</th>
-                        <th class="text-center px-2 py-2">معاينات</th>
+                        <th class="text-center px-2 py-2">اجتماعات</th>
                         <th class="text-center px-2 py-2">متابعات</th>
                         <th class="text-center px-2 py-2">فرص</th>
                         <th class="text-center px-2 py-2">إغلاق</th>
@@ -271,7 +275,7 @@
     <div class="xl:col-span-5 bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
         <div class="px-5 py-3 border-b border-gray-200 flex justify-between" style="{{ $headerStyle }}">
             <h3 class="font-bold text-base text-gray-900 font-tajawal">عملاء غير مُعيَّنين</h3>
-            <a href="{{ auth()->user()->clientsHubUrl(['filter' => 'unassigned']) }}" class="text-xs font-semibold" style="color:{{ $themeColor }}">عرض الكل</a>
+            <a href="{{ route('crm.leads.distribution') }}" class="text-xs font-semibold" style="color:{{ $themeColor }}">عرض الكل</a>
         </div>
         <ul class="divide-y divide-gray-100 p-2">
             @forelse($leadDistribution['unassigned'] as $client)

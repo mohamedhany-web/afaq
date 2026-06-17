@@ -30,7 +30,7 @@ return [
             'label' => 'عمليات المبيعات',
             'icon' => 'chart',
             'kpis' => [
-                'lead_to_meeting_conversion' => ['label' => 'تحويل لمعاينة/اجتماع', 'unit' => '%', 'target' => 35, 'direction' => 'higher'],
+                'lead_to_meeting_conversion' => ['label' => 'تحويل لاجتماع', 'unit' => '%', 'target' => 35, 'direction' => 'higher'],
                 'meeting_to_reservation_conversion' => ['label' => 'تحويل لحجز', 'unit' => '%', 'target' => 25, 'direction' => 'higher'],
                 'reservation_to_contract_conversion' => ['label' => 'تحويل لتعاقد', 'unit' => '%', 'target' => 60, 'direction' => 'higher'],
                 'sales_cycle_duration' => ['label' => 'مدة دورة البيع', 'unit' => 'يوم', 'target' => 45, 'direction' => 'lower'],
@@ -76,6 +76,15 @@ return [
                 'reports_submitted' => ['label' => 'تقارير مُرفوعة', 'unit' => 'عدد', 'target' => 12, 'direction' => 'higher'],
             ],
         ],
+    ],
+
+    /** مؤشرات الزمن والتواصل — تُعرض مطوية في لوحة العمليات */
+    'timing_slugs' => [
+        'lead_response_time',
+        'lead_distribution_time',
+        'contact_rate',
+        'sales_cycle_duration',
+        'report_delivery_time',
     ],
 
     /** مؤشرات تُستخدم في قالب التعويضات (مرجّحة) */

@@ -19,6 +19,7 @@ class CrmClientApprovalController extends Controller
         if ($this->approval->canApprove($user)) {
             $query = ClientChangeRequest::query()
                 ->with(['requester', 'client', 'reviewer'])
+                ->where('action', '!=', ClientChangeRequest::ACTION_CREATE)
                 ->orderByDesc('created_at');
 
             if ($request->status) {
@@ -29,7 +30,9 @@ class CrmClientApprovalController extends Controller
 
             $requests = $query->paginate(20)->withQueryString();
             $stats = [
-                'pending' => ClientChangeRequest::where('status', ClientChangeRequest::STATUS_PENDING)->count(),
+                'pending' => ClientChangeRequest::where('status', ClientChangeRequest::STATUS_PENDING)
+                    ->where('action', '!=', ClientChangeRequest::ACTION_CREATE)
+                    ->count(),
                 'approved' => ClientChangeRequest::where('status', ClientChangeRequest::STATUS_APPROVED)->whereMonth('reviewed_at', now()->month)->count(),
                 'rejected' => ClientChangeRequest::where('status', ClientChangeRequest::STATUS_REJECTED)->whereMonth('reviewed_at', now()->month)->count(),
             ];

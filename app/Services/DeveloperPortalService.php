@@ -21,13 +21,13 @@ class DeveloperPortalService
     {
         return Project::query()
             ->where('real_estate_developer_id', $account->real_estate_developer_id)
-            ->where('ownership_type', 'developer_third_party');
+            ->where('ownership_type', 'developer');
     }
 
     public function canAccessProject(DeveloperAccount $account, Project $project): bool
     {
         return (int) $project->real_estate_developer_id === (int) $account->real_estate_developer_id
-            && $project->ownership_type === 'developer_third_party';
+            && Project::normalizeOwnershipType($project->ownership_type) === 'developer';
     }
 
     /** @return array<string, mixed> */
@@ -39,7 +39,8 @@ class DeveloperPortalService
             'city' => 'nullable|string|max:100',
             'location' => 'nullable|string|max:255',
             'land_area_m2' => 'nullable|numeric|min:0',
-            'property_type' => ['required', Rule::in(array_keys(Project::PROPERTY_TYPES))],
+            'property_types' => 'required|array|min:1',
+            'property_types.*' => ['required', Rule::in(array_keys(Project::PROPERTY_TYPES))],
             'project_type' => ['nullable', Rule::in(array_keys(Project::DEVELOPMENT_TYPES))],
             'listing_status' => ['required', Rule::in(array_keys(Project::LISTING_STATUSES))],
             'total_units' => 'nullable|integer|min:0',
@@ -65,13 +66,17 @@ class DeveloperPortalService
         $data['progress_percentage'] = $total > 0 ? (int) round(($sold / $total) * 100) : 0;
         $data['start_date'] = $data['start_date'] ?? now()->toDateString();
 
+        $propertyTypes = Project::normalizePropertyTypes($data['property_types'] ?? []);
+        $data['property_types'] = $propertyTypes;
+        $data['property_type'] = $propertyTypes[0] ?? null;
+
         return $data;
     }
 
     /** @param array<string, mixed> $data */
     public function attachDeveloperMeta(array $data, RealEstateDeveloper $developer): array
     {
-        $data['ownership_type'] = 'developer_third_party';
+        $data['ownership_type'] = 'developer';
         $data['real_estate_developer_id'] = $developer->id;
         $data['developer_name'] = $developer->name;
         $data['ownership_details'] = null;

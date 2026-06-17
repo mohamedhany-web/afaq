@@ -35,7 +35,7 @@ class Project5BSeeder extends Seeder
                 ]),
                 'developer_name' => 'لاكازا',
                 'real_estate_developer_id' => $developer->id,
-                'ownership_type' => 'developer_third_party',
+                'ownership_type' => 'developer',
                 'city' => 'القاهرة',
                 'location' => 'المركزية — على محور جمال عبد الناصر مباشرة (في الخلف الاستاد وفندق لامار والبريد)',
                 'latitude' => 30.0542,

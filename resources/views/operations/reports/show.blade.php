@@ -34,17 +34,21 @@
             'obstacles' => 'العقبات',
             'support_required' => 'الدعم المطلوب من الإدارة',
             'next_period_plan' => 'خطة الفترة القادمة',
+            'notes' => 'ملاحظات',
         ];
     @endphp
     @foreach($fields as $name => $label)
     <div class="bg-white rounded-2xl border p-5">
         <label class="block text-sm font-bold text-gray-700 mb-2">{{ $label }}</label>
-        <textarea name="{{ $name }}" rows="4" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm" @disabled(!$canEdit)>{{ old($name, $report->$name) }}</textarea>
+        <textarea name="{{ $name }}" rows="{{ $name === 'notes' ? 3 : 4 }}" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm" @disabled(!$canEdit) placeholder="{{ $name === 'notes' ? 'ملاحظات عامة على التقرير أو الفريق...' : '' }}">{{ old($name, $report->$name) }}</textarea>
     </div>
     @endforeach
     @if($canEdit)
     <div class="flex flex-wrap gap-3">
         <button type="submit" class="px-6 py-3 rounded-xl text-white font-bold text-sm" style="background: {{ $themeColor }};">حفظ المسودة</button>
+        <button type="submit" formaction="{{ route('operations.reports.submit', $report) }}" formmethod="POST"
+                onclick="return confirm('رفع التقرير للإدارة؟ لن يمكن التعديل بعد الرفع.');"
+                class="px-6 py-3 rounded-xl text-white font-bold text-sm bg-green-600">رفع للإدارة</button>
     </div>
     @endif
 </form>
@@ -52,10 +56,6 @@
 @if($canEdit)
 <div class="flex flex-wrap gap-3 mt-4 font-tajawal">
     <form method="POST" action="{{ route('operations.reports.refresh', $report) }}">@csrf<button type="submit" class="px-5 py-2.5 rounded-xl border-2 border-gray-200 text-sm font-bold">تحديث الأرقام</button></form>
-    <form method="POST" action="{{ route('operations.reports.submit', $report) }}" onsubmit="return confirm('رفع التقرير للإدارة؟ لن يمكن التعديل بعد الرفع.');">
-        @csrf
-        <button type="submit" class="px-6 py-2.5 rounded-xl text-white text-sm font-bold bg-green-600">رفع للإدارة</button>
-    </form>
 </div>
 @endif
 

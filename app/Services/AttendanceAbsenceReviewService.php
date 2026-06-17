@@ -280,7 +280,41 @@ class AttendanceAbsenceReviewService
     {
         return AttendanceAbsenceReview::query()
             ->where('status', AttendanceAbsenceReview::STATUS_PENDING)
-            ->when($date, fn ($q) => $q->whereDate('review_date', $date))
+            ->when($date, fn ($q) => $q->forReviewDate($date))
             ->count();
+    }
+
+    public function resolveDisplayDate(?string $dateInput): Carbon
+    {
+        if ($dateInput !== null && $dateInput !== '') {
+            return Carbon::parse($dateInput)->startOfDay();
+        }
+
+        $latest = AttendanceAbsenceReview::query()->max('review_date');
+        if ($latest) {
+            return Carbon::parse($latest)->startOfDay();
+        }
+
+        return Carbon::yesterday()->startOfDay();
+    }
+
+    public function latestDateForStatus(?string $status = null): ?Carbon
+    {
+        $query = AttendanceAbsenceReview::query();
+
+        if ($status !== null && $status !== '') {
+            if ($status === AttendanceAbsenceReview::STATUS_CONFIRMED_ABSENT) {
+                $query->whereIn('status', [
+                    AttendanceAbsenceReview::STATUS_CONFIRMED_ABSENT,
+                    AttendanceAbsenceReview::STATUS_AUTO_CONFIRMED,
+                ]);
+            } else {
+                $query->where('status', $status);
+            }
+        }
+
+        $latest = $query->max('review_date');
+
+        return $latest ? Carbon::parse($latest)->startOfDay() : null;
     }
 }

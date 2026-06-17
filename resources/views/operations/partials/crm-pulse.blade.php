@@ -57,7 +57,7 @@
             'value' => $crmPulse['potential_clients'],
             'accent' => 'purple',
             'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>',
-            'href' => auth()->user()->clientsHubUrl(['status' => 'prospect']) . '#page-data',
+            'href' => route('operations.clients.index', ['bucket' => 'interested']) . '#page-data',
             'linkLabel' => 'عرض المحتملين',
         ],
         [
@@ -92,7 +92,7 @@
     @endforeach
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6 font-tajawal" id="crm-pulse-details">
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6 font-tajawal ui-compact-hidden" id="crm-pulse-details">
     @foreach($cards as $card)
     @php $items = $crmPulse['recent'][$card['key']] ?? collect(); @endphp
     <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">

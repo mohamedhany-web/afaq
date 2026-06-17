@@ -29,7 +29,7 @@
     <div class="bg-white rounded-2xl border overflow-hidden">
         <div class="px-5 py-4 border-b font-bold">الـ Pipeline</div>
         <div class="p-4 space-y-2">
-            @php $stageLabels = ['lead'=>'عميل جديد','prospect'=>'تم التواصل','proposal'=>'معاينة','negotiation'=>'تفاوض','closed_won'=>'مغلق — ربح','closed_lost'=>'مغلق — خسارة']; @endphp
+            @php $stageLabels = ['lead'=>'عميل جديد','prospect'=>'تم التواصل','proposal'=>'اجتماع','negotiation'=>'تفاوض','closed_won'=>'مغلق — ربح','closed_lost'=>'مغلق — خسارة']; @endphp
             @foreach($pipeline as $stage => $row)
             <a href="{{ route('crm.pipeline.index', ['view' => 'deals', 'stage' => $stage]) }}" class="flex justify-between items-center p-2 rounded-lg bg-gray-50 text-sm hover:bg-gray-100 transition-colors">
                 <span>{{ $stageLabels[$stage] ?? $stage }}</span>

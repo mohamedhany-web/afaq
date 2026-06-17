@@ -70,31 +70,128 @@ class CrmRoleCatalogService
             ->sortBy(fn (Role $r) => array_search($r->name, self::assignableRoleNames(), true));
     }
 
-    public static function activePermissions(): Collection
+    public static function permissionModules(): array
     {
-        $keys = collect(config('crm_roles.permission_groups', []))
-            ->flatMap(fn ($g) => $g['permissions'])
+        return config('crm_roles.permission_modules', []);
+    }
+
+    /** @return list<string> */
+    public static function modulePermissionKeys(): array
+    {
+        return collect(self::permissionModules())
+            ->flatMap(function (array $module) {
+                $keys = array_filter([
+                    $module['view'] ?? null,
+                    $module['create'] ?? null,
+                    $module['edit'] ?? null,
+                    $module['delete'] ?? null,
+                ]);
+
+                foreach ($module['extras'] ?? [] as $extraKey => $label) {
+                    $keys[] = is_int($extraKey) ? $label : $extraKey;
+                }
+
+                return $keys;
+            })
             ->unique()
             ->values()
             ->all();
+    }
 
-        return Permission::whereIn('name', $keys)->orderBy('name')->get();
+    public static function activePermissions(): Collection
+    {
+        return app(PermissionRegistryService::class)->allWebPermissions();
     }
 
     public static function permissionGroups(): array
     {
         $active = self::activePermissions()->pluck('name')->all();
-        $groups = config('crm_roles.permission_groups', []);
-        $result = [];
+        $moduleKeys = self::modulePermissionKeys();
+        $groupLabels = [
+            'admin' => 'الإدارة',
+            'crm' => 'CRM العقاري',
+            'operations' => 'العمليات',
+            'hr' => 'الموارد البشرية',
+            'finance' => 'المالية',
+            'marketing' => 'التسويق',
+            'support' => 'الدعم',
+            'portal' => 'بوابة العميل',
+            'legacy' => 'وحدات قديمة',
+        ];
 
-        foreach ($groups as $key => $group) {
-            $perms = array_values(array_intersect($group['permissions'], $active));
-            if ($perms !== []) {
-                $result[$key] = [
-                    'label' => $group['label'],
-                    'permissions' => $perms,
+        $grouped = [];
+        foreach (self::permissionModules() as $module) {
+            $groupKey = $module['group'] ?? 'other';
+            $perms = array_values(array_filter(array_merge(
+                array_filter([
+                    $module['view'] ?? null,
+                    $module['create'] ?? null,
+                    $module['edit'] ?? null,
+                    $module['delete'] ?? null,
+                ]),
+                array_keys($module['extras'] ?? [])
+            ), fn ($p) => in_array($p, $active, true)));
+
+            if ($perms === []) {
+                continue;
+            }
+
+            if (!isset($grouped[$groupKey])) {
+                $grouped[$groupKey] = [
+                    'label' => $groupLabels[$groupKey] ?? $groupKey,
+                    'modules' => [],
+                    'permissions' => [],
                 ];
             }
+
+            $grouped[$groupKey]['modules'][] = $module;
+            $grouped[$groupKey]['permissions'] = array_values(array_unique(array_merge(
+                $grouped[$groupKey]['permissions'],
+                $perms
+            )));
+        }
+
+        $uncategorized = array_values(array_diff($active, $moduleKeys));
+        if ($uncategorized !== []) {
+            $extras = [];
+            foreach ($uncategorized as $key) {
+                $extras[$key] = \App\Helpers\RoleHelper::getPermissionName($key);
+            }
+
+            $grouped['uncategorized'] = [
+                'label' => 'صلاحيات غير مصنّفة — أضفها لـ permission_modules',
+                'modules' => [[
+                    'key' => '_uncategorized',
+                    'label' => 'يجب تصنيفها في config/crm_roles.php',
+                    'group' => 'uncategorized',
+                    'view' => null,
+                    'create' => null,
+                    'edit' => null,
+                    'delete' => null,
+                    'extras' => $extras,
+                ]],
+                'permissions' => $uncategorized,
+            ];
+        }
+
+        return $grouped;
+    }
+
+    /** @return array<string, list<string>> */
+    public static function permissionsByModuleKey(): array
+    {
+        $result = [];
+        foreach (self::permissionModules() as $module) {
+            $keys = array_values(array_filter(array_merge(
+                array_filter([
+                    $module['view'] ?? null,
+                    $module['create'] ?? null,
+                    $module['edit'] ?? null,
+                    $module['delete'] ?? null,
+                ]),
+                array_keys($module['extras'] ?? [])
+            )));
+            $result[$module['key']] = $keys;
         }
 
         return $result;
@@ -224,8 +321,6 @@ class CrmRoleCatalogService
 
     public static function assignRoleToUser(\App\Models\User $user, string $roleName): void
     {
-        \App\Models\UserPermission::where('user_id', $user->id)->delete();
-
         if (in_array($roleName, ['sales_manager', 'manager'], true)) {
             CrmEmployeeService::assignSalesRole($user, CrmEmployeeService::ROLE_MANAGER);
         } elseif (in_array($roleName, ['sales_team_leader'], true)) {

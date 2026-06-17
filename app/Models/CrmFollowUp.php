@@ -17,7 +17,7 @@ class CrmFollowUp extends Model
         'note' => 'ملاحظة',
         'call' => 'مكالمة',
         'meeting' => 'اجتماع',
-        'viewing' => 'معاينة عقار',
+        'viewing' => 'اجتماع عقاري',
         'follow_up' => 'متابعة',
     ];
 

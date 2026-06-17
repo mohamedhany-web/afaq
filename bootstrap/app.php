@@ -31,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\VerifyCsrfToken::class,
             \App\Http\Middleware\SecureAuth::class,
             \App\Http\Middleware\BlockSuspiciousActivity::class,
+            \App\Http\Middleware\SetLocale::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

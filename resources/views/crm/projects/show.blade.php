@@ -56,7 +56,7 @@
             <div><dt class="{{ $fieldLabel }}">نوع العقار</dt><dd class="{{ $fieldValue }}">{{ $project->property_type_name }}</dd></div>
             <div><dt class="{{ $fieldLabel }}">نوع التطوير</dt><dd class="{{ $fieldValue }}">{{ $project->development_type_name }}</dd></div>
             <div><dt class="{{ $fieldLabel }}">نوع الملكية</dt><dd class="mt-1">@include('projects.partials.ownership-badge', ['type' => $project->ownership_type])</dd></div>
-            @if($project->ownership_type === 'developer_third_party')
+            @if($project->requiresRegisteredDeveloper())
             <div><dt class="{{ $fieldLabel }}">المطور</dt><dd class="{{ $fieldValue }}">{{ $project->displayDeveloperName() }}</dd></div>
             @endif
             <div><dt class="{{ $fieldLabel }}">السعر</dt>

@@ -174,6 +174,8 @@ require __DIR__.'/hr.php';
 
 // Profile routes
 Route::middleware(['auth', 'verified', 'verified.code'])->group(function () {
+    Route::get('locale/{locale}', [App\Http\Controllers\LocaleController::class, 'switch'])->name('locale.switch');
+
     Route::get('api/clients/search', ClientSearchController::class)->name('clients.search');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -215,6 +217,7 @@ Route::middleware(['auth', 'verified', 'verified.code', 'crm.only', 'marketing.o
     // الأدوار والصلاحيات
     Route::prefix('roles')->name('roles.')->middleware('permission:manage-roles')->group(function () {
         Route::get('/', [App\Http\Controllers\RoleController::class, 'index'])->name('index');
+        Route::get('/role/{role}/permissions', [App\Http\Controllers\RoleController::class, 'rolePermissions'])->name('role-permissions');
         Route::get('/user/{user}/permissions', [App\Http\Controllers\RoleController::class, 'userPermissions'])->name('user-permissions');
         Route::post('/user/{user}/assign-role', [App\Http\Controllers\RoleController::class, 'assignRole'])->name('assign-role');
         Route::post('/user/{user}/assign-permissions', [App\Http\Controllers\RoleController::class, 'assignCustomPermissions'])->name('assign-permissions');

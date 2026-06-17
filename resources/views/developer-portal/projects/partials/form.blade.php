@@ -8,7 +8,16 @@
     <div><label class="{{ $label }}">المدينة</label><input name="city" value="{{ old('city', $project->city ?? '') }}" class="{{ $input }}"></div>
     <div><label class="{{ $label }}">الموقع</label><input name="location" value="{{ old('location', $project->location ?? '') }}" class="{{ $input }}"></div>
     <div><label class="{{ $label }}">مساحة الأرض م²</label><input type="number" name="land_area_m2" min="0" step="0.01" value="{{ old('land_area_m2', $project->land_area_m2 ?? '') }}" class="{{ $input }}"></div>
-    <div><label class="{{ $label }}">نوع العقار *</label><select name="property_type" required class="{{ $input }}">@foreach(\App\Models\Project::PROPERTY_TYPES as $k=>$t)<option value="{{ $k }}" @selected(old('property_type',$project->property_type??'residential')==$k)>{{ $t }}</option>@endforeach</select></div>
+    <div class="sm:col-span-2"><label class="{{ $label }}">نوع العقار * <span class="font-normal text-gray-400">(يمكن اختيار أكثر من نوع)</span></label>
+        @php $selectedTypes = old('property_types', isset($project) ? $project->resolvedPropertyTypes() : ['residential']); @endphp
+        <div class="mt-2 flex flex-wrap gap-2">
+            @foreach(\App\Models\Project::PROPERTY_TYPES as $k => $t)
+                <label class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border-2 border-gray-200 bg-gray-50 text-sm cursor-pointer">
+                    <input type="checkbox" name="property_types[]" value="{{ $k }}" @checked(in_array($k, (array) $selectedTypes, true))> {{ $t }}
+                </label>
+            @endforeach
+        </div>
+    </div>
     <div><label class="{{ $label }}">نوع التطوير</label><select name="project_type" class="{{ $input }}"><option value="">—</option>@foreach(\App\Models\Project::DEVELOPMENT_TYPES as $k=>$t)<option value="{{ $k }}" @selected(old('project_type',$project->project_type??'')==$k)>{{ $t }}</option>@endforeach</select></div>
     <div><label class="{{ $label }}">حالة العرض *</label><select name="listing_status" required class="{{ $input }}">@foreach(\App\Models\Project::LISTING_STATUSES as $k=>$t)<option value="{{ $k }}" @selected(old('listing_status',$project->listing_status??'active')==$k)>{{ $t }}</option>@endforeach</select></div>
     <div><label class="{{ $label }}">إجمالي الوحدات</label><input type="number" name="total_units" min="0" value="{{ old('total_units', $project->total_units ?? 0) }}" class="{{ $input }}"></div>

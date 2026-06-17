@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -54,6 +55,29 @@ class AttendanceAbsenceReview extends Model
     public function lineManager(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reports_to_user_id');
+    }
+
+    public function scopeForReviewDate($query, Carbon|string $date)
+    {
+        $value = $date instanceof Carbon ? $date->toDateString() : Carbon::parse($date)->toDateString();
+
+        return $query->where('review_date', $value);
+    }
+
+    public function scopeWithStatusFilter($query, ?string $status)
+    {
+        if ($status === null || $status === '') {
+            return $query;
+        }
+
+        if ($status === self::STATUS_CONFIRMED_ABSENT) {
+            return $query->whereIn('status', [
+                self::STATUS_CONFIRMED_ABSENT,
+                self::STATUS_AUTO_CONFIRMED,
+            ]);
+        }
+
+        return $query->where('status', $status);
     }
 
     public function isPending(): bool
