@@ -7,8 +7,9 @@
     $sectionHeader = 'px-5 sm:px-6 py-4 border-b border-gray-200 font-tajawal font-bold text-gray-900';
     $fieldLabel = 'text-xs font-bold text-gray-500 mb-1 font-tajawal';
     $fieldValue = 'text-sm font-medium text-gray-900 font-tajawal';
+    $projectsRoutePrefix = $projectsRoutePrefix ?? 'crm.projects';
+    $pr = fn (string $action, mixed $params = []) => route($projectsRoutePrefix . '.' . $action, $params);
 @endphp
-@include('projects.partials.route-prefix')
 
 @include('crm.partials.page-header', [
     'title' => $project->name,

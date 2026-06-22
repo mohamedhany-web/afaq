@@ -1,5 +1,6 @@
 @php
-    $isEdit = isset($client);
+    $client = $client ?? new \App\Models\Client();
+    $isEdit = $client->exists;
     $clientTypeValue = old('client_type', $isEdit
         ? \App\Models\Client::normalizeType($client->client_type)
         : 'individual');

@@ -286,6 +286,7 @@ class OperationsClientController extends Controller
     public function create()
     {
         return view('operations.clients.create', [
+            'client' => new \App\Models\Client(),
             'requiresMutationApproval' => $this->approval->requiresMutationApproval(Auth::user()),
             'marketingCampaigns' => MarketingCampaign::query()->orderBy('name')->get(['id', 'name']),
             'clientsRoutePrefix' => 'operations.clients',

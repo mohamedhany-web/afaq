@@ -28,7 +28,7 @@ class ProjectApprovalService
     public function submitCreate(Request $request, User $user): ProjectChangeRequest
     {
         $data = $this->projects->validate($request);
-        $data = $this->projects->normalize($data, $request, $user, $project);
+        $data = $this->projects->normalize($data, $request, $user, null);
         $data = $this->projects->resolveDeveloper($data, $user);
 
         $change = ProjectChangeRequest::create([

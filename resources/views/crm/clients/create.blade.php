@@ -7,6 +7,8 @@
     $input = 'w-full border-2 border-gray-200 rounded-xl px-4 py-3 font-tajawal text-sm focus:outline-none focus:ring-2 focus:ring-offset-0';
     $label = 'block text-xs font-bold text-gray-500 mb-1.5 font-tajawal';
     $activeTab = request('tab', old('tab', 'manual'));
+    $client = $client ?? new \App\Models\Client();
+    $errors = $errors ?? new \Illuminate\Support\ViewErrorBag;
 @endphp
 
 @include('crm.partials.page-header', [
@@ -104,7 +106,7 @@
 @else
 <form action="{{ route('crm.clients.store') }}" method="POST" class="w-full space-y-6">
     @csrf
-    @include('crm.clients.partials.form', ['marketingCampaigns' => $marketingCampaigns ?? collect()])
+    @include('crm.clients.partials.form', ['client' => $client, 'marketingCampaigns' => $marketingCampaigns ?? collect()])
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
         <a href="{{ auth()->user()->clientsHubUrl() }}" class="inline-flex items-center justify-center px-6 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 font-tajawal">
             إلغاء والعودة للعملاء

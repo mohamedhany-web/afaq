@@ -2,8 +2,11 @@
 @section('page-title', 'المشاريع العقارية')
 
 @section('content')
-@php $themeColor = \App\Helpers\SettingsHelper::getThemeColor(); @endphp
-@include('projects.partials.route-prefix')
+@php
+    $themeColor = \App\Helpers\SettingsHelper::getThemeColor();
+    $projectsRoutePrefix = $projectsRoutePrefix ?? 'crm.projects';
+    $pr = fn (string $action, mixed $params = []) => route($projectsRoutePrefix . '.' . $action, $params);
+@endphp
 
 @include('crm.partials.page-header', [
     'title' => 'المشاريع العقارية',

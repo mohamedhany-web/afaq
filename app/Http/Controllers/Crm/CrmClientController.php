@@ -160,6 +160,7 @@ class CrmClientController extends Controller
     public function create()
     {
         return view('crm.clients.create', [
+            'client' => new Client(),
             'requiresApproval' => false,
             'requiresMutationApproval' => $this->approval->requiresMutationApproval(Auth::user()),
             'marketingCampaigns' => $this->marketingCampaignOptions(),

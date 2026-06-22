@@ -9,6 +9,8 @@
     $activeTab = request('tab', old('tab', 'manual'));
     $clientsRoutePrefix = $clientsRoutePrefix ?? 'operations.clients';
     $cr = fn (string $action, mixed $params = []) => route($clientsRoutePrefix . '.' . $action, $params);
+    $client = $client ?? new \App\Models\Client();
+    $errors = $errors ?? new \Illuminate\Support\ViewErrorBag;
 @endphp
 
 @include('crm.partials.page-header', [
@@ -87,6 +89,7 @@
 <form action="{{ $cr('store') }}" method="POST" class="w-full space-y-6">
     @csrf
     @include('crm.clients.partials.form', [
+        'client' => $client,
         'marketingCampaigns' => $marketingCampaigns ?? collect(),
         'clientsRoutePrefix' => $clientsRoutePrefix,
     ])

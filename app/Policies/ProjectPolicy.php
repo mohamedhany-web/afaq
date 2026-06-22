@@ -78,7 +78,17 @@ class ProjectPolicy
             return true;
         }
 
-        return $user->can('edit-own-projects') && (int) $project->project_manager_id === (int) $user->id;
+        return $this->userHasPermission($user, 'edit-own-projects')
+            && (int) $project->project_manager_id === (int) $user->id;
+    }
+
+    protected function userHasPermission(User $user, string $permission): bool
+    {
+        if (! \Spatie\Permission\Models\Permission::where('name', $permission)->where('guard_name', 'web')->exists()) {
+            return false;
+        }
+
+        return $user->hasPermissionTo($permission);
     }
 
     public function delete(User $user, Project $project): bool
