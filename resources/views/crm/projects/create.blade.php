@@ -28,7 +28,7 @@
 
 <form action="{{ route('crm.projects.store') }}" method="POST" class="w-full space-y-6">
     @csrf
-    @include('projects.partials.form', ['users' => $users, 'developers' => $developers ?? collect(), 'themeColor' => $themeColor])
+    @include('projects.partials.form', ['project' => $project, 'users' => $users, 'developers' => $developers ?? collect(), 'themeColor' => $themeColor])
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-6">
         <a href="{{ route('crm.projects.index') }}" class="inline-flex items-center justify-center px-6 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 font-tajawal">إلغاء</a>
         <button type="submit" class="inline-flex items-center justify-center px-8 py-3 rounded-xl text-white font-semibold text-sm shadow-md font-tajawal"

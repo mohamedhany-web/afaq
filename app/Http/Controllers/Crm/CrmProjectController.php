@@ -131,6 +131,7 @@ class CrmProjectController extends Controller
         abort_unless($this->projects->canCreate(Auth::user()), 403);
 
         return view('crm.projects.create', [
+            'project' => new Project(),
             'users' => $this->projects->formUsers(),
             'developers' => $this->projects->contractedDevelopers(),
             'requiresApproval' => $this->approval->requiresApproval(Auth::user()),

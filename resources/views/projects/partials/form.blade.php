@@ -1,5 +1,6 @@
 @php
-    $isEdit = isset($project);
+    $project = $project ?? new \App\Models\Project();
+    $isEdit = $project->exists;
     $input = 'w-full border-2 border-gray-200 rounded-xl px-4 py-3 font-tajawal text-sm focus:outline-none focus:ring-2 focus:ring-offset-0';
     $label = 'block text-xs font-bold text-gray-500 mb-1.5 font-tajawal';
     $sectionHeader = 'px-5 sm:px-6 py-4 border-b border-gray-200 font-tajawal font-bold text-gray-900';
