@@ -15,7 +15,7 @@ class ProjectUnitGeneratorService
     /** @return array{floors: int, units: int, scene_version: int} */
     public function generate(Project $project, bool $replaceExisting = true): array
     {
-        $config = $project->building_config ?? self::defaultConfigFor5B();
+        $config = $this->resolveBuildingConfig($project);
 
         if ($replaceExisting && $project->buildingFloors()->exists()) {
             $this->clearBuilding($project);
@@ -136,6 +136,17 @@ class ProjectUnitGeneratorService
                 'building_depth' => 16,
             ],
         ];
+    }
+
+    /** Merge saved project config (e.g. classification pricing) with the default tower template. */
+    public function resolveBuildingConfig(Project $project): array
+    {
+        $stored = $project->building_config ?? [];
+        if (! is_array($stored)) {
+            $stored = [];
+        }
+
+        return array_replace_recursive(self::defaultConfigFor5B(), $stored);
     }
 
     protected function clearBuilding(Project $project): void

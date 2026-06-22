@@ -44,6 +44,17 @@
 
 @include('projects.partials.classification-filter', compact('project', 'themeColor'))
 
+@if(session('success') || session('error'))
+<div class="mb-4 space-y-2">
+    @if(session('success'))
+    <div class="p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm font-tajawal">{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+    <div class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-tajawal">{{ session('error') }}</div>
+    @endif
+</div>
+@endif
+
 @include('crm.projects.partials.building-units', array_merge(compact('project', 'themeColor', 'buildingSummary'), ['projectsRoutePrefix' => $projectsRoutePrefix ?? 'crm.projects']))
 
 <div class="mb-6">

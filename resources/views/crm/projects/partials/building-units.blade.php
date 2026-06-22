@@ -907,6 +907,7 @@
     });
 
     const deepLinkUnit = new URLSearchParams(window.location.search).get('unit');
+    const statusSelect = document.getElementById('detail-status-select');
     if (statusSelect && canEdit) {
         statusSelect.addEventListener('change', () => {
             const msg = document.getElementById('detail-save-msg');
@@ -947,7 +948,6 @@
         applyFilters();
     }
 
-    const deepLinkUnit = new URLSearchParams(window.location.search).get('unit');
     if (deepLinkUnit && unitMap[deepLinkUnit]) {
         openUnitModal(deepLinkUnit);
     } else if (units[0]) {
