@@ -30,9 +30,11 @@
     if ($existing === []) {
         $existing = [[]];
     }
+    $inventorySource = old('inventory_source', $project->inventory_source ?? 'developer');
+    $manualFieldsDisabled = $inventorySource === 'developer';
 @endphp
 
-<div id="manual-units-section" class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full hidden">
+<div id="manual-units-section" class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full {{ $manualFieldsDisabled ? 'hidden' : '' }}">
     <div class="px-5 sm:px-6 py-4 border-b border-gray-200 font-tajawal font-bold text-gray-900 flex flex-wrap items-center justify-between gap-2"
          style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">
         <div>
@@ -65,19 +67,19 @@
                 @foreach($existing as $i => $row)
                 <tr class="manual-unit-row border-t border-gray-100">
                     @if(!empty($row['id']))<input type="hidden" name="manual_units[{{ $i }}][id]" value="{{ $row['id'] }}">@endif
-                    <td class="p-1"><select name="manual_units[{{ $i }}][use_type]" class="{{ $input }}">@foreach($useTypes as $k=>$t)<option value="{{ $k }}" @selected(($row['use_type']??'residential')===$k)>{{ $t }}</option>@endforeach</select></td>
-                    <td class="p-1"><input type="number" step="0.01" min="0" name="manual_units[{{ $i }}][area_m2]" value="{{ $row['area_m2'] ?? '' }}" class="{{ $input }}" required></td>
-                    <td class="p-1"><select name="manual_units[{{ $i }}][direction]" class="{{ $input }}"><option value="">—</option>@foreach($directions as $k=>$t)<option value="{{ $k }}" @selected(($row['direction']??'')===$k)>{{ $t }}</option>@endforeach</select></td>
-                    <td class="p-1"><input name="manual_units[{{ $i }}][floor_number]" value="{{ $row['floor_number'] ?? '' }}" class="{{ $input }}"></td>
-                    <td class="p-1"><input name="manual_units[{{ $i }}][floor_label]" value="{{ $row['floor_label'] ?? '' }}" class="{{ $input }}" placeholder="أول / ثاني"></td>
-                    <td class="p-1"><input name="manual_units[{{ $i }}][apartment_number]" value="{{ $row['apartment_number'] ?? '' }}" class="{{ $input }}"></td>
-                    <td class="p-1"><input type="number" step="0.01" min="0" name="manual_units[{{ $i }}][unit_price_total]" value="{{ $row['unit_price_total'] ?? '' }}" class="{{ $input }}"></td>
-                    <td class="p-1"><input type="number" step="0.01" name="manual_units[{{ $i }}][building_percent]" value="{{ $row['building_percent'] ?? '' }}" class="{{ $input }} w-16"></td>
-                    <td class="p-1"><input type="number" step="0.01" name="manual_units[{{ $i }}][discount_percent]" value="{{ $row['discount_percent'] ?? '' }}" class="{{ $input }} w-16"></td>
-                    <td class="p-1"><input type="number" step="0.01" name="manual_units[{{ $i }}][loading_percent]" value="{{ $row['loading_percent'] ?? '' }}" class="{{ $input }} w-16"></td>
-                    <td class="p-1"><input type="number" step="0.01" name="manual_units[{{ $i }}][maintenance_deposit]" value="{{ $row['maintenance_deposit'] ?? '' }}" class="{{ $input }} w-20"></td>
-                    <td class="p-1"><input type="number" step="0.01" name="manual_units[{{ $i }}][down_percent]" value="{{ $row['down_percent'] ?? '' }}" class="{{ $input }} w-16"></td>
-                    <td class="p-1"><input type="number" min="0" max="40" name="manual_units[{{ $i }}][years]" value="{{ $row['years'] ?? '' }}" class="{{ $input }} w-14"></td>
+                    <td class="p-1"><select name="manual_units[{{ $i }}][use_type]" class="{{ $input }}" @disabled($manualFieldsDisabled)>@foreach($useTypes as $k=>$t)<option value="{{ $k }}" @selected(($row['use_type']??'residential')===$k)>{{ $t }}</option>@endforeach</select></td>
+                    <td class="p-1"><input type="number" step="0.01" min="0" name="manual_units[{{ $i }}][area_m2]" value="{{ $row['area_m2'] ?? '' }}" class="{{ $input }} manual-unit-area" data-required-when-visible="1" @disabled($manualFieldsDisabled) @if(!$manualFieldsDisabled) required @endif></td>
+                    <td class="p-1"><select name="manual_units[{{ $i }}][direction]" class="{{ $input }}" @disabled($manualFieldsDisabled)><option value="">—</option>@foreach($directions as $k=>$t)<option value="{{ $k }}" @selected(($row['direction']??'')===$k)>{{ $t }}</option>@endforeach</select></td>
+                    <td class="p-1"><input name="manual_units[{{ $i }}][floor_number]" value="{{ $row['floor_number'] ?? '' }}" class="{{ $input }}" @disabled($manualFieldsDisabled)></td>
+                    <td class="p-1"><input name="manual_units[{{ $i }}][floor_label]" value="{{ $row['floor_label'] ?? '' }}" class="{{ $input }}" placeholder="أول / ثاني" @disabled($manualFieldsDisabled)></td>
+                    <td class="p-1"><input name="manual_units[{{ $i }}][apartment_number]" value="{{ $row['apartment_number'] ?? '' }}" class="{{ $input }}" @disabled($manualFieldsDisabled)></td>
+                    <td class="p-1"><input type="number" step="0.01" min="0" name="manual_units[{{ $i }}][unit_price_total]" value="{{ $row['unit_price_total'] ?? '' }}" class="{{ $input }}" @disabled($manualFieldsDisabled)></td>
+                    <td class="p-1"><input type="number" step="0.01" name="manual_units[{{ $i }}][building_percent]" value="{{ $row['building_percent'] ?? '' }}" class="{{ $input }} w-16" @disabled($manualFieldsDisabled)></td>
+                    <td class="p-1"><input type="number" step="0.01" name="manual_units[{{ $i }}][discount_percent]" value="{{ $row['discount_percent'] ?? '' }}" class="{{ $input }} w-16" @disabled($manualFieldsDisabled)></td>
+                    <td class="p-1"><input type="number" step="0.01" name="manual_units[{{ $i }}][loading_percent]" value="{{ $row['loading_percent'] ?? '' }}" class="{{ $input }} w-16" @disabled($manualFieldsDisabled)></td>
+                    <td class="p-1"><input type="number" step="0.01" name="manual_units[{{ $i }}][maintenance_deposit]" value="{{ $row['maintenance_deposit'] ?? '' }}" class="{{ $input }} w-20" @disabled($manualFieldsDisabled)></td>
+                    <td class="p-1"><input type="number" step="0.01" name="manual_units[{{ $i }}][down_percent]" value="{{ $row['down_percent'] ?? '' }}" class="{{ $input }} w-16" @disabled($manualFieldsDisabled)></td>
+                    <td class="p-1"><input type="number" min="0" max="40" name="manual_units[{{ $i }}][years]" value="{{ $row['years'] ?? '' }}" class="{{ $input }} w-14" @disabled($manualFieldsDisabled)></td>
                     <td class="p-1"><button type="button" class="remove-manual-row text-red-500 font-bold px-2">×</button></td>
                 </tr>
                 @endforeach

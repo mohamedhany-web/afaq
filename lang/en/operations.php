@@ -13,6 +13,7 @@ return [
 
     'sections' => [
         'all' => 'All Clients',
+        'new' => 'New',
         'follow_up' => 'Follow-up',
         'interested' => 'Interested Clients',
         'cancelled' => 'Cancelled',
@@ -27,6 +28,7 @@ return [
 
     'buckets' => [
         'all' => 'All Clients',
+        'new' => 'New',
         'follow_up' => 'Follow-up',
         'interested' => 'Interested Clients',
         'cancelled' => 'Cancelled',

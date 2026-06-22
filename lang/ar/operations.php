@@ -13,6 +13,7 @@ return [
 
     'sections' => [
         'all' => 'كافة العملاء',
+        'new' => 'New / جديد',
         'follow_up' => 'متابعة',
         'interested' => 'عملاء مهتمين',
         'cancelled' => 'كنسل',
@@ -27,6 +28,7 @@ return [
 
     'buckets' => [
         'all' => 'كافة العملاء',
+        'new' => 'New / جديد',
         'follow_up' => 'متابعة',
         'interested' => 'عملاء مهتمين',
         'cancelled' => 'كنسل',

@@ -106,7 +106,14 @@
 @else
 <form action="{{ route('crm.clients.store') }}" method="POST" class="w-full space-y-6">
     @csrf
-    @include('crm.clients.partials.form', ['client' => $client, 'marketingCampaigns' => $marketingCampaigns ?? collect()])
+    @include('crm.clients.partials.form', [
+        'client' => $client,
+        'marketingCampaigns' => $marketingCampaigns ?? collect(),
+        'themeColor' => $themeColor,
+        'input' => $input,
+        'label' => $label,
+        'clientsRoutePrefix' => 'crm.clients',
+    ])
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
         <a href="{{ auth()->user()->clientsHubUrl() }}" class="inline-flex items-center justify-center px-6 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 font-tajawal">
             إلغاء والعودة للعملاء

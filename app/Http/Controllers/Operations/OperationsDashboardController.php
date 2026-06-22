@@ -81,6 +81,10 @@ class OperationsDashboardController extends Controller
             'date' => $absenceReviewsDate?->toDateString(),
         ]));
         $salesReps = CrmEmployeeService::searchableSalesUsersQuery()->get();
+        $clientFilterQuery = array_filter([
+            'view' => 'data',
+            'sales_rep' => $selectedSalesRep?->id,
+        ]);
 
         return view('operations.dashboard', compact(
             'user',
@@ -94,6 +98,7 @@ class OperationsDashboardController extends Controller
             'absenceReviewsLink',
             'salesReps',
             'selectedSalesRep',
+            'clientFilterQuery',
         ));
     }
 

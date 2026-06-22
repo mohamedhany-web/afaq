@@ -91,6 +91,9 @@
     @include('crm.clients.partials.form', [
         'client' => $client,
         'marketingCampaigns' => $marketingCampaigns ?? collect(),
+        'themeColor' => $themeColor,
+        'input' => $input,
+        'label' => $label,
         'clientsRoutePrefix' => $clientsRoutePrefix,
     ])
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">

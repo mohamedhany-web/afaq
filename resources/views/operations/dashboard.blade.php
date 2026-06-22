@@ -6,14 +6,16 @@
     $themeColor = \App\Helpers\SettingsHelper::getThemeColor();
     $isLtr = app()->getLocale() === 'en';
     $kpiLinks = [
-        'lead_management' => route('operations.clients.index', ['view' => 'distribution']),
-        'crm_management' => route('operations.crm.index'),
-        'sales_operations' => route('operations.crm.index'),
-        'revenue_impact' => route('operations.crm.index'),
+        'lead_management' => route('operations.clients.index', array_merge($clientFilterQuery ?? ['view' => 'data'], ['bucket' => 'all'])),
+        'crm_management' => route('operations.clients.index', $clientFilterQuery ?? ['view' => 'data']),
+        'sales_operations' => route('operations.crm.index', array_filter(['sales_rep' => $selectedSalesRep->id ?? null])),
+        'revenue_impact' => route('operations.crm.index', array_filter(['sales_rep' => $selectedSalesRep->id ?? null])),
         'inventory_operations' => route('operations.inventory.index'),
         'team_performance' => route('operations.team.index'),
         'reporting_management' => route('operations.reports.index'),
     ];
+    $clientFilterQuery = $clientFilterQuery ?? ['view' => 'data'];
+    $salesRepQuery = array_filter(['sales_rep' => $selectedSalesRep->id ?? null]);
     $detailArrow = $isLtr ? '→' : '←';
 @endphp
 
@@ -93,8 +95,8 @@
     </div>
     <div class="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
         @foreach([
-            ['route' => 'operations.clients.index', 'params' => ['bucket' => 'all'], 'label' => __('operations.clients.hub_title'), 'icon' => 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
-            ['route' => 'operations.follow-ups.index', 'params' => [], 'label' => __('operations.quick_actions.follow_ups'), 'icon' => 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'],
+            ['route' => 'operations.clients.index', 'params' => array_merge($clientFilterQuery, ['bucket' => 'all']), 'label' => __('operations.clients.hub_title'), 'icon' => 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
+            ['route' => 'operations.follow-ups.index', 'params' => $salesRepQuery, 'label' => __('operations.quick_actions.follow_ups'), 'icon' => 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'],
             ['route' => 'operations.team.index', 'params' => [], 'label' => __('operations.quick_actions.team_performance'), 'icon' => 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z'],
             ['route' => 'operations.reps.search', 'params' => [], 'label' => __('operations.actions.search_sales_rep'), 'icon' => 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'],
             ['route' => 'operations.inventory.index', 'params' => [], 'label' => __('operations.quick_actions.inventory'), 'icon' => 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'],

@@ -16,9 +16,11 @@
     $input = $input ?? 'w-full border-2 border-gray-200 rounded-xl px-4 py-3 font-tajawal text-sm focus:outline-none focus:ring-2 focus:ring-offset-0';
     $label = $label ?? 'block text-xs font-bold text-gray-500 mb-1.5 font-tajawal';
     $themeColor = $themeColor ?? \App\Helpers\SettingsHelper::getThemeColor();
+    $inventorySource = old('inventory_source', $project->inventory_source ?? 'developer');
+    $pricingFieldsDisabled = $inventorySource !== 'developer';
 @endphp
 
-<div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full" id="classification-pricing-section">
+<div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full {{ $pricingFieldsDisabled ? 'hidden' : '' }}" id="classification-pricing-section">
     <div class="px-5 sm:px-6 py-4 border-b border-gray-200 font-tajawal font-bold text-gray-900"
          style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">
         الأسعار وخطط السيلز حسب التصنيف (تجاري · سكني · طبي)

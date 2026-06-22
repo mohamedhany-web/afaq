@@ -36,7 +36,7 @@
 
         <div id="pane-developer" class="inventory-pane mt-5 {{ $inventorySource !== 'developer' ? 'hidden' : '' }}">
             <label class="{{ $label }}">المطور العقاري *</label>
-            <select name="real_estate_developer_id" id="developer_id_select" class="{{ $input }}">
+            <select name="real_estate_developer_id" id="developer_id_select" class="{{ $input }}" @if($inventorySource === 'developer') required @endif @disabled($inventorySource !== 'developer')>
                 <option value="">— اختر المطور —</option>
                 @foreach($developers as $dev)
                 <option value="{{ $dev->id }}" @selected((string) old('real_estate_developer_id', $project->real_estate_developer_id ?? '') === (string) $dev->id)>
@@ -86,6 +86,18 @@ document.addEventListener('DOMContentLoaded', function () {
         devNameHidden.value = opt && opt.value ? opt.textContent.split('—')[0].trim() : '';
     }
 
+    function setSectionFieldsEnabled(section, enabled) {
+        if (!section) return;
+        section.querySelectorAll('input, select, textarea').forEach(el => {
+            if (el.type === 'hidden') return;
+            el.disabled = !enabled;
+            if (el.classList.contains('manual-unit-area') && el.dataset.requiredWhenVisible === '1') {
+                if (enabled) el.setAttribute('required', 'required');
+                else el.removeAttribute('required');
+            }
+        });
+    }
+
     function setSource(source) {
         if (!hiddenSource) return;
         hiddenSource.value = source;
@@ -104,11 +116,37 @@ document.addEventListener('DOMContentLoaded', function () {
             else if (nonCompanySelect) hiddenOwnership.value = nonCompanySelect.value;
         }
 
-        if (detailsWrap) detailsWrap.classList.toggle('hidden', !source);
-        if (manualSection) manualSection.classList.toggle('hidden', source === 'developer');
-        if (pricingSection) pricingSection.classList.toggle('hidden', source !== 'developer');
+        const showDetails = !!source;
+        const showManual = source === 'company' || source === 'non_company';
+        const showPricing = source === 'developer';
+
+        if (detailsWrap) detailsWrap.classList.toggle('hidden', !showDetails);
+        if (manualSection) manualSection.classList.toggle('hidden', !showManual);
+        if (pricingSection) pricingSection.classList.toggle('hidden', !showPricing);
         if (ownershipSection) ownershipSection.classList.toggle('hidden', true);
+
+        setSectionFieldsEnabled(manualSection, showManual);
+        setSectionFieldsEnabled(pricingSection, showPricing);
+        const devPane = document.getElementById('pane-developer');
+        setSectionFieldsEnabled(devPane, source === 'developer');
+
+        const devSelectEl = document.getElementById('developer_id_select');
+        if (devSelectEl) {
+            devSelectEl.disabled = source !== 'developer';
+            if (source === 'developer') devSelectEl.setAttribute('required', 'required');
+            else devSelectEl.removeAttribute('required');
+        }
     }
+
+    document.querySelector('form[action*="projects"]')?.addEventListener('submit', function () {
+        const source = hiddenSource?.value || 'developer';
+        const devPane = document.getElementById('pane-developer');
+        setSectionFieldsEnabled(manualSection, source === 'company' || source === 'non_company');
+        setSectionFieldsEnabled(pricingSection, source === 'developer');
+        setSectionFieldsEnabled(devPane, source === 'developer');
+        const devSelectEl = document.getElementById('developer_id_select');
+        if (devSelectEl) devSelectEl.disabled = source !== 'developer';
+    });
 
     cards.forEach(c => c.addEventListener('click', () => setSource(c.dataset.source)));
     nonCompanySelect?.addEventListener('change', () => {

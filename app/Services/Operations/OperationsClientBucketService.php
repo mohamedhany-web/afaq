@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 class OperationsClientBucketService
 {
     public const BUCKET_ALL = 'all';
+    public const BUCKET_NEW = 'new';
     public const BUCKET_FOLLOW_UP = 'follow_up';
     public const BUCKET_INTERESTED = 'interested';
     public const BUCKET_CANCELLED = 'cancelled';
@@ -21,6 +22,7 @@ class OperationsClientBucketService
     {
         return [
             self::BUCKET_ALL => __('operations.buckets.all'),
+            self::BUCKET_NEW => __('operations.buckets.new'),
             self::BUCKET_FOLLOW_UP => __('operations.buckets.follow_up'),
             self::BUCKET_INTERESTED => __('operations.buckets.interested'),
             self::BUCKET_CANCELLED => __('operations.buckets.cancelled'),
@@ -38,6 +40,7 @@ class OperationsClientBucketService
     {
         return match ($bucket) {
             self::BUCKET_ALL => $query,
+            self::BUCKET_NEW => $this->applyNew($query),
             self::BUCKET_FOLLOW_UP => $this->applyFollowUp($query),
             self::BUCKET_INTERESTED => $this->applyInterested($query),
             self::BUCKET_CANCELLED => $this->applyCancelled($query),
@@ -66,7 +69,12 @@ class OperationsClientBucketService
         return $query->where(function (Builder $q) {
             $q->where('status', 'prospect')
                 ->orWhereIn('lead_stage', ['lead', 'prospect', 'proposal']);
-        })->whereNotIn('lead_stage', ['closed_won', 'closed_lost']);
+        })->whereNotIn('lead_stage', ['closed_won', 'closed_lost', 'new']);
+    }
+
+    protected function applyNew(Builder $query): Builder
+    {
+        return $query->where('lead_stage', \App\Services\CrmScopeService::LEAD_STAGE_NEW);
     }
 
     protected function applyFollowUp(Builder $query): Builder

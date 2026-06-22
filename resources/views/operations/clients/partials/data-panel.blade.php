@@ -33,7 +33,11 @@
     'action' => $cr('index', ['view' => 'data', 'bucket' => $bucket ?? null]),
     'clientsExportRoute' => $cr('export', request()->query()),
     'clientsRoutePrefix' => $clientsRoutePrefix,
-    'preserve' => array_filter(['view' => 'data', 'bucket' => $bucket ?? null]),
+    'preserve' => array_filter([
+        'view' => 'data',
+        'bucket' => $bucket ?? null,
+        'sales_rep' => request('sales_rep'),
+    ]),
 ])
 
 @if(!empty($selectedSalesRep))

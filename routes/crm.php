@@ -37,6 +37,7 @@ Route::middleware(['auth', 'verified', 'verified.code'])->prefix('crm')->name('c
     Route::get('clients/deletions/log/{batch}', [CrmClientController::class, 'deletionLogShow'])->name('clients.deletions.show');
     Route::post('clients/bulk-delete', [CrmClientController::class, 'bulkDestroy'])->name('clients.bulk-destroy');
     Route::post('clients/bulk-transfer', [CrmClientController::class, 'bulkTransfer'])->name('clients.bulk-transfer');
+    Route::post('clients/bulk-update-meta', [CrmClientController::class, 'bulkUpdateMeta'])->name('clients.bulk-update-meta');
     Route::post('clients/{client}/transfer', [CrmClientController::class, 'transfer'])->name('clients.transfer');
     Route::get('clients/check-phone', [CrmClientController::class, 'checkPhone'])->name('clients.check-phone');
     Route::get('clients/export', [CrmClientController::class, 'export'])->name('clients.export');
@@ -54,6 +55,8 @@ Route::middleware(['auth', 'verified', 'verified.code'])->prefix('crm')->name('c
     Route::put('clients/{client}', [CrmClientController::class, 'update'])->name('clients.update');
     Route::patch('clients/{client}/lead-stage', [CrmClientController::class, 'updateLeadStage'])->name('clients.update-lead-stage');
     Route::post('clients/{client}/staff-notes', [CrmClientController::class, 'storeStaffNote'])->name('clients.staff-notes.store');
+    Route::put('clients/{client}/staff-notes/{note}', [CrmClientController::class, 'updateStaffNote'])->name('clients.staff-notes.update');
+    Route::delete('clients/{client}/staff-notes/{note}', [CrmClientController::class, 'destroyStaffNote'])->name('clients.staff-notes.destroy');
     Route::post('clients/{client}/interaction', [CrmClientController::class, 'logInteraction'])->name('clients.log-interaction');
     Route::delete('clients/{client}', [CrmClientController::class, 'destroy'])->name('clients.destroy');
 

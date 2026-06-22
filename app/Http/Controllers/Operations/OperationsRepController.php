@@ -58,6 +58,10 @@ class OperationsRepController extends Controller
 
         $clientStats = [
             'all' => Client::query()->when($employeeId, fn ($q) => $q->where('assigned_to', $employeeId))->count(),
+            'new' => $this->buckets->applyBucket(
+                Client::query()->when($employeeId, fn ($q) => $q->where('assigned_to', $employeeId)),
+                OperationsClientBucketService::BUCKET_NEW
+            )->count(),
             'interested' => $this->buckets->applyBucket(
                 Client::query()->when($employeeId, fn ($q) => $q->where('assigned_to', $employeeId)),
                 OperationsClientBucketService::BUCKET_INTERESTED

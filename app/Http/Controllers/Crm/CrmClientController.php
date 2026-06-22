@@ -205,6 +205,7 @@ class CrmClientController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
+        abort_unless($this->clients->canCreate($user), 403);
 
         $data = $this->clients->prepareData($this->clients->validate($request), $user, true);
         $client = Client::create($data);
@@ -365,6 +366,42 @@ class CrmClientController extends Controller
         }
 
         return back()->with('success', 'تم حفظ الملاحظة');
+    }
+
+    public function updateStaffNote(Request $request, Client $client, \App\Models\ClientStaffNote $note)
+    {
+        $this->authorizeClient($client);
+        abort_unless($note->client_id === $client->id, 404);
+        abort_unless($this->canManageStaffNote(Auth::user(), $note), 403);
+
+        $validated = $request->validate([
+            'type' => 'required|in:' . implode(',', array_keys(\App\Models\ClientStaffNote::TYPES)),
+            'body' => 'required|string|min:3|max:3000',
+        ]);
+
+        $note->update($validated);
+
+        return back()->with('success', 'تم تحديث الملاحظة');
+    }
+
+    public function destroyStaffNote(Client $client, \App\Models\ClientStaffNote $note)
+    {
+        $this->authorizeClient($client);
+        abort_unless($note->client_id === $client->id, 404);
+        abort_unless($this->canManageStaffNote(Auth::user(), $note), 403);
+
+        $note->delete();
+
+        return back()->with('success', 'تم حذف الملاحظة');
+    }
+
+    protected function canManageStaffNote(\App\Models\User $user, \App\Models\ClientStaffNote $note): bool
+    {
+        if ($user->hasRole(['super_admin', 'admin']) || $user->canAccessOperations()) {
+            return true;
+        }
+
+        return (int) $note->user_id === (int) $user->id;
     }
 
     public function logInteraction(Request $request, Client $client)
@@ -564,6 +601,45 @@ class CrmClientController extends Controller
         $message .= " — متخطى: {$result['skipped']}.";
 
         return back()->with('success', $message);
+    }
+
+    public function bulkUpdateMeta(Request $request)
+    {
+        $this->authorize('bulkUpdate', Client::class);
+
+        $validated = $request->validate([
+            'client_ids' => 'required|array|min:1|max:200',
+            'client_ids.*' => 'integer|exists:clients,id',
+            'status' => 'nullable|in:active,inactive,suspended,prospect',
+            'lead_source' => 'nullable|in:' . implode(',', Client::leadSourceKeys()),
+            'lead_stage' => 'nullable|in:' . implode(',', CrmScopeService::LEAD_STAGES),
+        ]);
+
+        $changes = array_filter([
+            'status' => $validated['status'] ?? null,
+            'lead_source' => isset($validated['lead_source']) && $validated['lead_source'] !== ''
+                ? Client::normalizeLeadSource($validated['lead_source'])
+                : null,
+            'lead_stage' => $validated['lead_stage'] ?? null,
+        ], fn ($v) => $v !== null && $v !== '');
+
+        if ($changes === []) {
+            return back()->with('error', 'اختر حالة أو مصدر أو مرحلة لتطبيقها.');
+        }
+
+        $user = Auth::user();
+        $scope = CrmScopeService::for($user);
+        $clients = $scope->clientsQuery()->whereIn('id', $validated['client_ids'])->get();
+        $updated = 0;
+
+        foreach ($clients as $client) {
+            $before = $client->only(array_keys($changes));
+            $client->update($changes);
+            app(ClientActivityService::class)->logUpdated($client, $user, $before, $client->fresh()->only(array_keys($changes)), $request);
+            $updated++;
+        }
+
+        return back()->with('success', "تم تحديث {$updated} عميل.");
     }
 
     public function transfer(Request $request, Client $client, ClientTransferService $transfers)

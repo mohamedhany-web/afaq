@@ -64,6 +64,13 @@
             </select>
             @error('status')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
         </div>
+        @unless($isEdit)
+        <div class="sm:col-span-2">
+            <p class="text-xs text-blue-700 font-tajawal bg-blue-50 border border-blue-100 rounded-xl px-3 py-2">
+                سيُسجَّل العميل تلقائياً في مرحلة <strong>New / جديد</strong> عند الحفظ.
+            </p>
+        </div>
+        @endunless
     </div>
 </div>
 

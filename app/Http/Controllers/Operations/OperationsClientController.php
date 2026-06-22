@@ -81,15 +81,18 @@ class OperationsClientController extends Controller
 
         $stageLabels = CrmScopeService::leadStageLabels();
         $labels = $this->buckets->labels();
-        $bucketCounts = collect($labels)->mapWithKeys(
-            fn ($label, $key) => [$key => $this->buckets->count($key)]
-        );
 
         $assignableReps = $this->distribution->assignableReps(Auth::user());
         $selectedSalesRep = null;
+        $filterEmployeeId = null;
         if ($request->filled('sales_rep')) {
             $selectedSalesRep = ($filters->salesReps())->firstWhere('id', (int) $request->sales_rep);
+            $filterEmployeeId = $selectedSalesRep?->employee?->id;
         }
+
+        $bucketCounts = collect($labels)->mapWithKeys(
+            fn ($label, $key) => [$key => $this->buckets->count($key, $filterEmployeeId)]
+        );
 
         return view('operations.clients.index', [
             'view' => 'data',
@@ -102,7 +105,11 @@ class OperationsClientController extends Controller
             'selectedSalesRep' => $selectedSalesRep,
             'requiresMutationApproval' => $this->approval->requiresMutationApproval(Auth::user()),
             'clientsRoutePrefix' => 'operations.clients',
-            'clearUrl' => route('operations.clients.index', array_filter(['view' => 'data', 'bucket' => $request->get('bucket')])),
+            'clearUrl' => route('operations.clients.index', array_filter([
+                'view' => 'data',
+                'bucket' => $request->get('bucket'),
+                'sales_rep' => $request->get('sales_rep'),
+            ])),
             'unassignedCount' => $this->distribution->unassignedLeadsQuery()->count(),
             ...$this->clientFilterViewData($filters, $request, $stageLabels, $statusLabels),
         ]);
@@ -257,6 +264,11 @@ class OperationsClientController extends Controller
         return back()->with('success', $message);
     }
 
+    public function bulkUpdateMeta(Request $request)
+    {
+        return app(\App\Http\Controllers\Crm\CrmClientController::class)->bulkUpdateMeta($request);
+    }
+
     public function transfer(Request $request, Client $client, ClientTransferService $transfers)
     {
         $this->authorize('view', $client);
@@ -328,6 +340,8 @@ class OperationsClientController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
+        abort_unless($this->clients->canCreate($user), 403);
+
         $data = $this->clients->prepareData($this->clients->validate($request), $user, true);
         $client = Client::create($data);
 

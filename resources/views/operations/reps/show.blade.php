@@ -12,26 +12,33 @@
     'actionLabel' => __('operations.dashboard_title'),
 ])
 
-<div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6 font-tajawal">
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6 font-tajawal">
     @include('crm.partials.stat-card', [
         'label' => __('operations.sections.all'),
         'value' => $clientStats['all'],
         'accent' => 'theme',
-        'href' => route('operations.clients.index', ['bucket' => 'all', 'employee_id' => $employeeId]) . '#page-data',
+        'href' => route('operations.clients.index', ['view' => 'data', 'bucket' => 'all', 'sales_rep' => $rep->id]) . '#page-data',
         'linkLabel' => __('operations.actions.view_details'),
     ])
     @include('crm.partials.stat-card', [
-        'label' => __('operations.sections.interested'),
-        'value' => $clientStats['interested'],
-        'accent' => 'purple',
-        'href' => route('operations.clients.index', ['bucket' => 'interested', 'employee_id' => $employeeId]) . '#page-data',
+        'label' => __('operations.sections.new'),
+        'value' => $clientStats['new'] ?? 0,
+        'accent' => 'blue',
+        'href' => route('operations.clients.index', ['view' => 'data', 'bucket' => 'new', 'sales_rep' => $rep->id]) . '#page-data',
         'linkLabel' => __('operations.actions.view_details'),
     ])
     @include('crm.partials.stat-card', [
         'label' => __('operations.sections.follow_up'),
         'value' => $clientStats['follow_up'],
         'accent' => 'blue',
-        'href' => route('operations.clients.index', ['bucket' => 'follow_up', 'employee_id' => $employeeId]) . '#page-data',
+        'href' => route('operations.clients.index', ['view' => 'data', 'bucket' => 'follow_up', 'sales_rep' => $rep->id]) . '#page-data',
+        'linkLabel' => __('operations.actions.view_details'),
+    ])
+    @include('crm.partials.stat-card', [
+        'label' => __('operations.sections.interested'),
+        'value' => $clientStats['interested'],
+        'accent' => 'purple',
+        'href' => route('operations.clients.index', ['view' => 'data', 'bucket' => 'interested', 'sales_rep' => $rep->id]) . '#page-data',
         'linkLabel' => __('operations.actions.view_details'),
     ])
 </div>
