@@ -28,7 +28,7 @@ class ProjectApprovalService
     public function submitCreate(Request $request, User $user): ProjectChangeRequest
     {
         $data = $this->projects->validate($request);
-        $data = $this->projects->normalize($data, $request, $user);
+        $data = $this->projects->normalize($data, $request, $user, $project);
         $data = $this->projects->resolveDeveloper($data, $user);
 
         $change = ProjectChangeRequest::create([
@@ -53,7 +53,7 @@ class ProjectApprovalService
         $this->assertNoPendingConflict($project, ProjectChangeRequest::ACTION_UPDATE);
 
         $data = $this->projects->validate($request, $project);
-        $data = $this->projects->normalize($data, $request, $user);
+        $data = $this->projects->normalize($data, $request, $user, $project);
         $data = $this->projects->resolveDeveloper($data, $user);
 
         $change = ProjectChangeRequest::create([

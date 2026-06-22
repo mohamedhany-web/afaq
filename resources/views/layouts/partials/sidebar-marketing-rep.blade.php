@@ -14,12 +14,11 @@
     @canNav('view-clients')
     <a href="{{ route('marketing.leads.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('marketing.leads.*') ? 'active' : '' }}">عملائي المحتملون</a>
     @endcanNav
-    @canNav('create-clients', 'create-marketing')
-    <a href="{{ route('marketing.leads.create') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium">إضافة Lead</a>
-    @endcanNav
+    <a href="{{ route('marketing.leads.create') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('marketing.leads.create') ? 'active' : '' }}">إضافة Lead</a>
     @canNav('generate-reports', 'view-reports')
     <a href="{{ route('marketing.reports.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('marketing.reports.*') ? 'active' : '' }}">تقريري اليومي</a>
     @endcanNav
     @include('layouts.partials.sidebar-leaves-link')
+    @include('layouts.partials.sidebar-exit-permit-link')
 </div>
 @endcanNav

@@ -69,6 +69,13 @@ class ActivityLog extends Model
             'completed' => 'تم الإنجاز',
             'logged_in' => 'تم تسجيل الدخول',
             'logged_out' => 'تم تسجيل الخروج',
+            'client_created' => 'إضافة عميل',
+            'client_updated' => 'تعديل عميل',
+            'client_transferred' => 'تحويل عميل',
+            'client_bulk_transferred' => 'تحويل جماعي',
+            'client_deleted' => 'حذف عميل',
+            'client_bulk_deleted' => 'حذف جماعي',
+            'crm_interaction' => 'تفاعل CRM',
             default => $this->action
         };
     }

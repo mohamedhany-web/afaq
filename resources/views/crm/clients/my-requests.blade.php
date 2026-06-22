@@ -7,7 +7,7 @@
 @include('crm.partials.page-header', [
     'title' => 'طلبات العملاء',
     'subtitle' => 'إضافة وتعديل وحذف العملاء — تُنفَّذ بعد موافقة الإدارة',
-    'actionUrl' => auth()->user()?->can('create', \App\Models\Client::class) ? route('crm.clients.create') : null,
+    'actionUrl' => route('crm.clients.create'),
     'actionLabel' => 'طلب عميل جديد',
 ])
 

@@ -108,7 +108,7 @@ class ClientImportService
                 continue;
             }
 
-            $normalized = self::normalizePhone($phone);
+            $normalized = Client::normalizePhone($phone);
             if ($normalized && isset($seenPhones[$normalized])) {
                 $result['skipped']++;
                 continue;
@@ -129,7 +129,7 @@ class ClientImportService
                 continue;
             }
 
-            $existing = $this->findByPhone($scope, $phone, $normalized);
+            $existing = Client::findByNormalizedPhone($phone);
 
             if ($existing) {
                 if ($duplicateMode === 'skip') {
@@ -160,7 +160,7 @@ class ClientImportService
                     'address' => trim((string) ($data['address'] ?? '')) ?: null,
                     'notes' => trim((string) ($data['notes'] ?? '')) ?: null,
                     'status' => 'prospect',
-                    'lead_stage' => 'lead',
+                    'lead_stage' => \App\Services\CrmScopeService::LEAD_STAGE_NEW,
                     'client_type' => Client::normalizeType($this->resolveImportedType($data['client_type'] ?? null)),
                     'lead_source' => Client::normalizeLeadSource($this->resolveImportedLeadSource($data['lead_source'] ?? null)),
                     'assigned_to' => $user->employee?->id,
@@ -178,27 +178,15 @@ class ClientImportService
         return $result;
     }
 
+    /** @deprecated Use Client::normalizePhone() */
     public static function normalizePhone(?string $phone): ?string
     {
-        if (!$phone) {
-            return null;
-        }
-
-        $digits = preg_replace('/\D+/', '', $phone);
-        if ($digits === '') {
-            return null;
-        }
-
-        if (str_starts_with($digits, '20') && strlen($digits) >= 11) {
-            $digits = '0' . substr($digits, 2);
-        }
-
-        return $digits;
+        return Client::normalizePhone($phone);
     }
 
     public static function fallbackName(string $phone): string
     {
-        $digits = self::normalizePhone($phone) ?? preg_replace('/\D+/', '', $phone);
+        $digits = Client::normalizePhone($phone) ?? preg_replace('/\D+/', '', $phone);
         $suffix = $digits ? substr($digits, -4) : Str::random(4);
 
         return 'عميل ' . $suffix;
@@ -343,18 +331,6 @@ class ClientImportService
         }
 
         return true;
-    }
-
-    protected function findByPhone(CrmScopeService $scope, string $phone, ?string $normalized): ?Client
-    {
-        $query = $scope->clientsQuery()->where(function ($q) use ($phone, $normalized) {
-            $q->where('phone', $phone);
-            if ($normalized) {
-                $q->orWhere('phone', 'like', '%' . substr($normalized, -10));
-            }
-        });
-
-        return $query->first();
     }
 
     protected function updateExisting(Client $client, string $name, string $phone, ?string $email, array $data): void

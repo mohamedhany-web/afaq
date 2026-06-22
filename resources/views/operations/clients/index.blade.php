@@ -8,11 +8,23 @@
     'title' => __('operations.clients.hub_title'),
     'subtitle' => __('operations.clients.hub_subtitle'),
     'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>',
-    'actionUrl' => auth()->user()?->can('create', \App\Models\Client::class) ? route('crm.clients.create') : null,
+    'actionUrl' => route('crm.clients.create'),
     'actionLabel' => __('operations.clients.new_client'),
 ])
 
 @include('operations.clients.partials.tabs')
+
+<div class="mb-4 flex flex-wrap gap-2 font-tajawal">
+    <a href="{{ route('crm.clients.create', ['tab' => 'import']) }}"
+       class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border-2 hover:bg-gray-50"
+       style="border-color: {{ $themeColor }}40; color: {{ $themeColor }};">
+        {{ __('operations.clients.import_excel') }} / CSV
+    </a>
+    <a href="{{ route('crm.clients.import.template') }}"
+       class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100">
+        {{ __('operations.clients.download_template') }}
+    </a>
+</div>
 
 <div id="page-data">
 @if(($view ?? 'data') === 'distribution')

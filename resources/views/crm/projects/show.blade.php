@@ -40,6 +40,8 @@
 @endif
 @include('projects.partials.map-display', compact('project', 'themeColor'))
 
+@include('projects.partials.classification-filter', compact('project', 'themeColor'))
+
 @include('crm.projects.partials.building-units', compact('project', 'themeColor', 'buildingSummary'))
 
 <div class="mb-6">
@@ -53,17 +55,15 @@
             <div><dt class="{{ $fieldLabel }}">حالة العرض</dt><dd class="mt-1">@include('projects.partials.listing-badge', ['status' => $project->listing_status])</dd></div>
             <div><dt class="{{ $fieldLabel }}">المدينة</dt><dd class="{{ $fieldValue }}">{{ $project->city ?? '—' }}</dd></div>
             <div><dt class="{{ $fieldLabel }}">الموقع</dt><dd class="{{ $fieldValue }}">{{ $project->location ?? '—' }}</dd></div>
-            <div><dt class="{{ $fieldLabel }}">نوع العقار</dt><dd class="{{ $fieldValue }}">{{ $project->property_type_name }}</dd></div>
+            <div><dt class="{{ $fieldLabel }}">تصنيف المشروع</dt><dd class="{{ $fieldValue }}">{{ $project->property_type_name }}</dd></div>
             <div><dt class="{{ $fieldLabel }}">نوع التطوير</dt><dd class="{{ $fieldValue }}">{{ $project->development_type_name }}</dd></div>
             <div><dt class="{{ $fieldLabel }}">نوع الملكية</dt><dd class="mt-1">@include('projects.partials.ownership-badge', ['type' => $project->ownership_type])</dd></div>
             @if($project->requiresRegisteredDeveloper())
             <div><dt class="{{ $fieldLabel }}">المطور</dt><dd class="{{ $fieldValue }}">{{ $project->displayDeveloperName() }}</dd></div>
             @endif
-            <div><dt class="{{ $fieldLabel }}">السعر</dt>
-                <dd class="font-bold font-tajawal" style="color: {{ $themeColor }};">
-                    {{ \App\Helpers\SettingsHelper::formatMoney($project->price_from) }}
-                    @if($project->price_to) — {{ \App\Helpers\SettingsHelper::formatMoney($project->price_to) }}@endif
-                </dd>
+            <div id="project-detail-price-block">
+                <dt class="{{ $fieldLabel }}">السعر حسب التصنيف</dt>
+                <dd class="text-sm text-gray-500 font-tajawal">اختر التصنيف من اللوحة أعلاه لعرض الأسعار والمساحات</dd>
             </div>
             @if($project->description)
             <div><dt class="{{ $fieldLabel }}">الوصف</dt><dd class="text-sm text-gray-700 font-tajawal whitespace-pre-line">{{ $project->description }}</dd></div>

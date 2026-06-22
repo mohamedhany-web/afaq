@@ -12,6 +12,7 @@ use App\Services\ProjectManagementService;
 use App\Services\ProjectUnitGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CrmProjectController extends Controller
 {
@@ -52,7 +53,77 @@ class CrmProjectController extends Controller
             'requiresApproval' => $this->approval->requiresApproval($user),
             'clearUrl' => route('crm.projects.index'),
             ...$this->projectFilterViewData($filters, $request),
+            'developers' => $this->projects->contractedDevelopers(),
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $user = Auth::user();
+        abort_unless($this->projects->canViewAny($user), 403);
+
+        $filters = $this->crmFilters($request);
+        $query = $filters->applyProjectFilters(
+            $this->projects->scopedQuery($user)
+                ->with(['realEstateDeveloper', 'units.paymentPlans']),
+            $request,
+        )->orderBy('name');
+
+        $filename = 'projects-units-' . now()->format('Y-m-d-His') . '.csv';
+
+        return response()->streamDownload(function () use ($query) {
+            $out = fopen('php://output', 'w');
+            fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($out, [
+                'المشروع', 'نوع المخزون', 'المطور', 'المدينة', 'التصنيف', 'رقم الوحدة', 'الطابق', 'الدور', 'الاتجاه',
+                'المساحة', 'سعر الوحدة', 'نسبة البناء', 'نسبة الخصم', 'نسبة التحميل', 'إجمالي العقد', 'وديعة الصيانة',
+                'المقدم', 'الباقي', 'أشهر التقسيط', 'حالة الوحدة',
+            ]);
+
+            $query->chunkById(50, function ($projects) use ($out) {
+                foreach ($projects as $project) {
+                    if ($project->units->isEmpty()) {
+                        fputcsv($out, [
+                            $project->name,
+                            $project->inventorySourceLabel(),
+                            $project->displayDeveloperName(),
+                            $project->city,
+                            $project->property_type_name,
+                            '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+                        ]);
+                        continue;
+                    }
+
+                    foreach ($project->units as $unit) {
+                        $plan = $unit->paymentPlans->first();
+                        fputcsv($out, [
+                            $project->name,
+                            $project->inventorySourceLabel(),
+                            $project->displayDeveloperName(),
+                            $project->city,
+                            $unit->useTypeLabel(),
+                            $unit->displayCode(),
+                            $unit->floor_number,
+                            $unit->floor_label,
+                            $unit->directionLabel(),
+                            $unit->area_m2,
+                            $unit->unit_price_total ?? $unit->price_cash,
+                            $plan?->building_percent,
+                            $plan?->discount_percent,
+                            $plan?->loading_percent,
+                            $plan?->total_contract_amount,
+                            $plan?->maintenance_deposit,
+                            $plan?->down_payment_amount,
+                            $plan?->remaining_balance,
+                            $plan?->installment_months,
+                            $unit->statusLabel(),
+                        ]);
+                    }
+                }
+            });
+
+            fclose($out);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     public function create()
@@ -61,6 +132,7 @@ class CrmProjectController extends Controller
 
         return view('crm.projects.create', [
             'users' => $this->projects->formUsers(),
+            'developers' => $this->projects->contractedDevelopers(),
             'requiresApproval' => $this->approval->requiresApproval(Auth::user()),
         ]);
     }
@@ -78,6 +150,7 @@ class CrmProjectController extends Controller
         }
 
         $data = $this->projects->validate($request);
+        $manualUnits = $request->input('manual_units', []);
         $data = $this->projects->normalize($data, $request, $user);
         $data = $this->projects->resolveDeveloper($data, $user);
 
@@ -88,6 +161,7 @@ class CrmProjectController extends Controller
         }
 
         $this->projects->syncMapPins($project, $request, $user);
+        $this->projects->syncManualUnits($project, is_array($manualUnits) ? $manualUnits : []);
 
         return redirect()->route('crm.projects.show', $project)
             ->with('success', 'تم إضافة المشروع العقاري بنجاح');
@@ -146,6 +220,7 @@ class CrmProjectController extends Controller
         return view('crm.projects.edit', [
             'project' => $project,
             'users' => $this->projects->formUsers(),
+            'developers' => $this->projects->contractedDevelopers(),
             'requiresApproval' => $this->approval->requiresApproval(Auth::user()),
         ]);
     }
@@ -163,7 +238,8 @@ class CrmProjectController extends Controller
         }
 
         $data = $this->projects->validate($request, $project);
-        $data = $this->projects->normalize($data, $request, $user);
+        $manualUnits = $request->input('manual_units', []);
+        $data = $this->projects->normalize($data, $request, $user, $project);
         $data = $this->projects->resolveDeveloper($data, $user);
 
         $project->update($data);
@@ -173,6 +249,7 @@ class CrmProjectController extends Controller
         }
 
         $this->projects->syncMapPins($project, $request, $user);
+        $this->projects->syncManualUnits($project, is_array($manualUnits) ? $manualUnits : []);
 
         return redirect()->route('crm.projects.show', $project)
             ->with('success', 'تم تحديث المشروع العقاري بنجاح');

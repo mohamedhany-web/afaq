@@ -13,12 +13,6 @@
         قائمة العملاء
     </a>
     @endcanNav
-    @canNav('create-clients')
-    <a href="{{ route('crm.clients.create') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('crm.clients.create') ? 'active' : '' }}">
-        <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-        إضافة عميل
-    </a>
-    @endcanNav
     @canNav('view-team-sales', 'manage-sales-teams')
     <a href="{{ route('crm.leads.distribution') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('crm.leads.*') ? 'active' : '' }}">
         <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -96,6 +90,7 @@
     </a>
     @endcanNav
     @include('layouts.partials.sidebar-leaves-link', ['label' => 'إجازات الفريق'])
+    @include('layouts.partials.sidebar-exit-permit-link')
 </div>
 <div class="mt-6">
     <h3 class="sidebar-section-title px-4">الحساب</h3>

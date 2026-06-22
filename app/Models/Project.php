@@ -12,13 +12,20 @@ class Project extends Model
 {
     use HasFactory;
 
-    public const PROPERTY_TYPES = [
+    public const CLASSIFICATION_TYPES = [
         'residential' => 'سكني',
+        'administrative' => 'إداري',
         'commercial' => 'تجاري',
+        'medical' => 'طبي',
         'mixed' => 'مختلط',
+    ];
+
+    public const LEGACY_PROPERTY_TYPES = [
         'land' => 'أراضي',
         'villa' => 'فلل',
     ];
+
+    public const PROPERTY_TYPES = self::CLASSIFICATION_TYPES + self::LEGACY_PROPERTY_TYPES;
 
     public const DEVELOPMENT_TYPES = [
         'compound' => 'كمبوند',
@@ -53,6 +60,45 @@ class Project extends Model
     ];
 
     public const OWNERSHIP_REQUIRES_DEVELOPER = ['developer'];
+
+    public const INVENTORY_SOURCES = [
+        'company' => 'وحدات الشركة',
+        'non_company' => 'وحدات الغير',
+        'developer' => 'مشاريع المطورين',
+    ];
+
+    public static function inventorySourceLabels(): array
+    {
+        return config('project_inventory.sources', self::INVENTORY_SOURCES);
+    }
+
+    public static function normalizeInventorySource(?string $source): ?string
+    {
+        $source = $source ? strtolower(trim($source)) : null;
+
+        return array_key_exists($source, self::inventorySourceLabels()) ? $source : null;
+    }
+
+    public function inventorySourceLabel(): string
+    {
+        return self::inventorySourceLabels()[$this->inventory_source] ?? ($this->inventory_source ?: '—');
+    }
+
+    public function usesManualUnits(): bool
+    {
+        return in_array($this->inventory_source, ['company', 'non_company'], true);
+    }
+
+    public function usesDeveloperTables(): bool
+    {
+        return ($this->inventory_source ?? 'developer') === 'developer';
+    }
+
+    /** @return list<string> */
+    public function developerTableKeys(): array
+    {
+        return array_keys(config('project_inventory.developer_tables', []));
+    }
 
     public const OWNERSHIP_DETAIL_FIELDS = [
         'direct_owner' => ['contact_name', 'contact_phone', 'contract_ref', 'notes'],
@@ -94,6 +140,7 @@ class Project extends Model
         'developer_name',
         'real_estate_developer_id',
         'ownership_type',
+        'inventory_source',
         'ownership_details',
         'listing_status',
         'land_area_m2',
@@ -276,6 +323,126 @@ class Project extends Model
         return collect($types)
             ->map(fn (string $key) => self::PROPERTY_TYPES[$key] ?? $key)
             ->implode('، ');
+    }
+
+    /** @return list<string> */
+    public static function concreteClassificationKeys(): array
+    {
+        return array_keys(config('project_classifications.concrete', []));
+    }
+
+    /** @return array<string, array{price_from?: float, price_to?: float, area_from?: float, area_to?: float}> */
+    public function classificationPricing(): array
+    {
+        $pricing = $this->building_config['classification_pricing'] ?? [];
+
+        return is_array($pricing) ? $pricing : [];
+    }
+
+    public function classificationLabel(string $key): string
+    {
+        return config('project_classifications.types.' . $key)
+            ?? config('project_classifications.concrete.' . $key)
+            ?? self::PROPERTY_TYPES[$key]
+            ?? $key;
+    }
+
+    /** تصنيفات المشروع القابلة للعرض في الفلتر */
+    public function activeClassifications(): array
+    {
+        $types = $this->resolvedPropertyTypes();
+        $concrete = self::concreteClassificationKeys();
+        $pricing = $this->classificationPricing();
+
+        if (in_array('mixed', $types, true)) {
+            $candidates = $concrete;
+        } else {
+            $candidates = array_values(array_intersect($types, $concrete));
+        }
+
+        if ($candidates === []) {
+            $candidates = $concrete;
+        }
+
+        $unitTypes = $this->relationLoaded('units')
+            ? $this->units->pluck('use_type')->unique()->all()
+            : $this->units()->distinct()->pluck('use_type')->all();
+
+        return array_values(array_filter($candidates, function (string $key) use ($pricing, $unitTypes) {
+            if (in_array($key, $unitTypes, true)) {
+                return true;
+            }
+            $row = $pricing[$key] ?? [];
+
+            if (! empty($row['price_from']) || ! empty($row['price_to'])
+                || ! empty($row['area_from']) || ! empty($row['area_to'])) {
+                return true;
+            }
+
+            return empty($pricing)
+                && ($this->price_from || $this->price_to)
+                && in_array($key, $this->resolvedPropertyTypes(), true);
+        }));
+    }
+
+    /** @return array{price_from: ?float, price_to: ?float, area_from: ?float, area_to: ?float, label: string}|null */
+    public function classificationSummary(string $key): ?array
+    {
+        if (! in_array($key, self::concreteClassificationKeys(), true)) {
+            return null;
+        }
+
+        $stored = $this->classificationPricing()[$key] ?? [];
+        $units = $this->relationLoaded('units')
+            ? $this->units->where('use_type', $key)
+            : $this->units()->where('use_type', $key)->get();
+
+        $areaFrom = isset($stored['area_from']) && $stored['area_from'] !== ''
+            ? (float) $stored['area_from'] : null;
+        $areaTo = isset($stored['area_to']) && $stored['area_to'] !== ''
+            ? (float) $stored['area_to'] : null;
+
+        if ($units->isNotEmpty()) {
+            $minArea = (float) $units->min('area_m2');
+            $maxArea = (float) $units->max('area_m2');
+            $areaFrom = $areaFrom ?? $minArea;
+            $areaTo = $areaTo ?? $maxArea;
+        }
+
+        $priceFrom = isset($stored['price_from']) && $stored['price_from'] !== ''
+            ? (float) $stored['price_from'] : null;
+        $priceTo = isset($stored['price_to']) && $stored['price_to'] !== ''
+            ? (float) $stored['price_to'] : null;
+
+        if ($units->isNotEmpty()) {
+            $cashPrices = $units->pluck('price_cash')->filter(fn ($p) => $p > 0);
+            $instPrices = $units->pluck('price_installment')->filter(fn ($p) => $p > 0);
+            $allPrices = $cashPrices->merge($instPrices);
+            if ($allPrices->isNotEmpty()) {
+                $priceFrom = $priceFrom ?? (float) $allPrices->min();
+                $priceTo = $priceTo ?? (float) $allPrices->max();
+            }
+        }
+
+        if ($priceFrom === null && $priceTo === null && ($this->price_from || $this->price_to)) {
+            $types = $this->resolvedPropertyTypes();
+            if (in_array($key, $types, true)) {
+                $priceFrom = $this->price_from ? (float) $this->price_from : null;
+                $priceTo = $this->price_to ? (float) $this->price_to : null;
+            }
+        }
+
+        if ($priceFrom === null && $priceTo === null && $areaFrom === null && $areaTo === null) {
+            return null;
+        }
+
+        return [
+            'label' => $this->classificationLabel($key),
+            'price_from' => $priceFrom,
+            'price_to' => $priceTo,
+            'area_from' => $areaFrom,
+            'area_to' => $areaTo,
+        ];
     }
 
     public function getDevelopmentTypeNameAttribute(): string

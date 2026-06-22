@@ -287,8 +287,8 @@
         </a>
         @endcan
 
-        @can('create-clients')
-        <a href="{{ route('clients.create') }}" 
+        @auth
+        <a href="{{ route('crm.clients.create') }}" 
            class="group flex items-center p-3 sm:p-4 lg:p-5 rounded-2xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1 transform border-2 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 mb-3 sm:mb-0">
             <div class="p-2.5 sm:p-3 rounded-xl shadow-lg ml-3 sm:ml-4 flex-shrink-0 group-hover:scale-110 transition-transform duration-300 bg-gradient-to-r from-green-600 to-emerald-600">
                 <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -303,7 +303,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
         </a>
-        @endcan
+        @endauth
 
         @can('create-employees')
         <a href="{{ route('employees.create') }}" 

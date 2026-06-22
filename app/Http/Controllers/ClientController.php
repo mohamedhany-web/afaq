@@ -61,6 +61,17 @@ class ClientController extends Controller
             'id_number.required' => 'رقم البطاقة إلزامي لعملاء فري لانس.',
         ]);
 
+        $validator->after(function ($v) {
+            $phone = $v->getData()['phone'] ?? null;
+            if (!$phone) {
+                return;
+            }
+            $duplicate = Client::findByNormalizedPhone($phone);
+            if ($duplicate) {
+                $v->errors()->add('phone', 'رقم الهاتف مسجّل مسبقاً للعميل: ' . $duplicate->name);
+            }
+        });
+
         if ($validator->fails()) {
             return redirect()->back()
                 ->withErrors($validator)
@@ -124,6 +135,17 @@ class ClientController extends Controller
         ], [
             'id_number.required' => 'رقم البطاقة إلزامي لعملاء فري لانس.',
         ]);
+
+        $validator->after(function ($v) use ($client) {
+            $phone = $v->getData()['phone'] ?? null;
+            if (!$phone) {
+                return;
+            }
+            $duplicate = Client::findByNormalizedPhone($phone, $client->id);
+            if ($duplicate) {
+                $v->errors()->add('phone', 'رقم الهاتف مسجّل مسبقاً للعميل: ' . $duplicate->name);
+            }
+        });
 
         if ($validator->fails()) {
             return redirect()->back()

@@ -19,6 +19,9 @@
             <div class="flex-1 min-w-0">
                 <a href="{{ $client->profileUrl() }}" class="font-bold text-[12px] text-gray-900 hover:underline block truncate" draggable="false">{{ $client->name }}</a>
                 <p class="text-[10px] text-gray-500 truncate" dir="ltr">{{ $client->phone }}</p>
+                @if(($client->lead_stage ?? '') === 'new' && $client->created_at)
+                <p class="text-[9px] text-blue-600 mt-0.5 font-tajawal">{{ $client->created_at->format('Y/m/d H:i') }}</p>
+                @endif
                 <div class="flex flex-wrap items-center gap-1 mt-1">
                     @include('crm.clients.partials.status-badge', ['status' => $client->status])
                     @if($deals->count())

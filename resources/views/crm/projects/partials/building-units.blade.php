@@ -89,7 +89,7 @@
             @foreach(config('project_units.use_types') as $key => $label)
                 @php $count = $buildingSummary['by_use'][$key] ?? 0; @endphp
                 @if($count > 0)
-                <div class="rounded-xl border border-gray-200 p-3 text-center">
+                <div class="rounded-xl border border-gray-200 p-3 text-center" data-use-type="{{ $key }}">
                     <div class="text-xs text-gray-500 font-tajawal">{{ $label }}</div>
                     <div class="text-xl font-bold font-tajawal" style="color: {{ $useColors[$key] ?? $themeColor }}">{{ $count }}</div>
                 </div>
@@ -133,6 +133,7 @@
                              data-unit-id="{{ $unit->id }}"
                              data-floor-id="{{ $floor->id }}"
                              data-status="{{ $unit->status }}"
+                             data-use-type="{{ $unit->use_type }}"
                              style="border-color: {{ $fill }}33;">
                         <div class="px-3 py-2.5 flex items-center justify-between gap-2" style="background: {{ $fill }}14;">
                             <button type="button"
@@ -205,6 +206,7 @@
                                     data-unit-id="{{ $unit->id }}"
                                     data-floor-id="{{ $floor->id }}"
                                     data-status="{{ $unit->status }}"
+                                    data-use-type="{{ $unit->use_type }}"
                                     style="background: {{ $fill }}; focus-ring-color: {{ $themeColor }};"
                                     title="{{ $unit->code }} — {{ $unit->useTypeLabel() }} — {{ $unit->statusLabel() }} — انقر للتفاصيل">
                                 {{ $unit->code }}
@@ -304,7 +306,8 @@
                         <tr class="unit-table-row hover:bg-gray-50 cursor-pointer transition"
                             data-unit-id="{{ $unit->id }}"
                             data-floor-id="{{ $floor->id }}"
-                            data-status="{{ $unit->status }}">
+                            data-status="{{ $unit->status }}"
+                            data-use-type="{{ $unit->use_type }}">
                             <td class="px-4 py-2 font-semibold text-gray-900">
                                 <button type="button"
                                         class="unit-code-link font-mono font-bold hover:underline"
@@ -476,6 +479,7 @@
     let selectedId = null;
     let activeFloor = 'all';
     let activeStatus = null;
+    let activeUseType = document.getElementById('project-classification-panel')?.dataset.defaultClass || null;
 
     const panelEmpty = document.getElementById('unit-detail-empty');
     const panelContent = document.getElementById('unit-detail-content');
@@ -819,7 +823,8 @@
         document.querySelectorAll(filterable).forEach(el => {
             const floorMatch = activeFloor === 'all' || el.dataset.floorId === String(activeFloor);
             const statusMatch = !activeStatus || el.dataset.status === activeStatus;
-            const show = floorMatch && statusMatch;
+            const useMatch = !activeUseType || el.dataset.useType === activeUseType;
+            const show = floorMatch && statusMatch && useMatch;
             el.style.display = show ? '' : 'none';
             if (show && el.classList.contains('unit-card')) visibleCards++;
         });
@@ -890,7 +895,16 @@
         });
     });
 
-    const statusSelect = document.getElementById('detail-status-select');
+    document.addEventListener('classification-changed', (e) => {
+        activeUseType = e.detail?.key || null;
+        document.querySelectorAll('#unit-stats-strip > div[data-use-type]').forEach(box => {
+            const show = !activeUseType || box.dataset.useType === activeUseType;
+            box.classList.toggle('hidden', !show);
+        });
+        applyFilters();
+    });
+
+    const deepLinkUnit = new URLSearchParams(window.location.search).get('unit');
     if (statusSelect && canEdit) {
         statusSelect.addEventListener('change', () => {
             const msg = document.getElementById('detail-save-msg');
@@ -923,6 +937,13 @@
     }
 
     applyStatusFromUrl();
+
+    if (activeUseType) {
+        document.querySelectorAll('#unit-stats-strip > div[data-use-type]').forEach(box => {
+            box.classList.toggle('hidden', box.dataset.useType !== activeUseType);
+        });
+        applyFilters();
+    }
 
     const deepLinkUnit = new URLSearchParams(window.location.search).get('unit');
     if (deepLinkUnit && unitMap[deepLinkUnit]) {

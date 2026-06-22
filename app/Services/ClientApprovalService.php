@@ -62,7 +62,7 @@ class ClientApprovalService
         $this->assertNoPendingConflict($client, ClientChangeRequest::ACTION_UPDATE);
 
         $data = $this->clients->prepareData(
-            $this->clients->validate($request),
+            $this->clients->validate($request, $client),
             $user,
             false
         );
@@ -192,15 +192,26 @@ class ClientApprovalService
     protected function applyUpdate(ClientChangeRequest $change, User $reviewer): Client
     {
         $client = Client::findOrFail($change->client_id);
+        $tracked = ['name', 'phone', 'email', 'company_name', 'address', 'status', 'lead_stage', 'client_type', 'lead_source', 'assigned_to', 'notes', 'description', 'id_number'];
+        $before = $client->only($tracked);
         $client->update(($change->payload ?? [])['client'] ?? []);
+        $after = $client->fresh()->only($tracked);
 
-        return $client->fresh();
+        app(\App\Services\Crm\ClientActivityService::class)->logUpdated($client, $reviewer, $before, $after);
+
+        return $client;
     }
 
     protected function applyDelete(ClientChangeRequest $change, User $reviewer): ?Client
     {
         $client = Client::findOrFail($change->client_id);
-        $this->clients->deleteClient($client);
+        $reason = ($change->payload ?? [])['meta']['delete_reason'] ?? 'حذف بموافقة الإدارة';
+        $batch = app(\App\Services\Crm\ClientActivityService::class)->recordDeletionBatch(
+            $reviewer,
+            $reason,
+            [app(\App\Services\Crm\ClientActivityService::class)->clientSnapshot($client)],
+        );
+        $this->clients->deleteClient($client, $reviewer, $reason, null, $batch);
 
         return null;
     }

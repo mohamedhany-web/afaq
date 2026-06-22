@@ -60,9 +60,20 @@ class OperationsInventoryController extends Controller
             $statusFilter = null;
         }
 
+        $useTypeFilter = $request->get('use_type');
+        $allowedUseTypes = array_keys(config('project_units.use_types', []));
+        if ($useTypeFilter && ! in_array($useTypeFilter, $allowedUseTypes, true)) {
+            $useTypeFilter = null;
+        }
+
+        $selectedProject = $request->filled('project_id')
+            ? Project::with('units')->find((int) $request->project_id)
+            : null;
+
         $units = ProjectUnit::query()
             ->with(['project:id,name', 'floor:id,label,level'])
             ->when($statusFilter, fn ($q) => $q->where('status', $statusFilter))
+            ->when($useTypeFilter, fn ($q) => $q->where('use_type', $useTypeFilter))
             ->when($request->filled('project_id'), fn ($q) => $q->where('project_id', (int) $request->project_id))
             ->when($request->search, function ($q) use ($request) {
                 $s = '%' . $request->search . '%';
@@ -89,6 +100,9 @@ class OperationsInventoryController extends Controller
             'units' => $units,
             'projects' => $projects,
             'statusFilter' => $statusFilter,
+            'useTypeFilter' => $useTypeFilter,
+            'selectedProject' => $selectedProject,
+            'useTypeLabels' => config('project_units.use_types', []),
             'stats' => [
                 'total' => ProjectUnit::count(),
                 'available' => (int) ($byStatus[ProjectUnit::STATUS_AVAILABLE] ?? 0),

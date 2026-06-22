@@ -152,7 +152,7 @@ return [
     'permission_modules' => [
         ['key' => 'users', 'label' => 'المستخدمون والأدوار', 'group' => 'admin', 'view' => 'view-users', 'create' => 'create-users', 'edit' => 'edit-users', 'delete' => 'delete-users', 'extras' => ['manage-roles' => 'إدارة الأدوار والصلاحيات']],
         ['key' => 'employees', 'label' => 'الموظفون', 'group' => 'hr', 'view' => 'view-employees', 'create' => 'create-employees', 'edit' => 'edit-employees', 'delete' => 'delete-employees'],
-        ['key' => 'clients', 'label' => 'العملاء', 'group' => 'crm', 'view' => 'view-clients', 'create' => 'create-clients', 'edit' => 'edit-clients', 'delete' => 'delete-clients', 'extras' => ['approve-client-changes' => 'موافقة تعديل/حذف العملاء']],
+        ['key' => 'clients', 'label' => 'العملاء', 'group' => 'crm', 'view' => 'view-clients', 'create' => 'create-clients', 'edit' => 'edit-clients', 'delete' => 'delete-clients', 'extras' => ['transfer-clients' => 'تحويل/توزيع العملاء', 'approve-client-changes' => 'موافقة تعديل/حذف العملاء']],
         ['key' => 'sales', 'label' => 'الصفقات والمسار', 'group' => 'crm', 'view' => 'view-sales', 'create' => 'create-sales', 'edit' => 'edit-sales', 'delete' => 'delete-sales'],
         ['key' => 'projects', 'label' => 'المشاريع العقارية', 'group' => 'crm', 'view' => 'view-all-projects', 'create' => 'create-projects', 'edit' => 'edit-projects', 'delete' => 'delete-projects', 'extras' => ['approve-project-changes' => 'موافقة طلبات المشاريع', 'view-own-projects' => 'عرض مشاريعي فقط']],
         ['key' => 'developers', 'label' => 'المطورون العقاريون', 'group' => 'operations', 'view' => 'view-developers', 'create' => null, 'edit' => 'manage-developers', 'delete' => null],
@@ -162,7 +162,7 @@ return [
             'view-team-sales' => 'عرض مبيعات الفريق',
             'manage-sales-teams' => 'إدارة فرق المبيعات',
         ]],
-        ['key' => 'tasks', 'label' => 'المهام', 'group' => 'crm', 'view' => 'view-all-tasks', 'create' => 'create-tasks', 'edit' => 'edit-tasks', 'delete' => 'delete-tasks', 'extras' => ['view-own-tasks' => 'عرض مهامي فقط']],
+        ['key' => 'tasks', 'label' => 'المهام', 'group' => 'crm', 'view' => 'view-all-tasks', 'create' => 'create-tasks', 'edit' => 'edit-tasks', 'delete' => 'delete-tasks', 'extras' => ['view-own-tasks' => 'عرض مهامي فقط', 'transfer-tasks' => 'تحويل/سحب المهام بين السيلز']],
         ['key' => 'attendance', 'label' => 'الحضور', 'group' => 'hr', 'view' => 'view-attendance', 'create' => 'create-attendance', 'edit' => 'edit-attendance', 'delete' => 'delete-attendance'],
         ['key' => 'leaves', 'label' => 'الإجازات', 'group' => 'hr', 'view' => 'view-leaves', 'create' => 'create-leaves', 'edit' => 'edit-leaves', 'delete' => 'delete-leaves', 'extras' => ['approve-leaves' => 'الموافقة على الإجازات']],
         ['key' => 'salaries', 'label' => 'الرواتب', 'group' => 'finance', 'view' => 'view-salaries', 'create' => 'create-salaries', 'edit' => 'edit-salaries', 'delete' => 'delete-salaries', 'extras' => ['approve-salaries' => 'اعتماد الرواتب']],

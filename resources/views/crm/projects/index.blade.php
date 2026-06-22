@@ -35,13 +35,14 @@
 @if(!empty($stats['ownership']))
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
     @foreach($stats['ownership'] as $row)
-    <div class="bg-white rounded-xl border border-gray-200 p-4 flex items-center justify-between font-tajawal">
+    <a href="{{ route('crm.projects.index', ['inventory_source' => $row['key']]) }}#page-data"
+       class="bg-white rounded-xl border border-gray-200 p-4 flex items-center justify-between font-tajawal hover:shadow-md transition-shadow">
         <div>
             <p class="text-xs text-gray-500">{{ $row['label'] }}</p>
             <p class="text-xl font-bold text-gray-900">{{ $row['count'] }} <span class="text-sm font-normal text-gray-400">مشروع</span></p>
         </div>
         <span class="text-xs text-gray-400">{{ number_format($row['units']) }} وحدة</span>
-    </div>
+    </a>
     @endforeach
 </div>
 @endif
@@ -56,6 +57,7 @@
             <div class="flex flex-col items-end gap-1 shrink-0">
                 @include('projects.partials.listing-badge', ['status' => $project->listing_status])
                 @include('projects.partials.ownership-badge', ['type' => $project->ownership_type])
+                <span class="text-[10px] px-2 py-0.5 rounded-lg bg-gray-100 text-gray-700 font-tajawal">{{ $project->inventorySourceLabel() }}</span>
             </div>
         </div>
         @if($project->requiresRegisteredDeveloper() && $project->displayDeveloperName() !== '—')

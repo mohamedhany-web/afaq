@@ -3,8 +3,12 @@
     $input = 'w-full border-2 border-gray-200 rounded-xl px-4 py-3 font-tajawal text-sm focus:outline-none focus:ring-2 focus:ring-offset-0';
     $label = 'block text-xs font-bold text-gray-500 mb-1.5 font-tajawal';
     $sectionHeader = 'px-5 sm:px-6 py-4 border-b border-gray-200 font-tajawal font-bold text-gray-900';
+    $themeColor = $themeColor ?? \App\Helpers\SettingsHelper::getThemeColor();
 @endphp
 
+@include('projects.partials.inventory-source-fields', compact('project', 'developers', 'themeColor', 'input', 'label', 'sectionHeader'))
+
+<div id="project-details-after-source" class="space-y-6 w-full">
 <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full">
     <div class="{{ $sectionHeader }}" style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">
         بيانات المشروع العقاري
@@ -32,7 +36,7 @@
             <input type="number" name="land_area_m2" min="0" step="0.01" value="{{ old('land_area_m2', $project->land_area_m2 ?? '') }}" class="{{ $input }}" placeholder="31000">
         </div>
         <div class="sm:col-span-2">
-            <label class="{{ $label }}">نوع العقار * <span class="font-normal text-gray-400">(يمكن اختيار أكثر من نوع)</span></label>
+            <label class="{{ $label }}">تصنيف المشروع * <span class="font-normal text-gray-400">(يمكن اختيار أكثر من تصنيف)</span></label>
             @php
                 $selectedPropertyTypes = old(
                     'property_types',
@@ -43,7 +47,7 @@
                 }
             @endphp
             <div class="mt-2 flex flex-wrap gap-2">
-                @foreach(\App\Models\Project::PROPERTY_TYPES as $val => $txt)
+                @foreach(\App\Models\Project::CLASSIFICATION_TYPES as $val => $txt)
                     <label class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border-2 cursor-pointer text-sm font-tajawal transition
                         {{ in_array($val, $selectedPropertyTypes, true) ? 'border-current bg-opacity-10' : 'border-gray-200 bg-gray-50' }}"
                         style="{{ in_array($val, $selectedPropertyTypes, true) ? 'border-color: ' . ($themeColor ?? '#4f46e5') . '; background: ' . ($themeColor ?? '#4f46e5') . '12; color: ' . ($themeColor ?? '#4f46e5') : '' }}">
@@ -77,47 +81,9 @@
     </div>
 </div>
 
-@include('projects.partials.ownership-fields', [
-    'project' => $project ?? null,
-    'themeColor' => $themeColor ?? \App\Helpers\SettingsHelper::getThemeColor(),
-    'input' => $input,
-    'label' => $label,
-    'sectionHeader' => $sectionHeader,
-])
+@include('projects.partials.manual-units-table', compact('project', 'themeColor', 'input'))
 
-<div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full">
-    <div class="{{ $sectionHeader }}" style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">
-        الوحدات والأسعار
-    </div>
-    <div class="p-5 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <div>
-            <label class="{{ $label }}">إجمالي الوحدات</label>
-            <input type="number" name="total_units" min="0" value="{{ old('total_units', $project->total_units ?? 0) }}" class="{{ $input }}">
-        </div>
-        <div>
-            <label class="{{ $label }}">وحدات مباعة</label>
-            <input type="number" name="sold_units" min="0" value="{{ old('sold_units', $project->sold_units ?? 0) }}" class="{{ $input }}">
-        </div>
-        <div>
-            <label class="{{ $label }}">وحدات متاحة</label>
-            <input type="number" name="available_units" min="0" value="{{ old('available_units', $project->available_units ?? '') }}" class="{{ $input }}" placeholder="يُحسب تلقائياً إن تُرك فارغاً">
-        </div>
-        <div>
-            <label class="{{ $label }}">نسبة البيع</label>
-            <div class="px-4 py-3 rounded-xl bg-gray-50 border-2 border-gray-200 text-sm text-gray-600 font-tajawal">
-                تُحدَّث تلقائياً من الوحدات
-            </div>
-        </div>
-        <div>
-            <label class="{{ $label }}">السعر من (ج.م)</label>
-            <input type="number" name="price_from" min="0" step="0.01" value="{{ old('price_from', $project->price_from ?? '') }}" class="{{ $input }}">
-        </div>
-        <div>
-            <label class="{{ $label }}">السعر إلى (ج.م)</label>
-            <input type="number" name="price_to" min="0" step="0.01" value="{{ old('price_to', $project->price_to ?? '') }}" class="{{ $input }}">
-        </div>
-    </div>
-</div>
+@include('projects.partials.classification-pricing', compact('project', 'themeColor', 'input', 'label'))
 
 <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full">
     <div class="{{ $sectionHeader }}" style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">
@@ -163,4 +129,5 @@
     </div>
 </div>
 
-@include('projects.partials.map-picker', ['project' => $project ?? null, 'themeColor' => $themeColor ?? \App\Helpers\SettingsHelper::getThemeColor()])
+@include('projects.partials.map-picker', ['project' => $project ?? null, 'themeColor' => $themeColor])
+</div>

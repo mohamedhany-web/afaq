@@ -2,6 +2,7 @@
 
 namespace App\Services\Tasks;
 
+use App\Models\Client;
 use App\Models\CrmTask;
 use App\Models\CrmTaskLog;
 use App\Models\User;
@@ -55,6 +56,19 @@ class CrmTaskService
         if ($scope->isManagerScope()) {
             return in_array($targetUserId, $scope->managedTeamMemberUserIds(), true)
                 && $targetUserId !== $actor->id;
+        }
+
+        return false;
+    }
+
+    public function canTransfer(User $actor, CrmTask $task): bool
+    {
+        if (! $this->canView($actor, $task)) {
+            return false;
+        }
+
+        if ($actor->can('transfer-tasks') || $this->assignableUsers($actor)->isNotEmpty()) {
+            return true;
         }
 
         return false;
@@ -155,6 +169,96 @@ class CrmTaskService
         $this->log($task, $actor, 'updated', null, $task->status);
 
         return $task->fresh();
+    }
+
+    public function transfer(User $actor, CrmTask $task, int $targetUserId): CrmTask
+    {
+        if (! $this->canTransfer($actor, $task)) {
+            abort(403, 'غير مصرح بتحويل هذه المهمة.');
+        }
+
+        if (! $this->canAssignTo($actor, $targetUserId)) {
+            throw ValidationException::withMessages(['assigned_to' => 'لا يمكنك تحويل المهمة لهذا المستخدم.']);
+        }
+
+        return $this->performTransfer($actor, $task, $targetUserId, enforceOverloadGuard: true);
+    }
+
+    /**
+     * تحويل المهام النشطة المرتبطة بعميل عند سحب/تحويل العميل بين السيلز.
+     *
+     * @return list<array{id: int, title: string}>
+     */
+    public function transferClientTasks(User $actor, Client $client, ?int $fromUserId, int $toUserId): array
+    {
+        if ($fromUserId === $toUserId) {
+            return [];
+        }
+
+        if (! $this->canAssignTo($actor, $toUserId)) {
+            return [];
+        }
+
+        $query = CrmTask::query()
+            ->where('client_id', $client->id)
+            ->whereIn('status', config('crm_tasks.active_statuses', []))
+            ->where('assigned_to', '!=', $toUserId);
+
+        if ($fromUserId) {
+            $query->where('assigned_to', $fromUserId);
+        }
+
+        $transferred = [];
+
+        foreach ($query->get() as $task) {
+            try {
+                $this->performTransfer($actor, $task, $toUserId, enforceOverloadGuard: false);
+                $transferred[] = ['id' => $task->id, 'title' => $task->title];
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
+        return $transferred;
+    }
+
+    protected function performTransfer(User $actor, CrmTask $task, int $targetUserId, bool $enforceOverloadGuard = true): CrmTask
+    {
+        if ((int) $task->assigned_to === $targetUserId) {
+            throw ValidationException::withMessages(['assigned_to' => 'المهمة مُعيَّنة بالفعل لهذا المستخدم.']);
+        }
+
+        if (in_array($task->status, [CrmTask::STATUS_COMPLETED, CrmTask::STATUS_VERIFIED, CrmTask::STATUS_ARCHIVED], true)) {
+            throw ValidationException::withMessages(['task' => 'لا يمكن تحويل مهمة مكتملة أو مؤرشفة.']);
+        }
+
+        if ($enforceOverloadGuard) {
+            $this->guardOverload($targetUserId);
+        }
+
+        return DB::transaction(function () use ($actor, $task, $targetUserId) {
+            $fromName = $task->assignee?->name ?? '—';
+            $toUser = User::findOrFail($targetUserId);
+
+            $task->update([
+                'assigned_to' => $targetUserId,
+                'status' => $task->requires_acceptance ? CrmTask::STATUS_PENDING : CrmTask::STATUS_ACCEPTED,
+                'accepted_at' => $task->requires_acceptance ? null : now(),
+            ]);
+
+            $this->log(
+                $task,
+                $actor,
+                'transferred',
+                null,
+                $task->status,
+                'تحويل من ' . $fromName . ' إلى ' . $toUser->name . ' (مع تحويل العميل)',
+            );
+
+            CrmNotificationService::notifyTaskAssigned($task->fresh());
+
+            return $task->fresh(['assignee', 'assigner']);
+        });
     }
 
     public function accept(User $actor, CrmTask $task): CrmTask

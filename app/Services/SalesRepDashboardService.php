@@ -66,7 +66,7 @@ class SalesRepDashboardService
         $today = today();
 
         $assigned = (clone $clients)->count();
-        $newToday = (clone $clients)->whereDate('created_at', $today)->count();
+        $newToday = (clone $clients)->where('lead_stage', CrmScopeService::LEAD_STAGE_NEW)->whereDate('created_at', $today)->count();
         $followUpsDue = (clone $sales)
             ->whereNotIn('stage', ['closed_won', 'closed_lost'])
             ->where(function ($q) use ($today) {
@@ -202,6 +202,10 @@ class SalesRepDashboardService
         $all = (clone $base)->get();
 
         $classify = function (Client $c): string {
+            if ($c->lead_stage === CrmScopeService::LEAD_STAGE_NEW) {
+                return 'new';
+            }
+
             $sale = $c->sales->sortByDesc('updated_at')->first();
             if ($c->created_at->gte(now()->subDays(7))) {
                 return 'new';

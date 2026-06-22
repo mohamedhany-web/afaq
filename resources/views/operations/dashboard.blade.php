@@ -28,14 +28,7 @@
 
 <div class="flex flex-wrap items-center gap-3 mb-6 font-tajawal">
     @include('partials.ui-compact-toggle', ['themeColor' => $themeColor, 'labelOn' => __('operations.ui.compact_on'), 'labelOff' => __('operations.ui.compact_off')])
-    <form method="GET" action="{{ route('operations.reps.search') }}" class="flex flex-1 min-w-[240px] max-w-xl gap-2">
-        <input type="search" name="q" value="{{ request('q') }}"
-               placeholder="{{ __('operations.actions.search_sales_rep_placeholder') }}"
-               class="flex-1 border rounded-xl px-4 py-2.5 text-sm">
-        <button type="submit" class="px-5 py-2.5 rounded-xl text-white text-sm font-bold whitespace-nowrap" style="background:{{ $themeColor }}">
-            {{ __('operations.actions.search_sales_rep') }}
-        </button>
-    </form>
+    @include('operations.partials.rep-search-form', ['salesReps' => $salesReps, 'compact' => true])
 </div>
 
 <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mb-6" id="page-data">

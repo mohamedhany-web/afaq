@@ -7,7 +7,9 @@ use App\Http\Controllers\Operations\OperationsCrmController;
 use App\Http\Controllers\Operations\OperationsDashboardController;
 use App\Http\Controllers\Operations\OperationsFollowUpController;
 use App\Http\Controllers\Operations\OperationsInventoryController;
+use App\Http\Controllers\Operations\OperationsExitPermitController;
 use App\Http\Controllers\Operations\OperationsLeadController;
+use App\Http\Controllers\Operations\OperationsLeaveController;
 use App\Http\Controllers\Operations\OperationsRepController;
 use App\Http\Controllers\Operations\OperationsPeriodReportController;
 use App\Http\Controllers\Operations\OperationsTeamController;
@@ -53,4 +55,12 @@ Route::middleware(['auth', 'verified', 'verified.code'])->prefix('operations')->
     Route::post('checkout-reviews/{checkoutReview}/approve', [OperationsCheckoutReviewController::class, 'approve'])->name('checkout-reviews.approve');
     Route::post('checkout-reviews/{checkoutReview}/reject', [OperationsCheckoutReviewController::class, 'reject'])->name('checkout-reviews.reject');
     Route::post('checkout-reviews/{checkoutReview}/revoke', [OperationsCheckoutReviewController::class, 'revoke'])->name('checkout-reviews.revoke');
+
+    Route::get('leaves', [OperationsLeaveController::class, 'index'])->name('leaves.index');
+    Route::post('leaves/{leave}/approve', [OperationsLeaveController::class, 'approve'])->name('leaves.approve');
+    Route::post('leaves/{leave}/reject', [OperationsLeaveController::class, 'reject'])->name('leaves.reject');
+
+    Route::get('exit-permits', [OperationsExitPermitController::class, 'index'])->name('exit-permits.index');
+    Route::post('exit-permits/{exitPermit}/approve', [OperationsExitPermitController::class, 'approve'])->name('exit-permits.approve');
+    Route::post('exit-permits/{exitPermit}/reject', [OperationsExitPermitController::class, 'reject'])->name('exit-permits.reject');
 });

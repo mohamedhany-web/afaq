@@ -26,7 +26,21 @@
 @include('operations.partials.kpi-group', ['group' => $inventoryKpis, 'link' => route('operations.inventory.index') . '#page-data'])
 @endif
 
-@include('operations.partials.unit-inventory-cards', compact('units', 'projects', 'statusFilter', 'themeColor'))
+@if($selectedProject ?? null)
+@include('projects.partials.classification-filter', [
+    'project' => $selectedProject,
+    'themeColor' => $themeColor,
+    'filterMode' => 'operations',
+    'opsFilterUrl' => route('operations.inventory.index', array_filter([
+        'project_id' => $selectedProject->id,
+        'status' => request('status'),
+        'search' => request('search'),
+    ])),
+    'defaultClass' => request('use_type'),
+])
+@endif
+
+@include('operations.partials.unit-inventory-cards', compact('units', 'projects', 'statusFilter', 'themeColor', 'useTypeFilter', 'useTypeLabels'))
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6 font-tajawal">
     <div class="bg-white rounded-2xl border overflow-hidden">

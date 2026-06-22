@@ -108,5 +108,13 @@ class CrmEmployeeService
     {
         return $user->hasAnyRole(self::LEGACY_TEAM_LEADER_ROLES);
     }
+
+    /** @return \Illuminate\Database\Eloquent\Builder<User> */
+    public static function searchableSalesUsersQuery()
+    {
+        return User::query()
+            ->with(['employee.department'])
+            ->orderBy('name');
+    }
 }
 

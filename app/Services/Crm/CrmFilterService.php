@@ -114,7 +114,7 @@ class CrmFilterService
     public function hasActiveFilters(Request $request, array $keys): bool
     {
         foreach ($keys as $key) {
-            if (in_array($key, ['unassigned', 'show_closed', 'advanced', 'client_unassigned', 'overdue_only'], true)) {
+            if (in_array($key, ['unassigned', 'show_closed', 'advanced', 'client_unassigned', 'overdue_only', 'has_units'], true)) {
                 if ($request->boolean($key)) {
                     return true;
                 }
@@ -186,7 +186,10 @@ class CrmFilterService
     /** @return string[] */
     public function projectFilterKeys(): array
     {
-        return ['search', 'listing_status', 'ownership_type', 'property_type', 'city', 'advanced'];
+        return [
+            'search', 'inventory_source', 'listing_status', 'developer_id', 'property_type',
+            'price_min', 'price_max', 'project_type', 'city', 'advanced',
+        ];
     }
 
     public function applyProjectFilters(Builder $query, Request $request): Builder
@@ -196,9 +199,17 @@ class CrmFilterService
                 $sub->where('name', 'like', '%' . $request->search . '%')
                     ->orWhere('location', 'like', '%' . $request->search . '%')
                     ->orWhere('city', 'like', '%' . $request->search . '%')
-                    ->orWhere('developer_name', 'like', '%' . $request->search . '%');
+                    ->orWhere('developer_name', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('units', fn ($u) => $u
+                        ->where('code', 'like', '%' . $request->search . '%')
+                        ->orWhere('apartment_number', 'like', '%' . $request->search . '%'));
             }))
+            ->when($request->inventory_source, fn ($q) => $q->where('inventory_source', $request->inventory_source))
             ->when($request->listing_status, fn ($q) => $q->where('listing_status', $request->listing_status))
+            ->when($request->developer_id, fn ($q) => $q->where('real_estate_developer_id', (int) $request->developer_id))
+            ->when($request->filled('price_min'), fn ($q) => $q->where('price_from', '>=', (float) $request->price_min))
+            ->when($request->filled('price_max'), fn ($q) => $q->where('price_to', '<=', (float) $request->price_max))
+            ->when($request->project_type, fn ($q) => $q->where('project_type', $request->project_type))
             ->when($request->property_type, function ($q) use ($request) {
                 $type = $request->property_type;
                 $q->where(function ($inner) use ($type) {
@@ -207,7 +218,14 @@ class CrmFilterService
                 });
             })
             ->when($request->ownership_type, fn ($q) => $q->where('ownership_type', $request->ownership_type))
-            ->when($request->city, fn ($q) => $q->where('city', 'like', '%' . $request->city . '%'));
+            ->when($request->city, fn ($q) => $q->where('city', 'like', '%' . $request->city . '%'))
+            ->when($request->boolean('has_units'), fn ($q) => $q->whereHas('units'))
+            ->when($request->unit_use_type, fn ($q) => $q->whereHas('units', fn ($u) => $u->where('use_type', $request->unit_use_type)))
+            ->when($request->unit_status, fn ($q) => $q->whereHas('units', fn ($u) => $u->where('status', $request->unit_status)))
+            ->when($request->direction, fn ($q) => $q->whereHas('units', fn ($u) => $u->where('direction', $request->direction)))
+            ->when($request->filled('floor_number'), fn ($q) => $q->whereHas('units', fn ($u) => $u->where('floor_number', $request->floor_number)))
+            ->when($request->filled('area_min'), fn ($q) => $q->whereHas('units', fn ($u) => $u->where('area_m2', '>=', (float) $request->area_min)))
+            ->when($request->filled('area_max'), fn ($q) => $q->whereHas('units', fn ($u) => $u->where('area_m2', '<=', (float) $request->area_max)));
     }
 
     public function resolveSalesRepId(Request $request): ?int

@@ -27,17 +27,26 @@ class OperationsRepController extends Controller
 
     public function search(Request $request)
     {
+        if ($request->filled('rep_id')) {
+            $rep = User::findOrFail($request->integer('rep_id'));
+            $this->ensureManagedRep($rep);
+
+            return redirect()->route('operations.reps.show', $rep);
+        }
+
         $q = trim((string) $request->get('q', ''));
+        $salesReps = CrmEmployeeService::searchableSalesUsersQuery()->get();
 
         $reps = $this->managedRepsQuery()
             ->when($q !== '', fn ($query) => $query->where('name', 'like', '%' . $q . '%'))
             ->orderBy('name')
-            ->limit(20)
             ->get();
 
         return view('operations.reps.search', [
             'reps' => $reps,
+            'salesReps' => $salesReps,
             'q' => $q,
+            'selectedRepId' => $request->integer('rep_id') ?: null,
         ]);
     }
 
@@ -83,12 +92,7 @@ class OperationsRepController extends Controller
 
     protected function managedRepsQuery()
     {
-        $salesDeptId = CrmEmployeeService::salesDepartment()->id;
-
-        return User::role(CrmEmployeeService::LEGACY_EMPLOYEE_ROLES)
-            ->whereHas('employee', fn ($q) => $q
-                ->where('department_id', $salesDeptId)
-                ->where('status', 'active'));
+        return CrmEmployeeService::searchableSalesUsersQuery();
     }
 
     protected function ensureManagedRep(User $rep): void

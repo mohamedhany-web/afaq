@@ -77,6 +77,7 @@ class ProjectManagementService
             'developer_name' => 'nullable|string|max:255',
             'real_estate_developer_id' => 'nullable|exists:real_estate_developers,id',
             'ownership_type' => ['required', Rule::in(array_keys(Project::OWNERSHIP_TYPES))],
+            'inventory_source' => ['required', Rule::in(array_keys(Project::inventorySourceLabels()))],
             'ownership_details' => 'nullable|array',
             'city' => 'nullable|string|max:100',
             'location' => 'nullable|string|max:255',
@@ -93,6 +94,31 @@ class ProjectManagementService
             'sold_units' => 'nullable|integer|min:0',
             'price_from' => 'nullable|numeric|min:0',
             'price_to' => 'nullable|numeric|min:0',
+            'classification_pricing' => 'nullable|array',
+            'classification_pricing.*.price_from' => 'nullable|numeric|min:0',
+            'classification_pricing.*.price_to' => 'nullable|numeric|min:0',
+            'classification_pricing.*.area_from' => 'nullable|numeric|min:0',
+            'classification_pricing.*.area_to' => 'nullable|numeric|min:0',
+            'classification_pricing.*.building_percent' => 'nullable|numeric|min:0|max:100',
+            'classification_pricing.*.discount_percent' => 'nullable|numeric|min:0|max:100',
+            'classification_pricing.*.loading_percent' => 'nullable|numeric|min:0|max:100',
+            'classification_pricing.*.maintenance_deposit' => 'nullable|numeric|min:0',
+            'classification_pricing.*.default_down_percent' => 'nullable|numeric|min:0|max:100',
+            'classification_pricing.*.default_installment_years' => 'nullable|integer|min:0|max:40',
+            'manual_units' => 'nullable|array|max:500',
+            'manual_units.*.area_m2' => 'nullable|numeric|min:0',
+            'manual_units.*.use_type' => ['nullable', Rule::in(array_keys(config('project_units.use_types', [])))],
+            'manual_units.*.direction' => ['nullable', Rule::in(array_keys(config('project_inventory.directions', [])))],
+            'manual_units.*.floor_number' => 'nullable|string|max:16',
+            'manual_units.*.floor_label' => 'nullable|string|max:64',
+            'manual_units.*.apartment_number' => 'nullable|string|max:32',
+            'manual_units.*.unit_price_total' => 'nullable|numeric|min:0',
+            'manual_units.*.building_percent' => 'nullable|numeric|min:0|max:100',
+            'manual_units.*.discount_percent' => 'nullable|numeric|min:0|max:100',
+            'manual_units.*.loading_percent' => 'nullable|numeric|min:0|max:100',
+            'manual_units.*.maintenance_deposit' => 'nullable|numeric|min:0',
+            'manual_units.*.down_percent' => 'nullable|numeric|min:0|max:100',
+            'manual_units.*.years' => 'nullable|integer|min:0|max:40',
             'client_id' => 'nullable|exists:clients,id',
             'project_manager_id' => 'nullable|exists:users,id',
             'department_id' => 'nullable|exists:departments,id',
@@ -123,6 +149,27 @@ class ProjectManagementService
                     $v->errors()->add('real_estate_developer_id', 'المطور المحدد غير مسجل أو التعاقد غير نشط.');
                 }
             }
+
+            $pricing = $request->input('classification_pricing', []);
+            if (is_array($pricing)) {
+                foreach ($pricing as $key => $row) {
+                    if (! is_array($row)) {
+                        continue;
+                    }
+                    $from = $row['price_from'] ?? null;
+                    $to = $row['price_to'] ?? null;
+                    if ($from !== null && $from !== '' && $to !== null && $to !== '' && (float) $to < (float) $from) {
+                        $label = Project::CLASSIFICATION_TYPES[$key] ?? $key;
+                        $v->errors()->add("classification_pricing.{$key}.price_to", "سعر «إلى» لـ {$label} يجب أن يكون أكبر من أو يساوي «من».");
+                    }
+                    $areaFrom = $row['area_from'] ?? null;
+                    $areaTo = $row['area_to'] ?? null;
+                    if ($areaFrom !== null && $areaFrom !== '' && $areaTo !== null && $areaTo !== '' && (float) $areaTo < (float) $areaFrom) {
+                        $label = Project::CLASSIFICATION_TYPES[$key] ?? $key;
+                        $v->errors()->add("classification_pricing.{$key}.area_to", "مساحة «إلى» لـ {$label} يجب أن تكون أكبر من أو تساوي «من».");
+                    }
+                }
+            }
         });
 
         if ($validator->fails()) {
@@ -132,7 +179,7 @@ class ProjectManagementService
         return $validator->validated();
     }
 
-    public function normalize(array $data, Request $request, User $user): array
+    public function normalize(array $data, Request $request, User $user, ?Project $project = null): array
     {
         $total = (int) ($data['total_units'] ?? 0);
         $sold = (int) ($data['sold_units'] ?? 0);
@@ -167,6 +214,20 @@ class ProjectManagementService
         }
 
         $ownershipType = Project::normalizeOwnershipType($data['ownership_type'] ?? '') ?? 'developer';
+        $inventorySource = Project::normalizeInventorySource($data['inventory_source'] ?? null)
+            ?? match ($ownershipType) {
+                'afaq_private' => 'company',
+                'developer' => 'developer',
+                default => 'non_company',
+            };
+
+        $data['inventory_source'] = $inventorySource;
+        $data['ownership_type'] = match ($inventorySource) {
+            'company' => 'afaq_private',
+            'developer' => 'developer',
+            default => Project::normalizeOwnershipType($data['ownership_type'] ?? '') ?? 'direct_owner',
+        };
+        $ownershipType = $data['ownership_type'];
 
         if (in_array($ownershipType, Project::OWNERSHIP_REQUIRES_DEVELOPER, true)) {
             $data['ownership_details'] = null;
@@ -183,9 +244,82 @@ class ProjectManagementService
         $data['property_types'] = $propertyTypes;
         $data['property_type'] = $propertyTypes[0] ?? null;
 
-        unset($data['map_pins']);
+        $pricing = $this->normalizeClassificationPricing(
+            $request->input('classification_pricing', []),
+            $propertyTypes,
+        );
+        $buildingConfig = is_array($project?->building_config) ? $project->building_config : [];
+        $buildingConfig['classification_pricing'] = $pricing;
+        $data['building_config'] = $buildingConfig;
+
+        $priceFromValues = collect($pricing)->pluck('price_from')->filter(fn ($v) => $v !== null && $v !== '');
+        $priceToValues = collect($pricing)->pluck('price_to')->filter(fn ($v) => $v !== null && $v !== '');
+        if ($priceFromValues->isNotEmpty()) {
+            $data['price_from'] = $priceFromValues->min();
+        }
+        if ($priceToValues->isNotEmpty()) {
+            $data['price_to'] = $priceToValues->max();
+        }
+
+        unset($data['map_pins'], $data['classification_pricing'], $data['manual_units']);
 
         return $data;
+    }
+
+    /** @param  list<array<string, mixed>>  $rows */
+    public function syncManualUnits(Project $project, array $rows): int
+    {
+        if (! $project->usesManualUnits()) {
+            return 0;
+        }
+
+        return app(ProjectManualUnitService::class)->sync($project, $rows, replace: true);
+    }
+
+    /** @return \Illuminate\Database\Eloquent\Collection<int, RealEstateDeveloper> */
+    public function contractedDevelopers()
+    {
+        return RealEstateDeveloper::contracted()
+            ->orderBy('name')
+            ->get(['id', 'name', 'city']);
+    }
+
+    /** @param  array<string, mixed>  $raw
+     * @param  list<string>  $propertyTypes
+     * @return array<string, array{price_from?: float, price_to?: float, area_from?: float, area_to?: float}>
+     */
+    public function normalizeClassificationPricing(array $raw, array $propertyTypes): array
+    {
+        $allowed = in_array('mixed', $propertyTypes, true)
+            ? Project::concreteClassificationKeys()
+            : array_values(array_intersect($propertyTypes, Project::concreteClassificationKeys()));
+
+        if ($allowed === []) {
+            $allowed = Project::concreteClassificationKeys();
+        }
+
+        $normalized = [];
+        foreach ($allowed as $key) {
+            $row = is_array($raw[$key] ?? null) ? $raw[$key] : [];
+            $entry = [];
+            foreach (['price_from', 'price_to', 'area_from', 'area_to', 'building_percent', 'discount_percent', 'loading_percent', 'maintenance_deposit', 'default_down_percent'] as $field) {
+                $val = $row[$field] ?? null;
+                if ($val !== null && $val !== '') {
+                    $entry[$field] = in_array($field, ['default_installment_years'], true)
+                        ? (int) $val
+                        : (float) $val;
+                }
+            }
+            $years = $row['default_installment_years'] ?? null;
+            if ($years !== null && $years !== '') {
+                $entry['default_installment_years'] = (int) $years;
+            }
+            if ($entry !== []) {
+                $normalized[$key] = $entry;
+            }
+        }
+
+        return $normalized;
     }
 
     public function resolveDeveloper(array $data, User $user): array
@@ -245,12 +379,12 @@ class ProjectManagementService
     public function ownershipStats($query): array
     {
         $counts = (clone $query)
-            ->selectRaw('ownership_type, COUNT(*) as total, COALESCE(SUM(available_units), 0) as units')
-            ->groupBy('ownership_type')
+            ->selectRaw('inventory_source, COUNT(*) as total, COALESCE(SUM(available_units), 0) as units')
+            ->groupBy('inventory_source')
             ->get()
-            ->keyBy('ownership_type');
+            ->keyBy('inventory_source');
 
-        return collect(Project::OWNERSHIP_TYPES)->map(function ($label, $key) use ($counts) {
+        return collect(Project::inventorySourceLabels())->map(function ($label, $key) use ($counts) {
             $row = $counts->get($key);
 
             return [

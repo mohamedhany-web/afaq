@@ -10,16 +10,18 @@
     'title' => 'مسار المبيعات',
     'subtitle' => 'اختر عميلاً لفتح مساره — السحب والإفلات وتسجيل البيانات داخل صفحة العميل',
     'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />',
-    'actionUrl' => auth()->user()?->can('create', \App\Models\Client::class) ? route('crm.clients.create') : route('crm.pipeline.create'),
-    'actionLabel' => auth()->user()?->can('create', \App\Models\Client::class) ? 'عميل جديد' : 'صفقة جديدة',
+    'actionUrl' => route('crm.clients.create'),
+    'actionLabel' => 'عميل جديد',
     'actionIcon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />',
 ])
 
+@include('crm.pipeline.partials.view-switcher', ['current' => 'list'])
+
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-    @include('crm.partials.stat-card', ['label' => 'العملاء', 'value' => $stats['total'], 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />', 'href' => route('crm.pipeline.index') . '#page-data', 'linkLabel' => 'عرض القائمة'])
-    @include('crm.partials.stat-card', ['label' => 'محتملون', 'value' => $stats['prospect'], 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />', 'href' => route('crm.pipeline.index', ['status' => 'prospect']) . '#page-data', 'linkLabel' => 'عرض المحتملين'])
-    @include('crm.partials.stat-card', ['label' => 'نشطون', 'value' => $stats['active'], 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />', 'href' => route('crm.pipeline.index', ['status' => 'active']) . '#page-data', 'linkLabel' => 'عرض النشطين'])
-    @include('crm.partials.stat-card', ['label' => 'لديهم صفقات', 'value' => $stats['with_deals'], 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2" />', 'href' => route('crm.pipeline.index', ['has_deals' => '1']) . '#page-data', 'linkLabel' => 'عرض الصفقات'])
+    @include('crm.partials.stat-card', ['label' => 'New Lead / جديد', 'value' => $stats['new_queue'] ?? 0, 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />', 'href' => route('crm.pipeline.index', ['lead_stage' => 'new']), 'linkLabel' => 'عرض Kanban'])
+    @include('crm.partials.stat-card', ['label' => 'جدد اليوم', 'value' => $stats['new_today'] ?? 0, 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />', 'href' => route('crm.pipeline.index', ['lead_stage' => 'new', 'created_from' => today()->toDateString(), 'created_to' => today()->toDateString()]), 'linkLabel' => 'عرض جدد اليوم'])
+    @include('crm.partials.stat-card', ['label' => 'محتملون', 'value' => $stats['prospect'], 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />', 'href' => route('crm.pipeline.index', ['view' => 'list', 'status' => 'prospect']) . '#page-data', 'linkLabel' => 'عرض المحتملين'])
+    @include('crm.partials.stat-card', ['label' => 'لديهم صفقات', 'value' => $stats['with_deals'], 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2" />', 'href' => route('crm.pipeline.index', ['view' => 'list', 'has_deals' => '1']) . '#page-data', 'linkLabel' => 'عرض الصفقات'])
 </div>
 
 @include('crm.partials.filter-bar')

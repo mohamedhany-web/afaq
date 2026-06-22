@@ -75,6 +75,7 @@ class OperationsDashboardController extends Controller
             'status' => 'pending',
             'date' => $absenceReviewsDate?->toDateString(),
         ]));
+        $salesReps = \App\Services\CrmEmployeeService::searchableSalesUsersQuery()->get();
 
         return view('operations.dashboard', compact(
             'user',
@@ -86,6 +87,7 @@ class OperationsDashboardController extends Controller
             'crmPulse',
             'workspaceSections',
             'absenceReviewsLink',
+            'salesReps',
         ));
     }
 }

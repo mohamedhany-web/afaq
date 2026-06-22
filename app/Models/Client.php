@@ -16,6 +16,7 @@ class Client extends Model
         'name',
         'email',
         'phone',
+        'phone_normalized',
         'company_name',
         'address',
         'status',
@@ -24,16 +25,19 @@ class Client extends Model
         'lost_reason_notes',
         'lost_at',
         'notes',
+        'description',
         'assigned_to',
         'created_by',
         'client_type',
         'lead_source',
+        'lead_source_details',
         'id_number',
         'marketing_campaign_id',
     ];
 
     protected $casts = [
         'lost_at' => 'datetime',
+        'lead_source_details' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -41,6 +45,11 @@ class Client extends Model
     public function timelineEvents(): HasMany
     {
         return $this->hasMany(ClientTimelineEvent::class)->orderByDesc('occurred_at');
+    }
+
+    public function staffNotes(): HasMany
+    {
+        return $this->hasMany(ClientStaffNote::class)->orderByDesc('created_at');
     }
 
     public function postSalesCases(): HasMany
@@ -51,6 +60,11 @@ class Client extends Model
     public function sales(): HasMany
     {
         return $this->hasMany(Sale::class);
+    }
+
+    public function crmTasks(): HasMany
+    {
+        return $this->hasMany(CrmTask::class);
     }
 
     public function followUps(): HasMany
@@ -157,6 +171,12 @@ class Client extends Model
         return config('client_lead_sources.labels', []);
     }
 
+    /** @return array<string, array{bg: string, text: string}> */
+    public static function leadSourceColors(): array
+    {
+        return config('client_lead_sources.colors', []);
+    }
+
     public static function leadSourceKeys(): array
     {
         return array_keys(static::leadSourceLabels());
@@ -193,6 +213,45 @@ class Client extends Model
         return $key ? (static::leadSourceLabels()[$key] ?? $key) : null;
     }
 
+    /** @return array<string, string> */
+    public static function leadSourceDetailFields(?string $source): array
+    {
+        $key = static::normalizeLeadSource($source);
+
+        return $key ? (config('client_lead_sources.detail_fields.' . $key, [])) : [];
+    }
+
+    /** @return list<array{label: string, value: string}> */
+    public function leadSourceDetailLines(): array
+    {
+        $source = static::normalizeLeadSource($this->lead_source);
+        $details = is_array($this->lead_source_details) ? $this->lead_source_details : [];
+        $fields = static::leadSourceDetailFields($source);
+        $lines = [];
+
+        foreach ($fields as $key => $label) {
+            $value = trim((string) ($details[$key] ?? ''));
+            if ($value !== '') {
+                $lines[] = ['label' => $label, 'value' => $value];
+            }
+        }
+
+        if ($source === 'marketing' && $this->marketingCampaign) {
+            $lines[] = ['label' => 'حملة مسجّلة', 'value' => $this->marketingCampaign->name];
+        }
+
+        return $lines;
+    }
+
+    public function assignedSalesRepName(): ?string
+    {
+        if (! $this->assignedEmployee) {
+            return null;
+        }
+
+        return trim($this->assignedEmployee->first_name . ' ' . $this->assignedEmployee->last_name) ?: null;
+    }
+
     public function profileUrl(string $hash = ''): string
     {
         if (auth()->user()?->can('viewFullDetails', $this)) {
@@ -200,5 +259,112 @@ class Client extends Model
         }
 
         return route('crm.pipeline.client', $this) . $hash;
+    }
+
+    public static function normalizePhone(?string $phone): ?string
+    {
+        if (!$phone) {
+            return null;
+        }
+
+        $digits = preg_replace('/\D+/', '', $phone);
+        if ($digits === '') {
+            return null;
+        }
+
+        if (str_starts_with($digits, '966') && strlen($digits) >= 12) {
+            $digits = '0' . substr($digits, 3);
+        } elseif (str_starts_with($digits, '20') && strlen($digits) >= 11) {
+            $digits = '0' . substr($digits, 2);
+        }
+
+        return $digits;
+    }
+
+    public static function findByNormalizedPhone(?string $phone, ?int $ignoreId = null): ?self
+    {
+        $normalized = static::normalizePhone($phone);
+        if (!$normalized) {
+            return null;
+        }
+
+        $query = static::query()->where('phone_normalized', $normalized);
+        if ($ignoreId) {
+            $query->where('id', '!=', $ignoreId);
+        }
+
+        $found = $query->first();
+        if ($found) {
+            return $found;
+        }
+
+        return static::query()
+            ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
+            ->whereNotNull('phone')
+            ->where('phone', '!=', '')
+            ->lazyById(200)
+            ->first(fn (self $client) => static::normalizePhone($client->phone) === $normalized);
+    }
+
+    public static function assertUniquePhone(?string $phone, ?int $ignoreId = null): void
+    {
+        $duplicate = static::findByNormalizedPhone($phone, $ignoreId);
+        if ($duplicate) {
+            abort(422, static::duplicatePhoneMessage($duplicate));
+        }
+    }
+
+    public static function duplicatePhoneMessage(self $duplicate): string
+    {
+        $summary = $duplicate->duplicateSummary();
+
+        return sprintf(
+            'رقم الهاتف مسجّل مسبقاً للعميل «%s» — الحالة: %s · المرحلة: %s%s',
+            $summary['name'],
+            $summary['status_label'],
+            $summary['lead_stage_label'],
+            $summary['sales_rep'] ? ' · السيلز: ' . $summary['sales_rep'] : ''
+        );
+    }
+
+    /** @return array<string, mixed> */
+    public function duplicateSummary(): array
+    {
+        $stageLabels = \App\Services\CrmScopeService::leadStageLabels();
+        $statusLabels = [
+            'prospect' => 'محتمل',
+            'active' => 'نشط',
+            'inactive' => 'غير نشط',
+            'suspended' => 'موقوف',
+        ];
+
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'phone' => $this->phone,
+            'status' => $this->status,
+            'status_label' => $statusLabels[$this->status] ?? $this->status,
+            'lead_stage' => $this->lead_stage,
+            'lead_stage_label' => $stageLabels[$this->lead_stage] ?? ($this->lead_stage ?: '—'),
+            'lead_source' => $this->lead_source,
+            'lead_source_label' => $this->leadSourceLabel(),
+            'sales_rep' => $this->assignedSalesRepName(),
+            'url' => route('crm.clients.show', $this),
+        ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $client) {
+            if (blank($client->lead_stage)) {
+                $client->lead_stage = \App\Services\CrmScopeService::LEAD_STAGE_NEW;
+            }
+        });
+
+        static::saving(function (self $client) {
+            if ($client->isDirty('phone')) {
+                $client->phone_normalized = static::normalizePhone($client->phone);
+            }
+        });
     }
 }

@@ -17,7 +17,13 @@
             <span class="kanban-count shrink-0 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[9px] font-bold text-white tabular-nums"
                   style="background: {{ $color['bg'] }};" data-stage="{{ $stage }}">{{ number_format($totalInStage) }}</span>
         </div>
-        <p class="text-[9px] text-gray-500 font-tajawal mt-0.5">مرحلة رحلة العميل</p>
+        <p class="text-[9px] text-gray-500 font-tajawal mt-0.5">
+            @if($stage === 'new')
+                عملاء جدد — قبل التوزيع أو تغيير المرحلة
+            @else
+                مرحلة رحلة العميل
+            @endif
+        </p>
     </div>
 
     <div class="kanban-drop-zone flex-1 p-1.5 space-y-1.5 overflow-y-auto overflow-x-hidden bg-gray-50/80 min-h-[80px] scroll-smooth"
@@ -28,7 +34,7 @@
             @include('crm.pipeline.partials.client-card', [
                 'client' => $client,
                 'accentColor' => $color['bg'],
-                'stageLabels' => $stageLabels,
+                'stageLabels' => $dealStageLabels ?? $stageLabels,
                 'interactionTypes' => $interactionTypes,
             ])
         @empty

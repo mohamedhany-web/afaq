@@ -11,7 +11,8 @@ class AttendanceAbsenceReviewPolicy
     public function viewAny(User $user): bool
     {
         return app(OrganizationalHierarchyService::class)->canReviewAttendance($user)
-            || $user->can('view-attendance');
+            || $user->can('view-attendance')
+            || $user->canAccessOperations();
     }
 
     public function review(User $user, AttendanceAbsenceReview $review): bool
@@ -20,7 +21,7 @@ class AttendanceAbsenceReviewPolicy
             return false;
         }
 
-        if ($user->canAccessHr()) {
+        if ($user->canAccessOperations() || $user->canAccessHr()) {
             return true;
         }
 
@@ -37,6 +38,7 @@ class AttendanceAbsenceReviewPolicy
         }
 
         return app(OrganizationalHierarchyService::class)->canReviewAttendance($user)
-            || $user->canAccessHr();
+            || $user->canAccessHr()
+            || $user->canAccessOperations();
     }
 }

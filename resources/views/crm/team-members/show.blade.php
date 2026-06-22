@@ -46,9 +46,16 @@
     </div>
 
     <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-        <div class="px-5 py-4 border-b border-gray-200 font-bold font-tajawal text-gray-900"
+        <div class="px-5 py-4 border-b border-gray-200 font-bold font-tajawal text-gray-900 flex flex-wrap items-center justify-between gap-2"
              style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">
-            عملاء المندوب
+            <span>عملاء السيلز</span>
+            @if(auth()->user()->can('bulkUpdate', \App\Models\Client::class))
+            <a href="{{ route('crm.clients.index', ['sales_rep' => $member->id]) }}#page-data"
+               class="text-xs font-bold px-3 py-1.5 rounded-lg hover:opacity-90"
+               style="background: {{ $themeColor }}15; color: {{ $themeColor }};">
+                تحويل / سحب عملاء
+            </a>
+            @endif
         </div>
         <div class="p-5 space-y-3 max-h-[400px] overflow-y-auto">
             @forelse($clients as $client)

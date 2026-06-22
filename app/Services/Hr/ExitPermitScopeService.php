@@ -21,6 +21,10 @@ class ExitPermitScopeService
 
     public function mode(): string
     {
+        if ($this->user->canAccessOperations()) {
+            return 'operations';
+        }
+
         if ($this->user->hasRole(['super_admin', 'admin', 'hr'])) {
             return 'admin';
         }
@@ -51,13 +55,25 @@ class ExitPermitScopeService
 
     public function canApprove(): bool
     {
+        if ($this->user->canAccessOperations()) {
+            return true;
+        }
+
         return $this->user->can('approve-leaves')
             && ($this->user->hasRole(['super_admin', 'admin', 'hr']) || $this->isLineManager());
     }
 
     public function canApprovePermit(ExitPermit $permit): bool
     {
-        if (!$this->canApprove() || !$permit->isPending()) {
+        if (!$permit->isPending()) {
+            return false;
+        }
+
+        if ($this->user->canAccessOperations()) {
+            return true;
+        }
+
+        if (!$this->canApprove()) {
             return false;
         }
 
@@ -74,8 +90,7 @@ class ExitPermitScopeService
 
     public function canRequest(): bool
     {
-        return $this->employee() !== null
-            && ($this->user->can('create-leaves') || $this->user->hasRole(['hr', 'admin', 'super_admin']));
+        return $this->employee() !== null;
     }
 
     /** @return int[] */
@@ -98,7 +113,7 @@ class ExitPermitScopeService
     {
         $query = ExitPermit::query()->with(['employee.user', 'employee.department', 'approvedBy']);
 
-        if ($this->mode() === 'admin') {
+        if ($this->mode() === 'admin' || $this->mode() === 'operations') {
             return $query;
         }
 
@@ -132,7 +147,7 @@ class ExitPermitScopeService
         $month = now()->month;
         $year = now()->year;
 
-        if ($this->mode() === 'admin') {
+        if ($this->mode() === 'admin' || $this->mode() === 'operations') {
             return [
                 'pending' => ExitPermit::pending()->count(),
                 'approved_month' => ExitPermit::approved()

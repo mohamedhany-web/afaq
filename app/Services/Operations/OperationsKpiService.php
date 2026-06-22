@@ -252,9 +252,9 @@ class OperationsKpiService
             'reports_submitted' => $opsReports,
             'projects_on_track_pct' => $projectsOnTrackPct,
             'team_attendance_pct' => $teamAttendancePct,
-            'unassigned_leads' => Client::whereNull('assigned_to')->whereIn('lead_stage', ['lead', 'prospect'])->count(),
+            'unassigned_leads' => Client::whereNull('assigned_to')->whereIn('lead_stage', ['new', 'lead', 'prospect'])->count(),
             'stale_leads' => Client::query()
-                ->whereIn('lead_stage', ['lead', 'prospect'])
+                ->whereIn('lead_stage', ['new', 'lead', 'prospect'])
                 ->where('updated_at', '<', now()->subDays(3))
                 ->count(),
         ];

@@ -65,8 +65,10 @@ class CrmLeadDistributionController extends Controller
         $request->validate(['employee_id' => 'required|exists:employees,id']);
 
         if ($client->assigned_to) {
-            return back()->with('error', 'العميل مُعيَّن مسبقاً.');
+            return back()->with('error', 'العميل مُعيَّن مسبقاً — استخدم «تحويل العميل» من صفحة الملف.');
         }
+
+        $this->authorize('transfer', $client);
 
         $user = Auth::user();
         $this->distribution->assignTo(
@@ -74,6 +76,7 @@ class CrmLeadDistributionController extends Controller
             (int) $request->employee_id,
             $user,
             $this->distributionSource($user),
+            $request,
         );
 
         return back()->with('success', 'تم ترحيل العميل إلى المندوب.');
@@ -91,6 +94,7 @@ class CrmLeadDistributionController extends Controller
             $request->client_ids,
             Auth::user(),
             $request->employee_id ? (int) $request->employee_id : null,
+            $request,
         );
 
         return back()->with('success', "تم توزيع {$result['assigned']} عميل — متخطى: {$result['skipped']}.");
@@ -103,7 +107,7 @@ class CrmLeadDistributionController extends Controller
             ->pluck('id')
             ->all();
 
-        $result = $this->distribution->distributeBatch($ids, Auth::user());
+        $result = $this->distribution->distributeBatch($ids, Auth::user(), null, $request);
 
         return back()->with('success', "توزيع تلقائي: {$result['assigned']} عميل — متخطى: {$result['skipped']}.");
     }

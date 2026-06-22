@@ -20,7 +20,8 @@
         </div>
         <div>
             <label class="{{ $label }}">رقم الهاتف *</label>
-            <input name="phone" value="{{ old('phone', $client->phone ?? '') }}" required class="{{ $input }}" placeholder="01xxxxxxxxx" dir="ltr">
+            <input name="phone" id="client_phone" value="{{ old('phone', $client->phone ?? '') }}" required class="{{ $input }}" placeholder="01xxxxxxxxx" dir="ltr">
+            @include('crm.clients.partials.phone-duplicate-check', ['ignoreId' => $isEdit ? $client->id : null])
             @error('phone')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
         </div>
         <div>
@@ -44,7 +45,7 @@
         </div>
         <div>
             <label class="{{ $label }}">مصدر العميل</label>
-            <select name="lead_source" class="{{ $input }}">
+            <select name="lead_source" id="lead_source" class="{{ $input }}">
                 <option value="">— غير محدد —</option>
                 @foreach(\App\Models\Client::leadSourceLabels() as $value => $labelText)
                     <option value="{{ $value }}" @selected($leadSourceValue === $value)>{{ $labelText }}</option>
@@ -52,6 +53,7 @@
             </select>
             @error('lead_source')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
         </div>
+        @include('crm.clients.partials.source-details-fields', compact('client', 'input', 'label', 'marketingCampaigns'))
         <div>
             <label class="{{ $label }}">الحالة *</label>
             <select name="status" class="{{ $input }}">
@@ -81,6 +83,19 @@
             <input name="address" value="{{ old('address', $client->address ?? '') }}" class="{{ $input }}" placeholder="المدينة، الحي، الشارع...">
             @error('address')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
         </div>
+    </div>
+</div>
+
+{{-- وصف العميل --}}
+<div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full">
+    <div class="px-5 sm:px-6 py-4 border-b border-gray-200 font-tajawal font-bold text-gray-900"
+         style="background: linear-gradient(135deg, {{ $themeColor }}08 0%, {{ $themeColor }}03 100%);">
+        وصف العميل
+    </div>
+    <div class="p-5 sm:p-6">
+        <label class="{{ $label }}">وصف مختصر عن العميل</label>
+        <textarea name="description" rows="3" class="{{ $input }} resize-none" placeholder="اهتماماته، نوع الوحدة المطلوبة، ملخص عن احتياجاته...">{{ old('description', $client->description ?? '') }}</textarea>
+        @error('description')<p class="mt-1 text-xs text-red-600 font-tajawal">{{ $message }}</p>@enderror
     </div>
 </div>
 

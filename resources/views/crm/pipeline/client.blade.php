@@ -10,7 +10,7 @@
 
 @include('crm.partials.page-header', [
     'title' => $client->name,
-    'subtitle' => 'مسار العميل — اسحب لتحديث المراحل وسجّل المتابعات',
+    'subtitle' => 'مسار العميل — سجّل المتابعات وتابع الصفقات',
     'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />',
     'actionUrl' => route('crm.pipeline.create', ['client_id' => $client->id]),
     'actionLabel' => 'صفقة جديدة',
@@ -26,8 +26,8 @@
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
     @include('crm.partials.stat-card', ['label' => 'مرحلة الرحلة', 'value' => $stageLabels[$client->lead_stage] ?? $client->lead_stage, 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />', 'href' => '#client-journey', 'linkLabel' => 'عرض الرحلة'])
-    @include('crm.partials.stat-card', ['label' => 'الصفقات', 'value' => $dealsCount, 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2" />', 'href' => '#client-deals-kanban', 'linkLabel' => 'عرض الصفقات'])
-    @include('crm.partials.stat-card', ['label' => 'قيمة الصفقات', 'value' => $money($dealsValue), 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />', 'href' => '#client-deals-kanban', 'linkLabel' => 'عرض الصفقات'])
+    @include('crm.partials.stat-card', ['label' => 'الصفقات', 'value' => $dealsCount, 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2" />', 'href' => '#client-deals-section', 'linkLabel' => 'عرض الصفقات'])
+    @include('crm.partials.stat-card', ['label' => 'قيمة الصفقات', 'value' => $money($dealsValue), 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />', 'href' => '#client-deals-section', 'linkLabel' => 'عرض الصفقات'])
     @include('crm.partials.stat-card', ['label' => 'حالة العميل', 'value' => match($client->status) { 'prospect' => 'محتمل', 'active' => 'نشط', 'inactive' => 'غير نشط', 'suspended' => 'موقوف', default => $client->status }, 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />', 'href' => $client->profileUrl('#client-details'), 'linkLabel' => 'عرض التفاصيل'])
 </div>
 
@@ -44,6 +44,7 @@
                 بيانات العميل
             </div>
             <div class="p-5 space-y-3 text-sm font-tajawal">
+                @include('crm.clients.partials.registration-meta', compact('client'))
                 <div>
                     <span class="text-xs font-bold text-gray-500">الهاتف</span>
                     <p class="font-medium text-gray-900" dir="ltr">{{ $client->phone }}</p>
@@ -78,10 +79,12 @@
                     <p class="text-gray-900">{{ trim($client->assignedEmployee->first_name . ' ' . $client->assignedEmployee->last_name) }}</p>
                 </div>
                 @endif
+                @if($client->description)
                 <div>
-                    <span class="text-xs font-bold text-gray-500">من أضاف العميل</span>
-                    <div class="mt-1">@include('crm.clients.partials.created-by', ['client' => $client])</div>
+                    <span class="text-xs font-bold text-gray-500">وصف العميل</span>
+                    <p class="text-gray-700 whitespace-pre-line">{{ $client->description }}</p>
                 </div>
+                @endif
             </div>
             <div class="px-5 py-3 border-t border-gray-100 flex flex-wrap gap-2">
                 @can('update', $client)
@@ -144,6 +147,8 @@
             </form>
         </div>
 
+        @include('crm.clients.partials.staff-notes', compact('client', 'themeColor'))
+
         @if($client->notes)
         <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-5">
             <h3 class="text-xs font-bold text-gray-500 mb-2 font-tajawal">سجل الملاحظات</h3>
@@ -152,25 +157,20 @@
         @endif
     </div>
 
-    {{-- صفقات العميل — Kanban --}}
+    {{-- صفقات العميل — قائمة عمودية مع فلتر --}}
     <div class="xl:col-span-2">
-        @include('crm.pipeline.partials.client-deals-kanban', compact(
-            'client', 'dealColumns', 'dealStageTotals', 'stageLabels', 'stageColors',
-            'activeStages', 'closedStages', 'themeColor'
-        ))
+        @include('crm.clients.partials.deals-list', [
+            'client' => $client,
+            'stageLabels' => $dealStageLabels ?? $stageLabels,
+            'themeColor' => $themeColor,
+            'money' => $money,
+        ])
     </div>
 </div>
 @include('crm.partials.lost-reason-modal')
 @endsection
 
 @push('scripts')
-@include('crm.partials.pipeline-kanban-scripts', [
-    'updateUrl' => route('crm.pipeline.update-stage', ['sale' => '__ID__']),
-    'loadMoreUrl' => '',
-    'payloadKey' => 'stage',
-    'itemKey' => 'dealId',
-    'group' => 'client-deals-' . $client->id,
-])
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const csrf = document.querySelector('meta[name="csrf-token"]')?.content;

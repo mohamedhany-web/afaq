@@ -30,6 +30,24 @@
     </a>
 </div>
 
+@if(session('success'))
+<div class="mb-4 p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm font-tajawal">{{ session('success') }}</div>
+@endif
+@if(session('error'))
+<div class="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-tajawal">{{ session('error') }}</div>
+@endif
+@php $importResult = session('import_result'); @endphp
+@if($importResult && !empty($importResult['errors']))
+<div class="mb-4 p-4 rounded-xl bg-amber-50 border border-amber-200 text-sm font-tajawal">
+    <p class="font-bold text-amber-900 mb-2">تفاصيل الصفوف الفاشلة:</p>
+    <ul class="space-y-1 text-amber-800 max-h-40 overflow-y-auto">
+        @foreach(array_slice($importResult['errors'], 0, 10) as $err)
+        <li>صف {{ $err['row'] ?? '—' }}: {{ $err['message'] ?? '' }}</li>
+        @endforeach
+    </ul>
+</div>
+@endif
+
 @if($activeTab === 'import')
 <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full">
     <div class="px-5 sm:px-6 py-4 border-b border-gray-200 font-tajawal font-bold text-gray-900 flex flex-wrap items-center justify-between gap-3"
@@ -86,7 +104,7 @@
 @else
 <form action="{{ route('crm.clients.store') }}" method="POST" class="w-full space-y-6">
     @csrf
-    @include('crm.clients.partials.form')
+    @include('crm.clients.partials.form', ['marketingCampaigns' => $marketingCampaigns ?? collect()])
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
         <a href="{{ auth()->user()->clientsHubUrl() }}" class="inline-flex items-center justify-center px-6 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 font-tajawal">
             إلغاء والعودة للعملاء

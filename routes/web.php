@@ -349,8 +349,8 @@ Route::middleware(['auth', 'verified', 'verified.code', 'crm.only', 'marketing.o
     
     // Sales & Marketing - Clients
     Route::get('clients', [ClientController::class, 'index'])->name('clients.index')->middleware('permission:view-clients');
-    Route::get('clients/create', [ClientController::class, 'create'])->name('clients.create')->middleware('permission:create-clients');
-    Route::post('clients', [ClientController::class, 'store'])->name('clients.store')->middleware('permission:create-clients');
+    Route::get('clients/create', [ClientController::class, 'create'])->name('clients.create');
+    Route::post('clients', [ClientController::class, 'store'])->name('clients.store');
     Route::get('clients/{client}', [ClientController::class, 'show'])->name('clients.show')->middleware('permission:view-clients');
     Route::get('clients/{client}/edit', [ClientController::class, 'edit'])->name('clients.edit')->middleware('permission:edit-clients');
     Route::put('clients/{client}', [ClientController::class, 'update'])->name('clients.update')->middleware('permission:edit-clients');

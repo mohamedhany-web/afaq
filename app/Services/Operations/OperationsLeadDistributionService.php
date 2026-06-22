@@ -7,6 +7,8 @@ use App\Models\Employee;
 use App\Models\User;
 use App\Services\Crm\ClientTimelineService;
 use App\Services\CrmEmployeeService;
+use App\Services\CrmRoleResolver;
+use App\Services\CrmScopeService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -16,7 +18,7 @@ class OperationsLeadDistributionService
     {
         return Client::query()
             ->whereNull('assigned_to')
-            ->whereIn('lead_stage', ['lead', 'prospect'])
+            ->whereIn('lead_stage', ['new', 'lead', 'prospect'])
             ->orderBy('created_at');
     }
 
@@ -61,7 +63,7 @@ class OperationsLeadDistributionService
             ->whereIn('user_id', $repUserIds)
             ->with('user:id,name')
             ->withCount(['clients as active_leads_count' => fn ($q) => $q
-                ->whereIn('lead_stage', ['lead', 'prospect', 'proposal', 'negotiation'])])
+                ->whereIn('lead_stage', ['new', 'lead', 'prospect', 'proposal', 'negotiation'])])
             ->orderBy('active_leads_count')
             ->get()
             ->map(fn (Employee $e) => [
@@ -72,8 +74,14 @@ class OperationsLeadDistributionService
     }
 
     /** توزيع عميل واحد على مندوب */
-    public function assignTo(Client $client, int $employeeId, User $actor, string $source = 'operations'): Client
-    {
+    public function assignTo(
+        Client $client,
+        int $employeeId,
+        User $actor,
+        string $source = 'operations',
+        ?\Illuminate\Http\Request $request = null,
+        bool $logActivity = true,
+    ): Client {
         $allowedIds = $this->assignableReps($actor)->pluck('employee.id')->filter()->map(fn ($id) => (int) $id);
 
         if ($allowedIds->isNotEmpty() && !$allowedIds->contains($employeeId)) {
@@ -92,8 +100,15 @@ class OperationsLeadDistributionService
             default => 'ترحيل من مدير العمليات',
         };
 
-        return DB::transaction(function () use ($client, $employee, $actor, $source, $assignmentLabel) {
-            $client->update(['assigned_to' => $employee->id]);
+        return DB::transaction(function () use ($client, $employee, $actor, $source, $assignmentLabel, $request, $logActivity) {
+            $fromEmployee = $client->assignedEmployee;
+            $updates = ['assigned_to' => $employee->id];
+
+            if ($client->lead_stage === CrmScopeService::LEAD_STAGE_NEW) {
+                $updates['lead_stage'] = 'lead';
+            }
+
+            $client->update($updates);
 
             app(ClientTimelineService::class)->record(
                 $client,
@@ -107,6 +122,17 @@ class OperationsLeadDistributionService
                 ['assigned_to' => $employee->id],
             );
 
+            if ($logActivity) {
+                app(\App\Services\Crm\ClientActivityService::class)->logTransfer(
+                    $client->fresh(['assignedEmployee']),
+                    $actor,
+                    $employee,
+                    $fromEmployee,
+                    $source,
+                    $request ?? null,
+                );
+            }
+
             return $client->fresh(['assignedEmployee']);
         });
     }
@@ -116,7 +142,7 @@ class OperationsLeadDistributionService
      *
      * @return array{assigned: int, skipped: int}
      */
-    public function distributeBatch(array $clientIds, User $actor, ?int $preferredEmployeeId = null): array
+    public function distributeBatch(array $clientIds, User $actor, ?int $preferredEmployeeId = null, ?\Illuminate\Http\Request $request = null): array
     {
         $reps = $this->assignableReps($actor);
         if ($reps->isEmpty()) {
@@ -126,7 +152,7 @@ class OperationsLeadDistributionService
         $loads = Employee::query()
             ->whereIn('user_id', $reps->pluck('id'))
             ->withCount(['clients as active_leads_count' => fn ($q) => $q
-                ->whereIn('lead_stage', ['lead', 'prospect', 'proposal', 'negotiation'])])
+                ->whereIn('lead_stage', ['new', 'lead', 'prospect', 'proposal', 'negotiation'])])
             ->get()
             ->keyBy('id');
 
@@ -150,7 +176,7 @@ class OperationsLeadDistributionService
                 continue;
             }
 
-            $this->assignTo($client, $employeeId, $actor, $this->assignmentSource($actor));
+            $this->assignTo($client, $employeeId, $actor, $this->assignmentSource($actor), $request);
             if ($loads->has($employeeId)) {
                 $loads[$employeeId]->active_leads_count++;
             }

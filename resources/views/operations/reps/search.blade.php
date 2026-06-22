@@ -12,14 +12,17 @@
     'actionLabel' => __('operations.dashboard_title'),
 ])
 
-<form method="GET" action="{{ route('operations.reps.search') }}" class="mb-6 flex gap-2 font-tajawal">
-    <input type="search" name="q" value="{{ $q }}" autofocus
-           placeholder="{{ __('operations.actions.search_sales_rep_placeholder') }}"
-           class="flex-1 border rounded-xl px-4 py-3 text-sm">
-    <button type="submit" class="px-6 py-3 rounded-xl text-white text-sm font-bold" style="background:{{ $themeColor }}">
-        {{ __('operations.actions.search') }}
-    </button>
-</form>
+@include('operations.partials.rep-search-form', [
+    'salesReps' => $salesReps,
+    'q' => $q,
+    'selectedRepId' => $selectedRepId ?? null,
+])
+
+@if($q !== '')
+<p class="text-xs text-gray-500 mb-3 font-tajawal">
+    {{ __('operations.rep_workspace.search_results') }}: <strong>{{ $q }}</strong> ({{ $reps->count() }})
+</p>
+@endif
 
 <div class="bg-white rounded-2xl border divide-y font-tajawal" id="page-data">
     @forelse($reps as $rep)

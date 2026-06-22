@@ -42,6 +42,7 @@ return [
         'residential' => 'سكني',
         'commercial' => 'تجاري',
         'administrative' => 'إداري',
+        'medical' => 'طبي',
     ],
 
     'statuses' => [
@@ -65,5 +66,6 @@ return [
         'residential' => '#3b82f6',
         'commercial' => '#f97316',
         'administrative' => '#8b5cf6',
+        'medical' => '#14b8a6',
     ],
 ];

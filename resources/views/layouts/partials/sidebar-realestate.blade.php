@@ -169,6 +169,13 @@
 </div>
 @endif
 
+@if(!$isClientGuard && $webUser)
+<div class="mt-6">
+    <h3 class="sidebar-section-title px-4">العملاء</h3>
+    @include('layouts.partials.sidebar-client-intake-links')
+</div>
+@endif
+
 @if(!$isClientGuard)
 <a href="{{ route('profile.edit') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium mt-4 {{ request()->routeIs('profile.*') ? 'active' : '' }}">
     <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>

@@ -114,6 +114,8 @@ class CrmTaskController extends Controller
         return view('crm.tasks.show', [
             'task' => $task,
             'canManage' => $tasks->assignableUsers(Auth::user())->isNotEmpty(),
+            'canTransfer' => $tasks->canTransfer(Auth::user(), $task),
+            'assignableUsers' => $tasks->assignableUsers(Auth::user()),
             'isAssignee' => (int) $task->assigned_to === (int) Auth::id(),
             'canVerify' => CrmScopeService::for(Auth::user())->isManagerScope() || CrmScopeService::for(Auth::user())->hasFullAccess(),
         ]);
@@ -173,6 +175,17 @@ class CrmTaskController extends Controller
         $tasks->cancel(Auth::user(), $task, $request->reason);
 
         return redirect()->route('crm.tasks.index')->with('success', 'تم إلغاء المهمة');
+    }
+
+    public function transfer(Request $request, CrmTask $task, CrmTaskService $tasks)
+    {
+        $validated = $request->validate([
+            'assigned_to' => 'required|exists:users,id',
+        ]);
+
+        $tasks->transfer(Auth::user(), $task, (int) $validated['assigned_to']);
+
+        return back()->with('success', 'تم تحويل المهمة وتسجيل العملية في سجل التتبع.');
     }
 
     protected function validated(Request $request): array

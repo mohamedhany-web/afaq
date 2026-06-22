@@ -111,9 +111,10 @@ class RolePermissionSeeder extends Seeder
         // 7. مدير مبيعات (CRM)
         $salesManager = Role::firstOrCreate(['name' => 'sales_manager', 'guard_name' => 'web']);
         $salesManagerPerms = [
-            'view-clients', 'create-clients', 'edit-clients',
+            'view-clients', 'create-clients', 'edit-clients', 'transfer-clients',
             'view-sales', 'create-sales', 'edit-sales',
             'view-all-projects', 'create-projects', 'edit-projects', 'delete-projects',
+            'view-all-tasks', 'create-tasks', 'edit-tasks', 'transfer-tasks',
             'view-employees',
             'view-attendance', 'create-attendance',
             'view-leaves', 'create-leaves', 'approve-leaves',
@@ -127,9 +128,10 @@ class RolePermissionSeeder extends Seeder
             ->syncPermissions($salesManagerPerms);
 
         $teamLeaderPerms = [
-            'view-clients', 'create-clients', 'edit-clients',
+            'view-clients', 'create-clients', 'edit-clients', 'transfer-clients',
             'view-sales', 'create-sales', 'edit-sales',
             'view-all-projects', 'create-projects', 'edit-projects',
+            'view-all-tasks', 'create-tasks', 'edit-tasks', 'transfer-tasks',
             'view-employees',
             'view-attendance', 'create-attendance',
             'view-leaves', 'create-leaves', 'approve-leaves',
@@ -184,9 +186,9 @@ class RolePermissionSeeder extends Seeder
         // 8. مدير عمليات (Operations)
         $operationManagerPerms = [
             'view-all-projects', 'create-projects', 'edit-projects', 'approve-project-changes',
-            'view-all-tasks', 'create-tasks', 'edit-tasks',
+            'view-all-tasks', 'create-tasks', 'edit-tasks', 'transfer-tasks',
             'view-developers', 'manage-developers',
-            'view-clients',
+            'view-clients', 'edit-clients', 'transfer-clients',
             'view-employees',
             'view-attendance', 'create-attendance',
             'view-leaves', 'create-leaves', 'approve-leaves',

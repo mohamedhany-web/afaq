@@ -33,6 +33,13 @@ Route::middleware(['auth', 'verified', 'verified.code'])->prefix('crm')->name('c
     Route::get('/', [CrmDashboardController::class, 'index'])->name('dashboard');
     Route::get('intelligence', [CrmIntelligenceController::class, 'index'])->name('intelligence.index');
 
+    Route::get('clients/deletions/log', [CrmClientController::class, 'deletionLogIndex'])->name('clients.deletions.index');
+    Route::get('clients/deletions/log/{batch}', [CrmClientController::class, 'deletionLogShow'])->name('clients.deletions.show');
+    Route::post('clients/bulk-delete', [CrmClientController::class, 'bulkDestroy'])->name('clients.bulk-destroy');
+    Route::post('clients/bulk-transfer', [CrmClientController::class, 'bulkTransfer'])->name('clients.bulk-transfer');
+    Route::post('clients/{client}/transfer', [CrmClientController::class, 'transfer'])->name('clients.transfer');
+    Route::get('clients/check-phone', [CrmClientController::class, 'checkPhone'])->name('clients.check-phone');
+    Route::get('clients/export', [CrmClientController::class, 'export'])->name('clients.export');
     Route::get('clients', [CrmClientController::class, 'index'])->name('clients.index');
     Route::get('clients/approvals/list', [CrmClientApprovalController::class, 'index'])->name('clients.approvals.index');
     Route::get('clients/approvals/{changeRequest}', [CrmClientApprovalController::class, 'show'])->name('clients.approvals.show');
@@ -46,6 +53,7 @@ Route::middleware(['auth', 'verified', 'verified.code'])->prefix('crm')->name('c
     Route::get('clients/{client}/edit', [CrmClientController::class, 'edit'])->name('clients.edit');
     Route::put('clients/{client}', [CrmClientController::class, 'update'])->name('clients.update');
     Route::patch('clients/{client}/lead-stage', [CrmClientController::class, 'updateLeadStage'])->name('clients.update-lead-stage');
+    Route::post('clients/{client}/staff-notes', [CrmClientController::class, 'storeStaffNote'])->name('clients.staff-notes.store');
     Route::post('clients/{client}/interaction', [CrmClientController::class, 'logInteraction'])->name('clients.log-interaction');
     Route::delete('clients/{client}', [CrmClientController::class, 'destroy'])->name('clients.destroy');
 
@@ -75,6 +83,7 @@ Route::middleware(['auth', 'verified', 'verified.code'])->prefix('crm')->name('c
     Route::post('tasks/{task}/complete', [CrmTaskController::class, 'complete'])->name('tasks.complete');
     Route::post('tasks/{task}/verify', [CrmTaskController::class, 'verify'])->name('tasks.verify');
     Route::post('tasks/{task}/cancel', [CrmTaskController::class, 'cancel'])->name('tasks.cancel');
+    Route::post('tasks/{task}/transfer', [CrmTaskController::class, 'transfer'])->name('tasks.transfer');
 
     Route::get('schedule', [CrmFollowUpController::class, 'index'])->name('follow-ups.index');
     Route::post('schedule', [CrmFollowUpController::class, 'store'])->name('follow-ups.store');
@@ -87,12 +96,14 @@ Route::middleware(['auth', 'verified', 'verified.code'])->prefix('crm')->name('c
     Route::get('pipeline/create', [CrmPipelineController::class, 'create'])->name('pipeline.create');
     Route::post('pipeline', [CrmPipelineController::class, 'store'])->name('pipeline.store');
     Route::get('pipeline/clients/{client}', [CrmPipelineController::class, 'showClient'])->name('pipeline.client');
+    Route::get('pipeline/column/{stage}/clients', [CrmPipelineController::class, 'columnClients'])->name('pipeline.column-clients');
     Route::get('pipeline/column/{stage}/deals', [CrmPipelineController::class, 'columnDeals'])->name('pipeline.column-deals');
     Route::get('pipeline/{sale}', [CrmPipelineController::class, 'show'])->name('pipeline.show');
     Route::get('pipeline/{sale}/edit', [CrmPipelineController::class, 'edit'])->name('pipeline.edit');
     Route::put('pipeline/{sale}', [CrmPipelineController::class, 'update'])->name('pipeline.update');
     Route::patch('pipeline/{sale}/stage', [CrmPipelineController::class, 'updateStage'])->name('pipeline.update-stage');
 
+    Route::get('projects/export', [CrmProjectController::class, 'export'])->name('projects.export');
     Route::get('projects', [CrmProjectController::class, 'index'])->name('projects.index');
     Route::get('projects/create', [CrmProjectController::class, 'create'])->name('projects.create');
     Route::post('projects', [CrmProjectController::class, 'store'])->name('projects.store');

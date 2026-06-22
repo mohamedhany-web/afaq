@@ -54,10 +54,6 @@ class MarketingLeadController extends Controller
 
     public function create(Request $request)
     {
-        if (!Auth::user()->can('create-clients')) {
-            abort(403);
-        }
-
         $scope = MarketingScopeService::for(Auth::user());
 
         return view('marketing.leads.create', [
@@ -69,10 +65,6 @@ class MarketingLeadController extends Controller
 
     public function store(Request $request, ClientTimelineService $timeline)
     {
-        if (!Auth::user()->can('create-clients')) {
-            abort(403);
-        }
-
         $data = $request->validate([
             'name' => 'nullable|string|max:255',
             'phone' => 'required|string|max:50',
@@ -83,6 +75,12 @@ class MarketingLeadController extends Controller
             'lead_source' => 'nullable|in:' . implode(',', array_keys(config('marketing.lead_sources'))),
             'marketing_campaign_id' => 'nullable|exists:marketing_campaigns,id',
         ]);
+
+        if ($duplicate = Client::findByNormalizedPhone($data['phone'])) {
+            return back()
+                ->withInput()
+                ->withErrors(['phone' => 'رقم الهاتف مسجّل مسبقاً للعميل: ' . $duplicate->name]);
+        }
 
         $name = trim($data['name'] ?? '');
         if ($name === '') {
@@ -98,7 +96,7 @@ class MarketingLeadController extends Controller
             'address' => $data['address'] ?? null,
             'notes' => $data['notes'] ?? null,
             'status' => 'prospect',
-            'lead_stage' => 'new',
+            'lead_stage' => \App\Services\CrmScopeService::LEAD_STAGE_NEW,
             'lead_source' => $data['lead_source'] ?? 'personal',
             'marketing_campaign_id' => $data['marketing_campaign_id'] ?? null,
             'created_by' => Auth::id(),

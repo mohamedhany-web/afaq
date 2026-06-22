@@ -23,7 +23,6 @@ class ClientPolicy
         return $this->approval->canSubmitChanges($user) || $user->canAccessOperations();
     }
 
-    /** عرض عميل واحد ضمن نطاق الصلاحيات */
     public function view(User $user, Client $client): bool
     {
         if ($this->approval->executesDirectly($user)) {
@@ -51,20 +50,34 @@ class ClientPolicy
             ->exists();
     }
 
-    /** ملف العميل الكامل (بيانات حساسة وتصنيفات) — الإدارة فقط */
     public function viewFullDetails(User $user, Client $client): bool
     {
         return $this->view($user, $client) && $this->approval->executesDirectly($user);
     }
 
+    public function viewActivityLog(User $user, Client $client): bool
+    {
+        return $this->view($user, $client)
+            && ($user->can('edit-clients') || $user->can('delete-clients') || $user->canAccessOperations() || $this->approval->executesDirectly($user));
+    }
+
+    public function viewDeletionLog(User $user): bool
+    {
+        return $user->can('delete-clients') || $user->canAccessOperations() || $this->approval->executesDirectly($user);
+    }
+
     public function create(User $user): bool
     {
-        return $user->can('create-clients') && $this->approval->canSubmitChanges($user);
+        return true;
     }
 
     public function update(User $user, Client $client): bool
     {
         if (! $this->view($user, $client)) {
+            return false;
+        }
+
+        if (! $user->can('edit-clients') && ! $this->approval->executesDirectly($user)) {
             return false;
         }
 
@@ -81,6 +94,34 @@ class ClientPolicy
             return false;
         }
 
+        if (! $user->can('delete-clients') && ! $this->approval->executesDirectly($user)) {
+            return false;
+        }
+
         return $this->approval->canSubmitChanges($user);
+    }
+
+    public function transfer(User $user, Client $client): bool
+    {
+        if (! $this->view($user, $client)) {
+            return false;
+        }
+
+        if ($this->approval->executesDirectly($user) || $user->canAccessOperations()) {
+            return true;
+        }
+
+        return $user->can('transfer-clients');
+    }
+
+    public function bulkUpdate(User $user): bool
+    {
+        return $user->can('edit-clients') || $user->can('transfer-clients')
+            || $user->canAccessOperations() || $this->approval->executesDirectly($user);
+    }
+
+    public function bulkDelete(User $user): bool
+    {
+        return $user->can('delete-clients') || $user->canAccessOperations() || $this->approval->executesDirectly($user);
     }
 }

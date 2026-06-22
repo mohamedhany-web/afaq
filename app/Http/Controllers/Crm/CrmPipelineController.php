@@ -41,6 +41,15 @@ class CrmPipelineController extends Controller
             return $this->dealsKanbanView($request);
         }
 
+        if ($request->get('view') === 'list') {
+            return $this->clientsListView($request);
+        }
+
+        return $this->clientsKanbanView($request);
+    }
+
+    protected function clientsListView(Request $request)
+    {
         $filters = $this->crmFilters($request);
         $scope = $filters->scope();
         $filteredQuery = $this->filteredClientsQuery($request, $scope);
@@ -48,6 +57,8 @@ class CrmPipelineController extends Controller
 
         $stats = [
             'total' => (clone $filteredQuery)->count(),
+            'new_queue' => (clone $filteredQuery)->where('lead_stage', CrmScopeService::LEAD_STAGE_NEW)->count(),
+            'new_today' => (clone $filteredQuery)->where('lead_stage', CrmScopeService::LEAD_STAGE_NEW)->whereDate('created_at', today())->count(),
             'prospect' => (clone $filteredQuery)->where('status', 'prospect')->count(),
             'active' => (clone $filteredQuery)->where('status', 'active')->count(),
             'with_deals' => (clone $filteredQuery)->whereIn('id', (clone $scopedSales)->distinct()->pluck('client_id'))->count(),
@@ -62,7 +73,7 @@ class CrmPipelineController extends Controller
             ->paginate(24)
             ->withQueryString();
 
-        $stageLabels = $this->stageLabels();
+        $stageLabels = $this->clientStageLabels();
         $statusLabels = $this->clientStatusLabels();
 
         return view('crm.pipeline.index', [
@@ -70,8 +81,130 @@ class CrmPipelineController extends Controller
             'stats' => $stats,
             'stageLabels' => $stageLabels,
             'statusLabels' => $statusLabels,
-            'clearUrl' => route('crm.pipeline.index'),
+            'clearUrl' => route('crm.pipeline.index', ['view' => 'list']),
             ...$this->clientFilterViewData($filters, $request, $stageLabels, $statusLabels),
+        ]);
+    }
+
+    protected function clientsKanbanView(Request $request)
+    {
+        $filters = $this->crmFilters($request);
+        $scope = $filters->scope();
+        $filteredQuery = $this->filteredClientsQuery($request, $scope);
+
+        $stageLabels = $this->clientStageLabels();
+        $dealStageLabels = $this->stageLabels();
+        $activeStages = CrmScopeService::activeLeadStages();
+        $closedStages = CrmScopeService::closedLeadStages();
+        $showClosed = $request->boolean('show_closed');
+        $today = today();
+
+        $stats = [
+            'total' => (clone $filteredQuery)->count(),
+            'new_queue' => (clone $filteredQuery)->where('lead_stage', CrmScopeService::LEAD_STAGE_NEW)->count(),
+            'new_today' => (clone $filteredQuery)->where('lead_stage', CrmScopeService::LEAD_STAGE_NEW)->whereDate('created_at', $today)->count(),
+            'unassigned_new' => (clone $filteredQuery)->where('lead_stage', CrmScopeService::LEAD_STAGE_NEW)->whereNull('assigned_to')->count(),
+            'active' => (clone $filteredQuery)->whereIn('lead_stage', $activeStages)->count(),
+            'won' => (clone $filteredQuery)->where('lead_stage', 'closed_won')->count(),
+            'lost' => (clone $filteredQuery)->where('lead_stage', 'closed_lost')->count(),
+        ];
+
+        $aggregates = (clone $filteredQuery)
+            ->selectRaw('lead_stage, COUNT(*) as cnt')
+            ->groupBy('lead_stage')
+            ->get()
+            ->keyBy('lead_stage');
+
+        $stagesForItems = $request->filled('lead_stage')
+            ? [$request->lead_stage]
+            : array_merge($activeStages, $showClosed ? $closedStages : []);
+
+        $columns = [];
+        $stageTotals = [];
+
+        foreach (CrmScopeService::LEAD_STAGES as $stage) {
+            $total = (int) ($aggregates->get($stage)?->cnt ?? 0);
+            $stageTotals[$stage] = ['count' => $total];
+
+            if (! in_array($stage, $stagesForItems, true)) {
+                $columns[$stage] = [
+                    'items' => collect(),
+                    'total' => $total,
+                    'has_more' => false,
+                    'deferred' => true,
+                ];
+
+                continue;
+            }
+
+            $stageQuery = (clone $filteredQuery)->where('lead_stage', $stage);
+            $items = (clone $stageQuery)
+                ->with($this->clientEagerLoads($scope))
+                ->with(['createdBy:id,name'])
+                ->orderByDesc('created_at')
+                ->limit(self::CLIENT_COLUMN_PAGE_SIZE)
+                ->get();
+
+            $columns[$stage] = [
+                'items' => $items,
+                'total' => $total,
+                'has_more' => $total > self::CLIENT_COLUMN_PAGE_SIZE,
+                'deferred' => false,
+            ];
+        }
+
+        return view('crm.pipeline.index-clients-kanban', [
+            'columns' => $columns,
+            'stageLabels' => $stageLabels,
+            'dealStageLabels' => $dealStageLabels,
+            'activeStages' => $activeStages,
+            'closedStages' => $closedStages,
+            'stats' => $stats,
+            'stageTotals' => $stageTotals,
+            'stageColors' => CrmScopeService::clientLeadStageColors(),
+            'showClosed' => $showClosed,
+            'interactionTypes' => $this->interactionTypes(),
+            'columnPageSize' => self::CLIENT_COLUMN_PAGE_SIZE,
+            'clearUrl' => route('crm.pipeline.index'),
+            ...$this->clientFilterViewData($filters, $request, $stageLabels, $this->clientStatusLabels()),
+        ]);
+    }
+
+    public function columnClients(Request $request, string $stage)
+    {
+        if (! in_array($stage, CrmScopeService::LEAD_STAGES, true)) {
+            abort(404);
+        }
+
+        $scope = CrmScopeService::for(Auth::user());
+        $page = max(1, (int) $request->get('page', 1));
+        $stageQuery = $this->filteredClientsQuery($request, $scope)->where('lead_stage', $stage);
+        $total = (clone $stageQuery)->count();
+
+        $clients = (clone $stageQuery)
+            ->with($this->clientEagerLoads($scope))
+            ->with(['createdBy:id,name'])
+            ->orderByDesc('created_at')
+            ->forPage($page, self::CLIENT_COLUMN_PAGE_SIZE)
+            ->get();
+
+        $stageColors = CrmScopeService::clientLeadStageColors();
+        $accentColor = $stageColors[$stage]['bg'] ?? \App\Helpers\SettingsHelper::getThemeColor();
+
+        $html = $clients->map(fn (Client $client) => view('crm.pipeline.partials.client-card', [
+            'client' => $client,
+            'accentColor' => $accentColor,
+            'stageLabels' => $this->stageLabels(),
+            'interactionTypes' => $this->interactionTypes(),
+        ])->render())->implode('');
+
+        $loaded = $page * self::CLIENT_COLUMN_PAGE_SIZE;
+
+        return response()->json([
+            'html' => $html,
+            'has_more' => $loaded < $total,
+            'remaining' => max(0, $total - $loaded),
+            'total' => $total,
         ]);
     }
 
@@ -84,6 +217,7 @@ class CrmPipelineController extends Controller
         $client->load([
             'assignedEmployee:id,first_name,last_name',
             'createdBy:id,name',
+            'staffNotes.user:id,name',
             'sales' => function ($q) use ($scope) {
                 $this->applySaleScopeToRelation($q, $scope);
                 $q->with(['project:id,name', 'salesRep:id,name'])
@@ -92,15 +226,9 @@ class CrmPipelineController extends Controller
         ]);
 
         $dealsQuery = $scope->salesQuery()->where('client_id', $client->id);
-        $stageLabels = $this->stageLabels();
-        $stageColors = [
-            'lead' => ['bg' => '#6366f1', 'light' => '#eef2ff'],
-            'prospect' => ['bg' => '#3b82f6', 'light' => '#eff6ff'],
-            'proposal' => ['bg' => '#0ea5e9', 'light' => '#f0f9ff'],
-            'negotiation' => ['bg' => '#f59e0b', 'light' => '#fffbeb'],
-            'closed_won' => ['bg' => '#16a34a', 'light' => '#f0fdf4'],
-            'closed_lost' => ['bg' => '#ef4444', 'light' => '#fef2f2'],
-        ];
+        $stageLabels = $this->clientStageLabels();
+        $dealStageLabels = $this->stageLabels();
+        $stageColors = CrmScopeService::clientLeadStageColors();
 
         $dealColumns = [];
         $dealStageTotals = [];
@@ -119,6 +247,7 @@ class CrmPipelineController extends Controller
         return view('crm.pipeline.client', [
             'client' => $client,
             'stageLabels' => $stageLabels,
+            'dealStageLabels' => $dealStageLabels,
             'dealColumns' => $dealColumns,
             'dealStageTotals' => $dealStageTotals,
             'stageColors' => $stageColors,
@@ -521,6 +650,11 @@ class CrmPipelineController extends Controller
             'closed_won' => 'تم البيع',
             'closed_lost' => 'خسارة',
         ];
+    }
+
+    protected function clientStageLabels(): array
+    {
+        return CrmScopeService::leadStageLabels();
     }
 
     protected function clientStatusLabels(): array

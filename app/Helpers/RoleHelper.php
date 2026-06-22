@@ -114,7 +114,9 @@ class RoleHelper
             'create-clients' => 'إنشاء عملاء',
             'edit-clients' => 'تعديل عملاء',
             'delete-clients' => 'حذف عملاء',
+            'transfer-clients' => 'تحويل/توزيع العملاء',
             'approve-client-changes' => 'موافقة تعديل/حذف العملاء',
+            'transfer-tasks' => 'تحويل/سحب المهام بين السيلز',
 
             'view-developers' => 'عرض المطورين العقاريين',
             'manage-developers' => 'إدارة المطورين العقاريين',

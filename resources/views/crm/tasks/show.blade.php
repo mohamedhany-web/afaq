@@ -55,8 +55,9 @@
             <ul class="divide-y font-tajawal text-sm">
                 @forelse($task->logs as $log)
                 <li class="px-5 py-3">
-                    <span class="font-semibold">{{ $log->action }}</span>
-                    @if($log->old_status && $log->new_status)<span class="text-gray-500"> {{ $log->old_status }} → {{ $log->new_status }}</span>@endif
+                    <span class="font-semibold">{{ $log->action === 'transferred' ? 'تحويل' : $log->action }}</span>
+                    @if($log->notes)<span class="text-gray-700"> — {{ $log->notes }}</span>@endif
+                    @if($log->old_status && $log->new_status && $log->action !== 'transferred')<span class="text-gray-500"> {{ $log->old_status }} → {{ $log->new_status }}</span>@endif
                     <span class="text-gray-400 text-xs block">{{ $log->created_at->format('Y/m/d H:i') }} — {{ $log->user?->name ?? 'النظام' }}</span>
                 </li>
                 @empty
@@ -86,6 +87,21 @@
             @endif
             @if($canVerify && $task->status === 'completed')
             <form method="POST" action="{{ route('crm.tasks.verify', $task) }}">@csrf<button class="w-full py-2.5 rounded-xl bg-purple-600 text-white text-sm font-bold">تحقق المدير</button></form>
+            @endif
+            @if($canTransfer && ($assignableUsers ?? collect())->isNotEmpty() && !in_array($task->status, ['completed','verified','archived','cancelled']))
+            <form method="POST" action="{{ route('crm.tasks.transfer', $task) }}" class="space-y-2 pt-2 border-t border-gray-100"
+                  onsubmit="return confirm('تحويل هذه المهمة إلى المستخدم المحدد؟')">
+                @csrf
+                <label class="block text-xs font-bold text-gray-500">تحويل / سحب المهمة</label>
+                <select name="assigned_to" required class="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm">
+                    @foreach($assignableUsers as $user)
+                    @if((int) $user->id !== (int) $task->assigned_to)
+                    <option value="{{ $user->id }}">{{ $user->name }}</option>
+                    @endif
+                    @endforeach
+                </select>
+                <button type="submit" class="w-full py-2.5 rounded-xl text-white text-sm font-bold" style="background:{{ $themeColor }}">تحويل المهمة</button>
+            </form>
             @endif
             @if($canManage && !in_array($task->status, ['archived','cancelled']))
             <form method="POST" action="{{ route('crm.tasks.cancel', $task) }}" onsubmit="return confirm('إلغاء المهمة؟')">@csrf<button class="w-full py-2 text-xs text-red-600 border border-red-200 rounded-lg">إلغاء</button></form>

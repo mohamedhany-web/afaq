@@ -23,7 +23,7 @@
 <form action="{{ route('crm.clients.update', $client) }}" method="POST" class="w-full space-y-6">
     @csrf
     @method('PUT')
-    @include('crm.clients.partials.form', ['client' => $client])
+    @include('crm.clients.partials.form', ['client' => $client, 'marketingCampaigns' => $marketingCampaigns ?? collect()])
 
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
         <a href="{{ $client->profileUrl() }}" class="inline-flex items-center justify-center px-6 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 font-tajawal">

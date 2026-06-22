@@ -58,17 +58,22 @@ trait UsesCrmFilters
     protected function projectFilterViewData(CrmFilterService $filters, Request $request): array
     {
         $keys = $filters->projectFilterKeys();
-        $advanced = ['property_type', 'city'];
+        $advanced = ['has_units', 'unit_use_type', 'unit_status', 'direction', 'floor_number', 'area_min', 'area_max', 'ownership_type'];
 
         return [
             'mode' => 'projects',
             'filterKeys' => $keys,
             'advancedKeys' => $advanced,
-            'hasActive' => $filters->hasActiveFilters($request, $keys),
+            'hasActive' => $filters->hasActiveFilters($request, array_merge($keys, $advanced)),
             'listingStatuses' => \App\Models\Project::LISTING_STATUSES,
             'ownershipTypes' => \App\Models\Project::OWNERSHIP_TYPES,
-            'propertyTypes' => \App\Models\Project::PROPERTY_TYPES ?? [],
-            'searchPlaceholder' => 'اسم المشروع، المدينة، المطور...',
+            'inventorySources' => \App\Models\Project::inventorySourceLabels(),
+            'developmentTypes' => \App\Models\Project::DEVELOPMENT_TYPES,
+            'unitUseTypes' => config('project_units.use_types', []),
+            'unitStatuses' => config('project_units.statuses', []),
+            'directions' => config('project_inventory.directions', []),
+            'developers' => app(\App\Services\ProjectManagementService::class)->contractedDevelopers(),
+            'searchPlaceholder' => 'اسم المشروع، المدينة، المطور، رقم الشقة...',
         ];
     }
 }

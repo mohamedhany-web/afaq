@@ -9,6 +9,7 @@ use App\Models\RealEstateDeveloper;
 use App\Models\Sale;
 use App\Models\SalesTeam;
 use App\Models\User;
+use App\Services\CrmScopeService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 class CrmDashboardAnalyticsService
 {
     public const FUNNEL_STAGES = [
+        'new' => 'New Lead / جديد',
         'lead' => 'عميل جديد',
         'prospect' => 'تم التواصل',
         'proposal' => 'اجتماع',
@@ -108,7 +110,7 @@ class CrmDashboardAnalyticsService
 
         $monthStart = Carbon::now()->startOfMonth();
         $totalLeads = (clone $clients)->count();
-        $newToday = (clone $clients)->whereDate('created_at', today())->count();
+        $newToday = (clone $clients)->where('lead_stage', CrmScopeService::LEAD_STAGE_NEW)->whereDate('created_at', today())->count();
         $qualified = (clone $clients)->whereIn('lead_stage', ['prospect', 'proposal'])->count();
         $activeOpps = (clone $sales)->whereIn('stage', ['lead', 'prospect', 'proposal', 'negotiation'])->count();
         $closedMonth = (clone $sales)->where('stage', 'closed_won')

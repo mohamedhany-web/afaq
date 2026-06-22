@@ -19,7 +19,8 @@ return [
     'view-employees', 'create-employees', 'edit-employees', 'delete-employees',
 
     // العملاء
-    'view-clients', 'create-clients', 'edit-clients', 'delete-clients', 'approve-client-changes',
+    'view-clients', 'create-clients', 'edit-clients', 'delete-clients', 'transfer-clients', 'approve-client-changes',
+    'transfer-tasks',
 
     // CRM — وصول ومساحة العمل
     'access-crm', 'view-crm-clients', 'view-crm-pipeline', 'view-team-sales', 'manage-sales-teams',

@@ -20,7 +20,7 @@
         <form method="GET" class="flex flex-wrap gap-3 items-end">
             <div class="flex flex-wrap gap-2">
                 @foreach(['' => 'الكل', 'available' => 'متاحة', 'reserved' => 'محجوزة', 'sold' => 'مباعة'] as $key => $label)
-                <a href="{{ route('operations.inventory.index', array_filter(['status' => $key ?: null, 'project_id' => request('project_id'), 'search' => request('search')])) }}#page-data"
+                <a href="{{ route('operations.inventory.index', array_filter(['status' => $key ?: null, 'project_id' => request('project_id'), 'use_type' => request('use_type'), 'search' => request('search')])) }}#page-data"
                    class="px-3 py-1.5 rounded-lg text-xs font-bold border {{ ($statusFilter ?? '') === $key || (!$statusFilter && $key === '') ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-200' }}"
                    @if(($statusFilter ?? '') === $key || (!$statusFilter && $key === '')) style="background:{{ $themeColor }}" @endif>
                     {{ $label }}
@@ -36,6 +36,15 @@
                     @endforeach
                 </select>
             </div>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-500 mb-1">تصنيف الوحدة</label>
+                <select name="use_type" class="border-2 border-gray-200 rounded-xl px-3 py-2 text-sm" onchange="this.form.submit()">
+                    <option value="">كل التصنيفات</option>
+                    @foreach($useTypeLabels ?? config('project_units.use_types', []) as $key => $label)
+                    <option value="{{ $key }}" @selected(($useTypeFilter ?? '') === $key)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
             <div class="flex-1 min-w-[180px]">
                 <label class="block text-[10px] font-bold text-gray-500 mb-1">بحث</label>
                 <input type="search" name="search" value="{{ request('search') }}" placeholder="رقم الوحدة أو المشروع..."
@@ -43,6 +52,9 @@
             </div>
             @if($statusFilter)
             <input type="hidden" name="status" value="{{ $statusFilter }}">
+            @endif
+            @if(request('use_type'))
+            <input type="hidden" name="use_type" value="{{ request('use_type') }}">
             @endif
             <button type="submit" class="px-5 py-2 rounded-xl text-white text-sm font-bold" style="background:{{ $themeColor }}">بحث</button>
         </form>

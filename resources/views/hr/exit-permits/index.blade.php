@@ -4,6 +4,7 @@
     $themeColor = \App\Helpers\SettingsHelper::getThemeColor();
     $titles = [
         'admin' => ['title' => 'إدارة الأذونات', 'subtitle' => 'مراجعة واعتماد أذونات الخروج والتأخر لجميع الموظفين'],
+        'operations' => ['title' => 'موافقات الأذونات — العمليات', 'subtitle' => 'مراجعة واعتماد طلبات الإذن من العمليات'],
         'manager' => ['title' => 'أذونات الفريق', 'subtitle' => 'مراجعة أذونات فريقك وأذوناتك الشخصية'],
         'self' => ['title' => 'أذوناتي', 'subtitle' => 'تقديم طلب إذن ومتابعة حالة الطلبات'],
     ];

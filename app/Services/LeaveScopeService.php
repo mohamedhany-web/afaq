@@ -19,6 +19,10 @@ class LeaveScopeService
 
     public function mode(): string
     {
+        if ($this->user->canAccessOperations()) {
+            return 'operations';
+        }
+
         if ($this->user->hasRole(['super_admin', 'admin', 'hr'])) {
             return 'admin';
         }
@@ -49,13 +53,25 @@ class LeaveScopeService
 
     public function canApprove(): bool
     {
+        if ($this->user->canAccessOperations()) {
+            return true;
+        }
+
         return $this->user->can('approve-leaves')
             && ($this->user->hasRole(['super_admin', 'admin', 'hr']) || $this->isLineManager());
     }
 
     public function canApproveLeave(Leave $leave): bool
     {
-        if (!$this->canApprove() || $leave->status !== 'pending') {
+        if ($leave->status !== 'pending') {
+            return false;
+        }
+
+        if ($this->user->canAccessOperations()) {
+            return true;
+        }
+
+        if (!$this->canApprove()) {
             return false;
         }
 
@@ -90,7 +106,7 @@ class LeaveScopeService
     {
         $query = Leave::query()->with(['employee.user', 'approvedBy']);
 
-        if ($this->mode() === 'admin') {
+        if ($this->mode() === 'admin' || $this->mode() === 'operations') {
             return $query;
         }
 
@@ -124,7 +140,7 @@ class LeaveScopeService
         $year = now()->year;
         $employee = $this->employee();
 
-        if ($this->mode() === 'admin') {
+        if ($this->mode() === 'admin' || $this->mode() === 'operations') {
             return [
                 'pending' => Leave::where('status', 'pending')->count(),
                 'approved_month' => Leave::approved()->whereMonth('start_date', now()->month)->whereYear('start_date', $year)->count(),

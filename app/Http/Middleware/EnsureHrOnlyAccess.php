@@ -22,6 +22,7 @@ class EnsureHrOnlyAccess
             'leaves',
             'attendances',
             'users',
+            'crm/clients',
             'api',
             'profile',
             'logout',
@@ -43,6 +44,7 @@ class EnsureHrOnlyAccess
         if ($request->routeIs(
             'logout', 'profile.*', 'verification.*', 'notifications.*', 'messages.*',
             'attendances.*', 'leaves.*', 'employees.*', 'users.*', 'hr.*',
+            'crm.clients.create', 'crm.clients.store', 'crm.clients.import', 'crm.clients.import.template',
         )) {
             return $next($request);
         }

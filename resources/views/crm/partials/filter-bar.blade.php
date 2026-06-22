@@ -5,7 +5,7 @@
     $preserve = $preserve ?? [];
     $filterKeys = $filterKeys ?? [];
     $hasActive = $hasActive ?? false;
-    $showAdvanced = request()->boolean('advanced') || collect($filterKeys)->contains(fn ($k) => in_array($k, ['deal_stage', 'has_deals', 'unassigned', 'client_type', 'lead_source', 'created_from', 'created_to', 'project_id', 'min_value', 'max_value', 'updated_from', 'updated_to', 'show_closed', 'type', 'city', 'property_type', 'date_from', 'date_to', 'from', 'to', 'client_status', 'client_lead_stage', 'client_unassigned', 'overdue_only'], true) && request()->filled($k));
+    $showAdvanced = request()->boolean('advanced') || collect($filterKeys)->contains(fn ($k) => in_array($k, ['deal_stage', 'has_deals', 'unassigned', 'client_type', 'lead_source', 'created_from', 'created_to', 'project_id', 'min_value', 'max_value', 'updated_from', 'updated_to', 'show_closed', 'type', 'city', 'property_type', 'date_from', 'date_to', 'from', 'to', 'client_status', 'client_lead_stage', 'client_unassigned', 'overdue_only', 'has_units', 'unit_use_type', 'unit_status', 'direction', 'floor_number', 'area_min', 'area_max', 'ownership_type'], true) && request()->filled($k));
     $inputClass = 'w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 font-tajawal text-sm';
     $labelClass = 'block text-xs font-bold text-gray-500 mb-1.5 font-tajawal';
     $salesRepValue = request('sales_rep', request('user_id', request('assignee')));
@@ -31,10 +31,10 @@
                 @endif
 
                 @if(($showSalesRepFilter ?? false) && in_array('sales_rep', $filterKeys, true))
-                <div class="w-full sm:w-48">
-                    <label class="{{ $labelClass }}">مندوب المبيعات</label>
+                <div class="w-full sm:w-52">
+                    <label class="{{ $labelClass }}">السيلز / مندوب المبيعات</label>
                     <select name="sales_rep" class="{{ $inputClass }}">
-                        <option value="">كل المندوبين</option>
+                        <option value="">كل السيلز</option>
                         @foreach($salesReps ?? [] as $rep)
                         <option value="{{ $rep->id }}" @selected((string) $salesRepValue === (string) $rep->id)>{{ $rep->name }}</option>
                         @endforeach
@@ -60,7 +60,9 @@
                     <select name="lead_stage" class="{{ $inputClass }}">
                         <option value="">كل المراحل</option>
                         @foreach($stageLabels ?? [] as $key => $label)
-                        <option value="{{ $key }}" @selected(request('lead_stage') === $key)>{{ $label }}</option>
+                        @php $stageColor = \App\Services\CrmScopeService::clientLeadStageColors()[$key] ?? null; @endphp
+                        <option value="{{ $key }}" @selected(request('lead_stage') === $key)
+                                @if($stageColor) style="color: {{ $stageColor['bg'] }};" @endif>{{ $label }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -111,6 +113,68 @@
                 </div>
                 @endif
 
+                @if(in_array('inventory_source', $filterKeys, true))
+                <div class="w-full sm:w-48">
+                    <label class="{{ $labelClass }}">نوع المخزون</label>
+                    <select name="inventory_source" class="{{ $inputClass }}">
+                        <option value="">الكل</option>
+                        @foreach($inventorySources ?? [] as $val => $txt)
+                        <option value="{{ $val }}" @selected(request('inventory_source') === $val)>{{ $txt }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
+
+                @if(in_array('developer_id', $filterKeys, true))
+                <div class="w-full sm:w-52">
+                    <label class="{{ $labelClass }}">المطور</label>
+                    <select name="developer_id" class="{{ $inputClass }}">
+                        <option value="">كل المطورين</option>
+                        @foreach($developers ?? [] as $dev)
+                        <option value="{{ $dev->id }}" @selected((string) request('developer_id') === (string) $dev->id)>{{ $dev->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
+
+                @if(in_array('property_type', $filterKeys, true))
+                <div class="w-full sm:w-44">
+                    <label class="{{ $labelClass }}">تصنيف الوحدة</label>
+                    <select name="property_type" class="{{ $inputClass }}">
+                        <option value="">الكل</option>
+                        @foreach(\App\Models\Project::CLASSIFICATION_TYPES as $val => $txt)
+                        <option value="{{ $val }}" @selected(request('property_type') === $val)>{{ $txt }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
+
+                @if(in_array('price_min', $filterKeys, true))
+                <div class="w-full sm:w-36">
+                    <label class="{{ $labelClass }}">سعر من</label>
+                    <input type="number" name="price_min" value="{{ request('price_min') }}" min="0" class="{{ $inputClass }}" placeholder="0">
+                </div>
+                @endif
+
+                @if(in_array('price_max', $filterKeys, true))
+                <div class="w-full sm:w-36">
+                    <label class="{{ $labelClass }}">سعر إلى</label>
+                    <input type="number" name="price_max" value="{{ request('price_max') }}" min="0" class="{{ $inputClass }}">
+                </div>
+                @endif
+
+                @if(in_array('project_type', $filterKeys, true))
+                <div class="w-full sm:w-44">
+                    <label class="{{ $labelClass }}">نوع التطوير</label>
+                    <select name="project_type" class="{{ $inputClass }}">
+                        <option value="">الكل</option>
+                        @foreach($developmentTypes ?? [] as $val => $txt)
+                        <option value="{{ $val }}" @selected(request('project_type') === $val)>{{ $txt }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
+
                 @if(in_array('ownership_type', $filterKeys, true))
                 <div class="w-full sm:w-44">
                     <label class="{{ $labelClass }}">نوع الملكية</label>
@@ -128,6 +192,28 @@
                             style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">تطبيق</button>
                     @if($hasActive)
                     <a href="{{ $clearUrl }}" class="px-5 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 font-tajawal">مسح الفلاتر</a>
+                    @endif
+                    @if(($mode ?? '') === 'projects')
+                    <a href="{{ route('crm.projects.export', request()->query()) }}"
+                       class="px-5 py-2.5 rounded-xl border-2 text-sm font-semibold font-tajawal hover:bg-gray-50 inline-flex items-center gap-1.5"
+                       style="border-color: {{ $themeColor }}40; color: {{ $themeColor }};"
+                       title="تصدير المشاريع والوحدات (CSV)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        تصدير CSV
+                    </a>
+                    @endif
+                    @if(($mode ?? '') === 'clients' && ($showSalesRepFilter ?? false))
+                    <a href="{{ route('crm.clients.export', request()->query()) }}"
+                       class="px-5 py-2.5 rounded-xl border-2 text-sm font-semibold font-tajawal hover:bg-gray-50 inline-flex items-center gap-1.5"
+                       style="border-color: {{ $themeColor }}40; color: {{ $themeColor }};"
+                       title="تصدير القائمة الحالية (مع الفلاتر المطبّقة)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        @if(request()->filled('sales_rep'))
+                        تصدير عملاء السيلز
+                        @else
+                        تصدير CSV
+                        @endif
+                    </a>
                     @endif
                     @if(!empty($advancedKeys))
                     <button type="button" @click="advanced = !advanced"
@@ -193,7 +279,9 @@
                                 <select name="lead_source" class="{{ $inputClass }}">
                                     <option value="">الكل</option>
                                     @foreach(\App\Models\Client::leadSourceLabels() as $key => $lbl)
-                                    <option value="{{ $key }}" @selected(request('lead_source') === $key)>{{ $lbl }}</option>
+                                    @php $srcColor = \App\Models\Client::leadSourceColors()[$key] ?? null; @endphp
+                                    <option value="{{ $key }}" @selected(request('lead_source') === $key)
+                                            @if($srcColor) style="color: {{ $srcColor['text'] }};" @endif>{{ $lbl }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -353,6 +441,66 @@
                             <div>
                                 <label class="{{ $labelClass }}">المدينة</label>
                                 <input type="text" name="city" value="{{ request('city') }}" placeholder="مثال: الرياض" class="{{ $inputClass }}">
+                            </div>
+                            @break
+                            @case('has_units')
+                            <div class="flex items-end">
+                                <label class="flex items-center gap-2 cursor-pointer py-2.5 font-tajawal text-sm text-gray-700">
+                                    <input type="checkbox" name="has_units" value="1" @checked(request()->boolean('has_units'))
+                                           class="rounded border-gray-300" style="accent-color: {{ $themeColor }};">
+                                    مشاريع لها وحدات مسجّلة
+                                </label>
+                            </div>
+                            @break
+                            @case('unit_use_type')
+                            <div>
+                                <label class="{{ $labelClass }}">تصنيف الوحدة</label>
+                                <select name="unit_use_type" class="{{ $inputClass }}">
+                                    <option value="">الكل</option>
+                                    @foreach($unitUseTypes ?? [] as $val => $txt)
+                                    <option value="{{ $val }}" @selected(request('unit_use_type') === $val)>{{ $txt }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @break
+                            @case('unit_status')
+                            <div>
+                                <label class="{{ $labelClass }}">حالة الوحدة</label>
+                                <select name="unit_status" class="{{ $inputClass }}">
+                                    <option value="">الكل</option>
+                                    @foreach($unitStatuses ?? [] as $val => $txt)
+                                    <option value="{{ $val }}" @selected(request('unit_status') === $val)>{{ $txt }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @break
+                            @case('direction')
+                            <div>
+                                <label class="{{ $labelClass }}">اتجاه الوحدة</label>
+                                <select name="direction" class="{{ $inputClass }}">
+                                    <option value="">الكل</option>
+                                    @foreach($directions ?? [] as $val => $txt)
+                                    <option value="{{ $val }}" @selected(request('direction') === $val)>{{ $txt }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @break
+                            @case('floor_number')
+                            <div>
+                                <label class="{{ $labelClass }}">رقم الطابق</label>
+                                <input type="text" name="floor_number" value="{{ request('floor_number') }}" class="{{ $inputClass }}">
+                            </div>
+                            @break
+                            @case('area_min')
+                            <div>
+                                <label class="{{ $labelClass }}">مساحة من (م²)</label>
+                                <input type="number" name="area_min" value="{{ request('area_min') }}" min="0" step="0.01" class="{{ $inputClass }}">
+                            </div>
+                            @break
+                            @case('area_max')
+                            <div>
+                                <label class="{{ $labelClass }}">مساحة إلى (م²)</label>
+                                <input type="number" name="area_max" value="{{ request('area_max') }}" min="0" step="0.01" class="{{ $inputClass }}">
                             </div>
                             @break
                             @case('date_from')

@@ -13,6 +13,9 @@ class UnitPaymentPlan extends Model
     protected $fillable = [
         'project_unit_id', 'plan_type', 'down_percent', 'years',
         'installment_per_m2', 'down_payment_amount', 'notes',
+        'building_percent', 'discount_percent', 'loading_percent',
+        'net_unit_price', 'total_contract_amount', 'maintenance_deposit',
+        'remaining_balance', 'installment_months',
     ];
 
     protected $casts = [
@@ -20,6 +23,14 @@ class UnitPaymentPlan extends Model
         'years' => 'integer',
         'installment_per_m2' => 'decimal:2',
         'down_payment_amount' => 'decimal:2',
+        'building_percent' => 'decimal:2',
+        'discount_percent' => 'decimal:2',
+        'loading_percent' => 'decimal:2',
+        'net_unit_price' => 'decimal:2',
+        'total_contract_amount' => 'decimal:2',
+        'maintenance_deposit' => 'decimal:2',
+        'remaining_balance' => 'decimal:2',
+        'installment_months' => 'integer',
     ];
 
     public function unit(): BelongsTo

@@ -9,7 +9,7 @@
     'subtitle' => 'Leads من الحملات والقنوات',
     'actionUrl' => route('marketing.leads.create'),
     'actionLabel' => 'إضافة Lead',
-    'secondaryUrl' => auth()->user()?->can('create', \App\Models\Client::class) ? route('crm.clients.create') : null,
+    'secondaryUrl' => route('crm.clients.create'),
     'secondaryLabel' => 'عميل في CRM',
 ])
 

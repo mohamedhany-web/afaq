@@ -12,7 +12,49 @@ use Illuminate\Support\Facades\Cache;
 
 class CrmScopeService
 {
-    public const LEAD_STAGES = ['lead', 'prospect', 'proposal', 'negotiation', 'closed_won', 'closed_lost'];
+    public const LEAD_STAGE_NEW = 'new';
+
+    public const LEAD_STAGES = ['new', 'lead', 'prospect', 'proposal', 'negotiation', 'closed_won', 'closed_lost'];
+
+    /** @return list<string> */
+    public static function activeLeadStages(): array
+    {
+        return ['new', 'lead', 'prospect', 'proposal', 'negotiation'];
+    }
+
+    /** @return list<string> */
+    public static function closedLeadStages(): array
+    {
+        return ['closed_won', 'closed_lost'];
+    }
+
+    /** @return array<string, string> */
+    public static function leadStageLabels(): array
+    {
+        return [
+            'new' => 'New Lead / جديد',
+            'lead' => 'عميل محتمل',
+            'prospect' => 'مهتم',
+            'proposal' => 'عرض سعر',
+            'negotiation' => 'تفاوض',
+            'closed_won' => 'تم البيع',
+            'closed_lost' => 'خسارة',
+        ];
+    }
+
+    /** @return array<string, array{bg: string, light: string}> */
+    public static function clientLeadStageColors(): array
+    {
+        return [
+            'new' => ['bg' => '#2563eb', 'light' => '#eff6ff'],
+            'lead' => ['bg' => '#6366f1', 'light' => '#eef2ff'],
+            'prospect' => ['bg' => '#3b82f6', 'light' => '#eff6ff'],
+            'proposal' => ['bg' => '#0ea5e9', 'light' => '#f0f9ff'],
+            'negotiation' => ['bg' => '#f59e0b', 'light' => '#fffbeb'],
+            'closed_won' => ['bg' => '#16a34a', 'light' => '#f0fdf4'],
+            'closed_lost' => ['bg' => '#ef4444', 'light' => '#fef2f2'],
+        ];
+    }
 
     public function __construct(protected User $user) {}
 
