@@ -193,8 +193,17 @@
                     @if($hasActive)
                     <a href="{{ $clearUrl }}" class="px-5 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 font-tajawal">مسح الفلاتر</a>
                     @endif
+                    @if(!empty($inventoryExportRoute))
+                    <a href="{{ $inventoryExportRoute }}"
+                       class="px-5 py-2.5 rounded-xl border-2 text-sm font-semibold font-tajawal hover:bg-gray-50 inline-flex items-center gap-1.5"
+                       style="border-color: {{ $themeColor }}40; color: {{ $themeColor }};"
+                       title="تصدير المخزون والوحدات (CSV)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        تصدير المخزون CSV
+                    </a>
+                    @endif
                     @if(($mode ?? '') === 'projects')
-                    <a href="{{ route('crm.projects.export', request()->query()) }}"
+                    <a href="{{ $projectsExportRoute ?? route(($projectsRoutePrefix ?? 'crm.projects') . '.export', request()->query()) }}"
                        class="px-5 py-2.5 rounded-xl border-2 text-sm font-semibold font-tajawal hover:bg-gray-50 inline-flex items-center gap-1.5"
                        style="border-color: {{ $themeColor }}40; color: {{ $themeColor }};"
                        title="تصدير المشاريع والوحدات (CSV)">
@@ -203,7 +212,7 @@
                     </a>
                     @endif
                     @if(($mode ?? '') === 'clients' && ($showSalesRepFilter ?? false))
-                    <a href="{{ route('crm.clients.export', request()->query()) }}"
+                    <a href="{{ $clientsExportRoute ?? route(($clientsRoutePrefix ?? 'crm.clients') . '.export', request()->query()) }}"
                        class="px-5 py-2.5 rounded-xl border-2 text-sm font-semibold font-tajawal hover:bg-gray-50 inline-flex items-center gap-1.5"
                        style="border-color: {{ $themeColor }}40; color: {{ $themeColor }};"
                        title="تصدير القائمة الحالية (مع الفلاتر المطبّقة)">

@@ -3,6 +3,12 @@
 return [
     'dashboard_title' => 'لوحة العمليات',
     'dashboard_subtitle' => 'مركز التشغيل — العملاء · المهام · المتابعات · الفريق',
+    'dashboard' => [
+        'filtered_by_rep' => 'عرض بيانات السيلز',
+        'filtered_hint' => 'الأرقام والمؤشرات أدناه مخصّصة لهذا المندوب فقط',
+        'view_rep_clients' => 'قائمة عملاء السيلز',
+        'clear_filter' => 'مسح الفلتر',
+    ],
     'all_clients_first' => 'افتح لوحة العمليات لعرض كل البيانات',
 
     'sections' => [
@@ -35,6 +41,7 @@ return [
         'search_sales_rep_placeholder' => 'اكتب اسم المندوب...',
         'select_sales_rep' => 'اختر المستخدم...',
         'open_rep_workspace' => 'فتح صفحة العمليات',
+        'apply_filter' => 'تطبيق على اللوحة',
         'switch_language' => 'English',
         'switch_language_ar' => 'العربية',
         'my_reports' => 'تقاريري',

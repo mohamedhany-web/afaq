@@ -5,7 +5,15 @@
     $userId = $employee?->user_id;
 @endphp
 @if($repName)
-<a href="{{ route('crm.clients.index', array_merge(request()->except('page'), ['sales_rep' => $userId])) }}#page-data"
+@php
+    $clientsRoutePrefix = $clientsRoutePrefix ?? 'crm.clients';
+    $filterParams = array_merge(request()->except('page'), ['sales_rep' => $userId]);
+    if (str_starts_with($clientsRoutePrefix, 'operations.')) {
+        $filterParams['view'] = 'data';
+    }
+    $salesRepFilterUrl = route($clientsRoutePrefix . '.index', $filterParams) . '#page-data';
+@endphp
+<a href="{{ $salesRepFilterUrl }}"
    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold font-tajawal hover:opacity-90 transition-opacity"
    style="background: {{ $themeColor }}15; color: {{ $themeColor }};"
    title="عرض كل عملاء {{ $repName }}">

@@ -21,16 +21,19 @@ use Illuminate\Support\Facades\DB;
 
 class OperationsKpiService
 {
+    protected ?User $scopedSalesRep = null;
+
     public function __construct(
         protected EmployeeComplianceService $compliance,
     ) {}
 
     /** @return array{groups: array, flat: array<string, float>, period: array} */
-    public function collect(?Carbon $start = null, ?Carbon $end = null, ?User $opsUser = null): array
+    public function collect(?Carbon $start = null, ?Carbon $end = null, ?User $opsUser = null, ?User $scopedSalesRep = null): array
     {
         $start ??= now()->startOfMonth();
         $end ??= now()->endOfDay();
         $opsUser ??= auth()->user();
+        $this->scopedSalesRep = $scopedSalesRep;
 
         $raw = $this->computeRawMetrics($start, $end, $opsUser);
         $groups = $this->buildGroups($raw);
@@ -47,16 +50,58 @@ class OperationsKpiService
         ];
     }
 
+    protected function scopedEmployeeId(): ?int
+    {
+        return $this->scopedSalesRep?->employee?->id;
+    }
+
+    protected function scopedUserId(): ?int
+    {
+        return $this->scopedSalesRep?->id;
+    }
+
+    protected function scopeClients($query)
+    {
+        if ($employeeId = $this->scopedEmployeeId()) {
+            $query->where('assigned_to', $employeeId);
+        }
+
+        return $query;
+    }
+
+    protected function scopeSales($query)
+    {
+        if ($userId = $this->scopedUserId()) {
+            $query->where('assigned_to', $userId);
+        }
+
+        return $query;
+    }
+
+    protected function scopeFollowUps($query)
+    {
+        if ($userId = $this->scopedUserId()) {
+            $query->where('user_id', $userId);
+        }
+
+        return $query;
+    }
+
     /** @return array<string, float|int> */
     protected function computeRawMetrics(Carbon $start, Carbon $end, ?User $opsUser): array
     {
-        $salesRepIds = $this->salesRepUserIds();
-        $salesEmployeeIds = Employee::query()
-            ->whereIn('user_id', $salesRepIds)
-            ->pluck('id');
+        $salesRepIds = $this->scopedUserId()
+            ? collect([$this->scopedUserId()])
+            : $this->salesRepUserIds();
+        $salesEmployeeIds = $this->scopedEmployeeId()
+            ? collect([$this->scopedEmployeeId()])
+            : Employee::query()
+                ->whereIn('user_id', $salesRepIds)
+                ->pluck('id');
 
-        $leadsInPeriod = Client::query()
-            ->whereBetween('created_at', [$start, $end]);
+        $leadsInPeriod = $this->scopeClients(
+            Client::query()->whereBetween('created_at', [$start, $end])
+        );
 
         $totalLeads = (clone $leadsInPeriod)->count();
 
@@ -88,7 +133,9 @@ class OperationsKpiService
         $expectedReportDays = max(1, $start->diffInWeekdays($end) + 1);
         $crmCompliance = min(100, round(($reportsSubmitted / $activeSalesReps) * (100 / min(22, $expectedReportDays)), 1));
 
-        $clientsBase = Client::query()->whereBetween('created_at', [$start, $end]);
+        $clientsBase = $this->scopeClients(
+            Client::query()->whereBetween('created_at', [$start, $end])
+        );
         $withPhone = (clone $clientsBase)->whereNotNull('phone')->where('phone', '!=', '')->count();
         $withName = (clone $clientsBase)->whereNotNull('name')->where('name', '!=', '')->count();
         $dataAccuracy = $totalLeads > 0
@@ -97,23 +144,26 @@ class OperationsKpiService
 
         $duplicateRate = $this->duplicatePhoneRate($start, $end);
 
-        $activeDeals = Sale::query()
-            ->whereIn('assigned_to', $salesRepIds)
-            ->whereNotIn('stage', ['closed_won', 'closed_lost'])
-            ->count();
-        $recentlyUpdated = Sale::query()
-            ->whereIn('assigned_to', $salesRepIds)
-            ->whereNotIn('stage', ['closed_won', 'closed_lost'])
-            ->where('updated_at', '>=', now()->subDays(7))
-            ->count();
+        $activeDeals = $this->scopeSales(
+            Sale::query()
+                ->whereIn('assigned_to', $salesRepIds)
+                ->whereNotIn('stage', ['closed_won', 'closed_lost'])
+        )->count();
+        $recentlyUpdated = $this->scopeSales(
+            Sale::query()
+                ->whereIn('assigned_to', $salesRepIds)
+                ->whereNotIn('stage', ['closed_won', 'closed_lost'])
+                ->where('updated_at', '>=', now()->subDays(7))
+        )->count();
         $pipelineUpdateRate = $activeDeals > 0 ? round(($recentlyUpdated / $activeDeals) * 100, 1) : 100;
 
-        $meetings = CrmFollowUp::query()
-            ->whereIn('user_id', $salesRepIds)
-            ->whereIn('interaction_type', ['meeting', 'viewing'])
-            ->where('status', 'completed')
-            ->whereBetween('completed_at', [$start, $end])
-            ->count();
+        $meetings = $this->scopeFollowUps(
+            CrmFollowUp::query()
+                ->whereIn('user_id', $salesRepIds)
+                ->whereIn('interaction_type', ['meeting', 'viewing'])
+                ->where('status', 'completed')
+                ->whereBetween('completed_at', [$start, $end])
+        )->count();
         $leadToMeeting = $totalLeads > 0 ? round(($meetings / $totalLeads) * 100, 1) : 0;
 
         $reservations = ProjectUnit::query()
@@ -122,10 +172,11 @@ class OperationsKpiService
             ->count();
         $meetingToReservation = $meetings > 0 ? round(($reservations / $meetings) * 100, 1) : 0;
 
-        $contracts = Sale::query()
-            ->where('stage', 'closed_won')
-            ->whereBetween('actual_close_date', [$start, $end])
-            ->count();
+        $contracts = $this->scopeSales(
+            Sale::query()
+                ->where('stage', 'closed_won')
+                ->whereBetween('actual_close_date', [$start, $end])
+        )->count();
         $reservationToContract = $reservations > 0 ? round(($contracts / $reservations) * 100, 1) : 0;
 
         $cycleDays = $this->averageSalesCycleDays($start, $end);
@@ -138,21 +189,24 @@ class OperationsKpiService
             ? round((($currentRevenue - $prevRevenue) / $prevRevenue) * 100, 1)
             : ($currentRevenue > 0 ? 100 : 0);
 
-        $recovered = Client::query()
-            ->where('lead_stage', 'prospect')
-            ->whereNotNull('lost_at')
-            ->whereBetween('updated_at', [$start, $end])
-            ->count();
+        $recovered = $this->scopeClients(
+            Client::query()
+                ->where('lead_stage', 'prospect')
+                ->whereNotNull('lost_at')
+                ->whereBetween('updated_at', [$start, $end])
+        )->count();
 
-        $marketingLeads = Client::query()
-            ->whereNotNull('marketing_campaign_id')
-            ->whereBetween('created_at', [$start, $end])
-            ->count();
-        $marketingWon = Sale::query()
-            ->where('stage', 'closed_won')
-            ->whereHas('client', fn ($c) => $c->whereNotNull('marketing_campaign_id'))
-            ->whereBetween('actual_close_date', [$start, $end])
-            ->count();
+        $marketingLeads = $this->scopeClients(
+            Client::query()
+                ->whereNotNull('marketing_campaign_id')
+                ->whereBetween('created_at', [$start, $end])
+        )->count();
+        $marketingWon = $this->scopeSales(
+            Sale::query()
+                ->where('stage', 'closed_won')
+                ->whereHas('client', fn ($c) => $c->whereNotNull('marketing_campaign_id'))
+                ->whereBetween('actual_close_date', [$start, $end])
+        )->count();
         $marketingRoi = $marketingLeads > 0 ? round(($marketingWon / $marketingLeads) * 100, 1) : 0;
 
         $units = ProjectUnit::query();
@@ -173,15 +227,17 @@ class OperationsKpiService
 
         $doubleBooking = 0;
 
-        $scheduled = CrmFollowUp::query()
-            ->whereIn('user_id', $salesRepIds)
-            ->whereBetween('scheduled_at', [$start, $end])
-            ->count();
-        $completedFollowUps = CrmFollowUp::query()
-            ->whereIn('user_id', $salesRepIds)
-            ->where('status', 'completed')
-            ->whereBetween('completed_at', [$start, $end])
-            ->count();
+        $scheduled = $this->scopeFollowUps(
+            CrmFollowUp::query()
+                ->whereIn('user_id', $salesRepIds)
+                ->whereBetween('scheduled_at', [$start, $end])
+        )->count();
+        $completedFollowUps = $this->scopeFollowUps(
+            CrmFollowUp::query()
+                ->whereIn('user_id', $salesRepIds)
+                ->where('status', 'completed')
+                ->whereBetween('completed_at', [$start, $end])
+        )->count();
         $followUpCompliance = $scheduled > 0 ? round(($completedFollowUps / $scheduled) * 100, 1) : 100;
 
         $activitiesPerRep = $salesRepIds->count() > 0
@@ -272,10 +328,11 @@ class OperationsKpiService
     /** @return array{avg_minutes: float, count: int} */
     protected function leadResponseTimes(Carbon $start, Carbon $end): array
     {
-        $clients = Client::query()
-            ->whereBetween('created_at', [$start, $end])
-            ->with(['timelineEvents' => fn ($q) => $q->where('event_type', 'interaction')->orderBy('occurred_at')])
-            ->get();
+        $clients = $this->scopeClients(
+            Client::query()
+                ->whereBetween('created_at', [$start, $end])
+                ->with(['timelineEvents' => fn ($q) => $q->where('event_type', 'interaction')->orderBy('occurred_at')])
+        )->get();
 
         $minutes = [];
         foreach ($clients as $client) {
@@ -296,10 +353,11 @@ class OperationsKpiService
     /** @return array{avg_minutes: float, count: int} */
     protected function leadDistributionTimes(Carbon $start, Carbon $end): array
     {
-        $clients = Client::query()
-            ->whereBetween('created_at', [$start, $end])
-            ->whereNotNull('assigned_to')
-            ->get();
+        $clients = $this->scopeClients(
+            Client::query()
+                ->whereBetween('created_at', [$start, $end])
+                ->whereNotNull('assigned_to')
+        )->get();
 
         if ($clients->isEmpty()) {
             return ['avg_minutes' => 0, 'count' => 0];
@@ -315,10 +373,11 @@ class OperationsKpiService
 
     protected function duplicatePhoneRate(Carbon $start, Carbon $end): float
     {
-        $phones = Client::query()
-            ->whereBetween('created_at', [$start, $end])
-            ->whereNotNull('phone')
-            ->pluck('phone')
+        $phones = $this->scopeClients(
+            Client::query()
+                ->whereBetween('created_at', [$start, $end])
+                ->whereNotNull('phone')
+        )->pluck('phone')
             ->map(fn ($p) => preg_replace('/\D+/', '', $p))
             ->filter();
 
@@ -333,11 +392,12 @@ class OperationsKpiService
 
     protected function averageSalesCycleDays(Carbon $start, Carbon $end): float
     {
-        $sales = Sale::query()
-            ->where('stage', 'closed_won')
-            ->whereBetween('actual_close_date', [$start, $end])
-            ->with('client:id,created_at')
-            ->get();
+        $sales = $this->scopeSales(
+            Sale::query()
+                ->where('stage', 'closed_won')
+                ->whereBetween('actual_close_date', [$start, $end])
+                ->with('client:id,created_at')
+        )->get();
 
         if ($sales->isEmpty()) {
             return 0;
@@ -356,10 +416,13 @@ class OperationsKpiService
 
     protected function closedRevenue(Carbon $start, Carbon $end): float
     {
-        return (float) Sale::query()
-            ->where('stage', 'closed_won')
-            ->whereBetween('actual_close_date', [$start, $end])
-            ->sum(DB::raw('COALESCE(actual_value, estimated_value)'));
+        $query = $this->scopeSales(
+            Sale::query()
+                ->where('stage', 'closed_won')
+                ->whereBetween('actual_close_date', [$start, $end])
+        );
+
+        return (float) $query->sum(DB::raw('COALESCE(actual_value, estimated_value)'));
     }
 
     /** @return array<string, array> */

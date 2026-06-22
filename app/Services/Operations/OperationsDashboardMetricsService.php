@@ -37,13 +37,14 @@ class OperationsDashboardMetricsService
         ];
     }
 
-    public function commentsCount(Carbon $day): int
+    public function commentsCount(Carbon $day, ?int $salesRepUserId = null): int
     {
         $start = $day->copy()->startOfDay();
         $end = $day->copy()->endOfDay();
 
         return CrmFollowUp::query()
             ->where('status', CrmFollowUp::STATUS_COMPLETED)
+            ->when($salesRepUserId, fn ($q) => $q->where('user_id', $salesRepUserId))
             ->whereBetween('completed_at', [$start, $end])
             ->count();
     }

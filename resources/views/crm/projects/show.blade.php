@@ -8,6 +8,7 @@
     $fieldLabel = 'text-xs font-bold text-gray-500 mb-1 font-tajawal';
     $fieldValue = 'text-sm font-medium text-gray-900 font-tajawal';
 @endphp
+@include('projects.partials.route-prefix')
 
 @include('crm.partials.page-header', [
     'title' => $project->name,
@@ -42,7 +43,7 @@
 
 @include('projects.partials.classification-filter', compact('project', 'themeColor'))
 
-@include('crm.projects.partials.building-units', compact('project', 'themeColor', 'buildingSummary'))
+@include('crm.projects.partials.building-units', array_merge(compact('project', 'themeColor', 'buildingSummary'), ['projectsRoutePrefix' => $projectsRoutePrefix ?? 'crm.projects']))
 
 <div class="mb-6">
     @include('projects.partials.ownership-summary', compact('project', 'themeColor'))
@@ -84,7 +85,7 @@
         <div class="px-5 sm:px-6 py-4 border-t border-gray-100 flex flex-col gap-2">
             @can('update', $project)
             @if(empty($pendingChange))
-            <a href="{{ route('crm.projects.edit', $project) }}" class="inline-flex justify-center w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-white font-tajawal"
+            <a href="{{ $pr('edit', $project) }}" class="inline-flex justify-center w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-white font-tajawal"
                style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">{{ ($requiresApproval ?? false) ? 'طلب تعديل' : 'تعديل المشروع' }}</a>
             @endif
             @endcan
@@ -92,11 +93,11 @@
             @if(empty($pendingChange))
                 @if($requiresApproval ?? false)
                     @include('crm.partials.delete-request-form', [
-                        'action' => route('crm.projects.destroy', $project),
+                        'action' => $pr('destroy', $project),
                         'label' => 'طلب حذف المشروع',
                     ])
                 @else
-                <form action="{{ route('crm.projects.destroy', $project) }}" method="POST"
+                <form action="{{ $pr('destroy', $project) }}" method="POST"
                       onsubmit="return confirm('حذف هذا المشروع؟ لا يمكن التراجع.')">
                     @csrf @method('DELETE')
                     <button type="submit" class="w-full px-4 py-2.5 rounded-xl text-sm font-semibold bg-red-50 text-red-600 hover:bg-red-100 font-tajawal">حذف المشروع</button>

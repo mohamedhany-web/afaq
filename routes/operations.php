@@ -10,6 +10,8 @@ use App\Http\Controllers\Operations\OperationsInventoryController;
 use App\Http\Controllers\Operations\OperationsExitPermitController;
 use App\Http\Controllers\Operations\OperationsLeadController;
 use App\Http\Controllers\Operations\OperationsLeaveController;
+use App\Http\Controllers\Operations\OperationsProjectController;
+use App\Http\Controllers\Operations\OperationsProjectUnitController;
 use App\Http\Controllers\Operations\OperationsRepController;
 use App\Http\Controllers\Operations\OperationsPeriodReportController;
 use App\Http\Controllers\Operations\OperationsTeamController;
@@ -19,6 +21,14 @@ Route::middleware(['auth', 'verified', 'verified.code'])->prefix('operations')->
     Route::get('/', [OperationsDashboardController::class, 'index'])->name('dashboard');
 
     Route::get('leads', [OperationsLeadController::class, 'index'])->name('leads.index');
+    Route::get('clients/check-phone', [OperationsClientController::class, 'checkPhone'])->name('clients.check-phone');
+    Route::get('clients/export', [OperationsClientController::class, 'export'])->name('clients.export');
+    Route::post('clients/bulk-transfer', [OperationsClientController::class, 'bulkTransfer'])->name('clients.bulk-transfer');
+    Route::post('clients/{client}/transfer', [OperationsClientController::class, 'transfer'])->name('clients.transfer');
+    Route::get('clients/create', [OperationsClientController::class, 'create'])->name('clients.create');
+    Route::get('clients/import/template', [OperationsClientController::class, 'importTemplate'])->name('clients.import.template');
+    Route::post('clients/import', [OperationsClientController::class, 'import'])->name('clients.import');
+    Route::post('clients', [OperationsClientController::class, 'store'])->name('clients.store');
     Route::get('clients', [OperationsClientController::class, 'index'])->name('clients.index');
     Route::get('reps/search', [OperationsRepController::class, 'search'])->name('reps.search');
     Route::get('reps/{rep}', [OperationsRepController::class, 'show'])->name('reps.show');
@@ -33,7 +43,21 @@ Route::middleware(['auth', 'verified', 'verified.code'])->prefix('operations')->
     Route::patch('follow-ups/{followUp}/complete', [OperationsFollowUpController::class, 'complete'])->name('follow-ups.complete');
     Route::patch('follow-ups/{followUp}/cancel', [OperationsFollowUpController::class, 'cancel'])->name('follow-ups.cancel');
 
+    Route::get('inventory/export', [OperationsInventoryController::class, 'export'])->name('inventory.export');
     Route::get('inventory', [OperationsInventoryController::class, 'index'])->name('inventory.index');
+
+    Route::get('projects/export', [OperationsProjectController::class, 'export'])->name('projects.export');
+    Route::get('projects', [OperationsProjectController::class, 'index'])->name('projects.index');
+    Route::get('projects/create', [OperationsProjectController::class, 'create'])->name('projects.create');
+    Route::post('projects', [OperationsProjectController::class, 'store'])->name('projects.store');
+    Route::get('projects/{project}', [OperationsProjectController::class, 'show'])->name('projects.show');
+    Route::get('projects/{project}/edit', [OperationsProjectController::class, 'edit'])->name('projects.edit');
+    Route::put('projects/{project}', [OperationsProjectController::class, 'update'])->name('projects.update');
+    Route::delete('projects/{project}', [OperationsProjectController::class, 'destroy'])->name('projects.destroy');
+    Route::post('projects/{project}/units/generate', [OperationsProjectUnitController::class, 'generate'])->name('projects.units.generate');
+    Route::post('projects/{project}/units/renumber', [OperationsProjectUnitController::class, 'renumber'])->name('projects.units.renumber');
+    Route::patch('projects/{project}/units/{unit}', [OperationsProjectUnitController::class, 'update'])->name('projects.units.update');
+    Route::get('projects/{project}/units/{unit}', [OperationsProjectUnitController::class, 'show'])->name('projects.units.show');
     Route::get('team', [OperationsTeamController::class, 'index'])->name('team.index');
 
     Route::get('reports', [OperationsPeriodReportController::class, 'index'])->name('reports.index');

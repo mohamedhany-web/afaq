@@ -45,7 +45,7 @@
 <div class="mt-6">
     <h3 class="sidebar-section-title px-4">{{ __('operations.sidebar.operations') }}</h3>
     @canNav('view-all-projects', 'view-own-projects')
-    <a href="{{ route('crm.projects.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('crm.projects.*') ? 'active' : '' }}">
+    <a href="{{ route('operations.projects.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('operations.projects.*') ? 'active' : '' }}">
         <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
         {{ __('operations.sidebar.real_estate_projects') }}
     </a>

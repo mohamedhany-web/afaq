@@ -11,8 +11,17 @@
     'title' => 'إدارة المخزون العقاري',
     'subtitle' => 'الوحدات المتاحة والمحجوزة والمباعة — دقة الأسعار',
     'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>',
-    'actionUrl' => route('crm.projects.index'),
-    'actionLabel' => 'المشاريع والوحدات',
+    'actionUrl' => route('operations.projects.index'),
+    'actionLabel' => 'إدارة المشاريع',
+])
+
+@include('crm.partials.filter-bar', [
+    'mode' => 'projects',
+    'action' => route('operations.inventory.index'),
+    'clearUrl' => $clearUrl ?? route('operations.inventory.index'),
+    'projectsRoutePrefix' => $projectsRoutePrefix ?? 'operations.projects',
+    'inventoryExportRoute' => $inventoryExportRoute ?? route('operations.inventory.export', request()->query()),
+    'preserve' => array_filter(['status' => request('status')]),
 ])
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
@@ -40,7 +49,7 @@
 ])
 @endif
 
-@include('operations.partials.unit-inventory-cards', compact('units', 'projects', 'statusFilter', 'themeColor', 'useTypeFilter', 'useTypeLabels'))
+@include('operations.partials.unit-inventory-cards', compact('units', 'projects', 'statusFilter', 'themeColor', 'useTypeFilter', 'useTypeLabels') + ['projectsRoutePrefix' => $projectsRoutePrefix ?? 'operations.projects'])
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6 font-tajawal">
     <div class="bg-white rounded-2xl border overflow-hidden">
@@ -62,7 +71,7 @@
                     <td class="p-3 text-amber-700">{{ $project->reserved_count }}</td>
                     <td class="p-3 text-blue-700">{{ $project->sold_count }}</td>
                     <td class="p-3">
-                        <a href="{{ route('crm.projects.show', $project) }}#building-units-root" class="text-xs font-bold hover:underline" style="color:{{ $themeColor }}">الوحدات</a>
+                        <a href="{{ route(($projectsRoutePrefix ?? 'operations.projects') . '.show', $project) }}#building-units-root" class="text-xs font-bold hover:underline" style="color:{{ $themeColor }}">الوحدات</a>
                     </td>
                 </tr>
                 @endforeach
@@ -75,7 +84,7 @@
         <ul class="divide-y">
             @forelse($missingPrice as $unit)
             <li class="p-4 text-sm">
-                <a href="{{ route('crm.projects.show', $unit->project_id) }}?unit={{ $unit->id }}#building-units-root" class="font-semibold hover:underline" style="color:{{ $themeColor }}">{{ $unit->code }} — {{ $unit->project?->name }}</a>
+                <a href="{{ route(($projectsRoutePrefix ?? 'operations.projects') . '.show', $unit->project_id) }}?unit={{ $unit->id }}#building-units-root" class="font-semibold hover:underline" style="color:{{ $themeColor }}">{{ $unit->code }} — {{ $unit->project?->name }}</a>
                 <p class="text-xs text-gray-500">{{ $unit->useTypeLabel() }} — {{ $unit->area_m2 }} م²</p>
             </li>
             @empty

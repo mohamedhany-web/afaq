@@ -28,8 +28,42 @@
 
 <div class="flex flex-wrap items-center gap-3 mb-6 font-tajawal">
     @include('partials.ui-compact-toggle', ['themeColor' => $themeColor, 'labelOn' => __('operations.ui.compact_on'), 'labelOff' => __('operations.ui.compact_off')])
-    @include('operations.partials.rep-search-form', ['salesReps' => $salesReps, 'compact' => true])
+    @include('operations.partials.rep-search-form', [
+        'salesReps' => $salesReps,
+        'compact' => true,
+        'filterAction' => route('operations.dashboard'),
+        'repFieldName' => 'sales_rep',
+        'selectedSalesRep' => $selectedSalesRep ?? null,
+        'selectedRepId' => $selectedSalesRep->id ?? null,
+    ])
 </div>
+
+@if(!empty($selectedSalesRep))
+<div class="mb-6 p-4 rounded-2xl border-2 font-tajawal flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+     style="border-color: {{ $themeColor }}40; background: {{ $themeColor }}08;">
+    <div>
+        <p class="text-xs font-bold text-gray-500">{{ __('operations.dashboard.filtered_by_rep') }}</p>
+        <p class="text-lg font-extrabold" style="color: {{ $themeColor }};">{{ $selectedSalesRep->name }}</p>
+        <p class="text-xs text-gray-600 mt-1">{{ __('operations.dashboard.filtered_hint') }}</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+        <a href="{{ route('operations.clients.index', ['view' => 'data', 'sales_rep' => $selectedSalesRep->id]) }}"
+           class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white"
+           style="background: {{ $themeColor }};">
+            {{ __('operations.dashboard.view_rep_clients') }}
+        </a>
+        <a href="{{ route('operations.reps.show', $selectedSalesRep) }}"
+           class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border-2 hover:bg-gray-50"
+           style="border-color: {{ $themeColor }}40; color: {{ $themeColor }};">
+            {{ __('operations.actions.open_rep_workspace') }}
+        </a>
+        <a href="{{ route('operations.dashboard') }}"
+           class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-white border border-gray-200 text-gray-600 hover:bg-gray-50">
+            {{ __('operations.dashboard.clear_filter') }}
+        </a>
+    </div>
+</div>
+@endif
 
 <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mb-6" id="page-data">
     @foreach($workspaceSections as $section)

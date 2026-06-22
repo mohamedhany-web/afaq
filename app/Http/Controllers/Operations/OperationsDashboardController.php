@@ -14,7 +14,10 @@ use App\Services\Operations\OperationsDashboardMetricsService;
 use App\Services\Operations\OperationsKpiService;
 use App\Services\Operations\OperationsLeadDistributionService;
 use App\Services\Operations\OperationsWorkspaceService;
+use App\Services\CrmEmployeeService;
 use App\Services\OperationsRoleResolver;
+use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class OperationsDashboardController extends Controller
@@ -31,6 +34,7 @@ class OperationsDashboardController extends Controller
     }
 
     public function index(
+        Request $request,
         CompensationPayrollService $payroll,
         CompensationKpiScoringService $scoring,
         AttendanceAbsenceReviewService $absenceReviews,
@@ -42,9 +46,10 @@ class OperationsDashboardController extends Controller
     ) {
         $user = Auth::user();
         $resolver = OperationsRoleResolver::for($user);
+        $selectedSalesRep = $this->resolveDashboardSalesRep($request);
         $period = $payroll->currentPeriod();
         $kpi = $scoring->evaluateUser($user, $period);
-        $kpiData = $opsKpis->collect($period->starts_at, $period->ends_at, $user);
+        $kpiData = $opsKpis->collect($period->starts_at, $period->ends_at, $user, $selectedSalesRep);
         $kpiGroups = $kpiData['groups'] ?? [];
 
         $stats = [
@@ -69,13 +74,13 @@ class OperationsDashboardController extends Controller
         }
 
         $crmPulse = $crmPulseMetrics->snapshot();
-        $workspaceSections = $workspace->dashboardSections();
+        $workspaceSections = $workspace->dashboardSections(null, $selectedSalesRep);
         $absenceReviewsDate = $absenceReviews->latestDateForStatus('pending');
         $absenceReviewsLink = route('operations.attendance-reviews.index', array_filter([
             'status' => 'pending',
             'date' => $absenceReviewsDate?->toDateString(),
         ]));
-        $salesReps = \App\Services\CrmEmployeeService::searchableSalesUsersQuery()->get();
+        $salesReps = CrmEmployeeService::searchableSalesUsersQuery()->get();
 
         return view('operations.dashboard', compact(
             'user',
@@ -88,6 +93,25 @@ class OperationsDashboardController extends Controller
             'workspaceSections',
             'absenceReviewsLink',
             'salesReps',
+            'selectedSalesRep',
         ));
+    }
+
+    protected function resolveDashboardSalesRep(Request $request): ?User
+    {
+        if (! $request->filled('sales_rep')) {
+            return null;
+        }
+
+        $rep = User::query()->find($request->integer('sales_rep'));
+        if (! $rep) {
+            return null;
+        }
+
+        $exists = CrmEmployeeService::searchableSalesUsersQuery()
+            ->where('users.id', $rep->id)
+            ->exists();
+
+        return $exists ? $rep : null;
     }
 }

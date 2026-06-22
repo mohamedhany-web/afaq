@@ -8,7 +8,7 @@
             <div id="bulk-selected-preview" class="mt-2 flex flex-wrap gap-1 max-h-16 overflow-y-auto text-[11px] text-gray-600"></div>
         </div>
         @if(($assignableReps ?? collect())->isNotEmpty() && auth()->user()->can('bulkUpdate', \App\Models\Client::class))
-        <form method="POST" action="{{ route('crm.clients.bulk-transfer') }}" class="flex flex-col sm:flex-row gap-2 items-stretch sm:items-end flex-wrap" id="bulk-transfer-form">
+        <form method="POST" action="{{ route(($clientsRoutePrefix ?? 'crm.clients') . '.bulk-transfer') }}" class="flex flex-col sm:flex-row gap-2 items-stretch sm:items-end flex-wrap" id="bulk-transfer-form">
             @csrf
             <div id="bulk-transfer-ids"></div>
             <div>

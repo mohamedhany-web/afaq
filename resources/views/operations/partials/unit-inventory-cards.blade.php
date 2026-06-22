@@ -66,7 +66,7 @@
             @php
                 $statusColor = $statusColors[$unit->status] ?? '#6b7280';
                 $useColor = $useColors[$unit->use_type] ?? $themeColor;
-                $detailUrl = route('crm.projects.show', $unit->project_id) . '?unit=' . $unit->id . '#building-units-root';
+                $detailUrl = route(($projectsRoutePrefix ?? 'operations.projects') . '.show', $unit->project_id) . '?unit=' . $unit->id . '#building-units-root';
                 $price = $unit->price_cash > 0 ? $unit->price_cash : ($unit->price_installment > 0 ? $unit->price_installment : null);
             @endphp
             <article class="rounded-xl border-2 border-gray-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col">

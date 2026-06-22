@@ -18,10 +18,23 @@ class CrmProjectController extends Controller
 {
     use UsesCrmFilters;
 
+    protected string $projectsRoutePrefix = 'crm.projects';
+
     public function __construct(
         protected ProjectManagementService $projects,
         protected ProjectApprovalService $approval,
     ) {}
+
+    protected function projectsRoute(string $action, mixed $parameters = []): string
+    {
+        return route($this->projectsRoutePrefix . '.' . $action, $parameters);
+    }
+
+    /** @return array<string, mixed> */
+    protected function projectsViewData(array $data = []): array
+    {
+        return array_merge(['projectsRoutePrefix' => $this->projectsRoutePrefix], $data);
+    }
 
     public function index(Request $request)
     {
@@ -47,14 +60,15 @@ class CrmProjectController extends Controller
             'ownership' => $this->projects->ownershipStats($base),
         ];
 
-        return view('crm.projects.index', [
+        return view('crm.projects.index', $this->projectsViewData([
             'projects' => $projects,
             'stats' => $stats,
             'requiresApproval' => $this->approval->requiresApproval($user),
-            'clearUrl' => route('crm.projects.index'),
+            'clearUrl' => $this->projectsRoute('index'),
+            'projectsExportRoute' => $this->projectsRoute('export', request()->query()),
             ...$this->projectFilterViewData($filters, $request),
             'developers' => $this->projects->contractedDevelopers(),
-        ]);
+        ]));
     }
 
     public function export(Request $request): StreamedResponse
@@ -130,12 +144,12 @@ class CrmProjectController extends Controller
     {
         abort_unless($this->projects->canCreate(Auth::user()), 403);
 
-        return view('crm.projects.create', [
+        return view('crm.projects.create', $this->projectsViewData([
             'project' => new Project(),
             'users' => $this->projects->formUsers(),
             'developers' => $this->projects->contractedDevelopers(),
             'requiresApproval' => $this->approval->requiresApproval(Auth::user()),
-        ]);
+        ]));
     }
 
     public function store(Request $request)
@@ -164,7 +178,7 @@ class CrmProjectController extends Controller
         $this->projects->syncMapPins($project, $request, $user);
         $this->projects->syncManualUnits($project, is_array($manualUnits) ? $manualUnits : []);
 
-        return redirect()->route('crm.projects.show', $project)
+        return redirect()->to($this->projectsRoute('show', $project))
             ->with('success', 'تم إضافة المشروع العقاري بنجاح');
     }
 
@@ -203,13 +217,13 @@ class CrmProjectController extends Controller
 
         $buildingSummary = app(ProjectUnitGeneratorService::class)->buildingSummary($project);
 
-        return view('crm.projects.show', [
+        return view('crm.projects.show', $this->projectsViewData([
             'project' => $project,
             'stats' => $stats,
             'buildingSummary' => $buildingSummary,
             'pendingChange' => $this->approval->pendingForProject($project),
             'requiresApproval' => $this->approval->requiresApproval(Auth::user()),
-        ]);
+        ]));
     }
 
     public function edit(Project $project)
@@ -218,12 +232,12 @@ class CrmProjectController extends Controller
 
         $project->load(['teamMembers', 'mapPins']);
 
-        return view('crm.projects.edit', [
+        return view('crm.projects.edit', $this->projectsViewData([
             'project' => $project,
             'users' => $this->projects->formUsers(),
             'developers' => $this->projects->contractedDevelopers(),
             'requiresApproval' => $this->approval->requiresApproval(Auth::user()),
-        ]);
+        ]));
     }
 
     public function update(Request $request, Project $project)
@@ -252,7 +266,7 @@ class CrmProjectController extends Controller
         $this->projects->syncMapPins($project, $request, $user);
         $this->projects->syncManualUnits($project, is_array($manualUnits) ? $manualUnits : []);
 
-        return redirect()->route('crm.projects.show', $project)
+        return redirect()->to($this->projectsRoute('show', $project))
             ->with('success', 'تم تحديث المشروع العقاري بنجاح');
     }
 
@@ -285,7 +299,7 @@ class CrmProjectController extends Controller
             throw $e;
         }
 
-        return redirect()->route('crm.projects.index')
+        return redirect()->to($this->projectsRoute('index'))
             ->with('success', 'تم حذف المشروع العقاري بنجاح');
     }
 }

@@ -50,9 +50,14 @@ class OperationsClientBucketService
         };
     }
 
-    public function count(string $bucket): int
+    public function count(string $bucket, ?int $assignedEmployeeId = null): int
     {
-        return $this->applyBucket($this->baseQuery(), $bucket)->count();
+        $query = $this->baseQuery();
+        if ($assignedEmployeeId) {
+            $query->where('assigned_to', $assignedEmployeeId);
+        }
+
+        return $this->applyBucket($query, $bucket)->count();
     }
 
     /** نفس منطق عدّاد العملاء المحتملين في لوحة العمليات */

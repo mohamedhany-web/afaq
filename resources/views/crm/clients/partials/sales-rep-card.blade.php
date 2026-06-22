@@ -24,7 +24,7 @@
             </div>
         </div>
         @if(($assignableReps ?? collect())->isNotEmpty() && auth()->user()->can('transfer', $client))
-        <form method="POST" action="{{ route('crm.clients.transfer', $client) }}"
+        <form method="POST" action="{{ route(($clientsRoutePrefix ?? 'crm.clients') . '.transfer', $client) }}"
               class="flex flex-col sm:flex-row gap-2 items-stretch sm:items-end min-w-[240px]"
               onsubmit="return confirm('تحويل هذا العميل والمهام المحددة إلى السيلز الجديد؟')">
             @csrf
@@ -51,7 +51,7 @@
 @elseif(($assignableReps ?? collect())->isNotEmpty() && auth()->user()->can('transfer', $client))
 <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 font-tajawal">
     <p class="text-sm text-amber-900 mb-3 font-semibold">العميل غير مُعيَّن لسيلز بعد — يمكن تعيينه أو سحبه لفريق المبيعات</p>
-    <form method="POST" action="{{ route('crm.clients.transfer', $client) }}" class="flex flex-wrap gap-2 items-end">
+    <form method="POST" action="{{ route(($clientsRoutePrefix ?? 'crm.clients') . '.transfer', $client) }}" class="flex flex-wrap gap-2 items-end">
         @csrf
         <div>
             <label class="block text-xs font-bold text-gray-600 mb-1">تعيين / سحب إلى سيلز</label>

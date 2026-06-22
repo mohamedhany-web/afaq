@@ -3,6 +3,12 @@
 return [
     'dashboard_title' => 'Operations Dashboard',
     'dashboard_subtitle' => 'Operations hub — Clients · Tasks · Follow-ups · Team',
+    'dashboard' => [
+        'filtered_by_rep' => 'Showing sales rep data',
+        'filtered_hint' => 'Counts and KPIs below are scoped to this rep only',
+        'view_rep_clients' => 'Rep client list',
+        'clear_filter' => 'Clear filter',
+    ],
     'all_clients_first' => 'Open the operations dashboard to see all data',
 
     'sections' => [
@@ -35,6 +41,7 @@ return [
         'search_sales_rep_placeholder' => 'Type rep name...',
         'select_sales_rep' => 'Select user...',
         'open_rep_workspace' => 'Open operations page',
+        'apply_filter' => 'Apply to dashboard',
         'switch_language' => 'العربية',
         'switch_language_ar' => 'العربية',
         'my_reports' => 'My reports',

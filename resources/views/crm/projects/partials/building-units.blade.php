@@ -6,16 +6,18 @@
     $statusColors = config('project_units.status_colors', []);
     $floors = $project->buildingFloors ?? collect();
     $hasUnits = $floors->isNotEmpty() && $floors->sum(fn ($f) => $f->units->count()) > 0;
+    $projectsRoutePrefix = $projectsRoutePrefix ?? 'crm.projects';
+    $pr = fn (string $action, mixed $params = []) => route($projectsRoutePrefix . '.' . $action, $params);
     $unitUpdateUrl = $unitUpdateUrl ?? ($hasUnits
-        ? preg_replace('/\/0(\?|$)/', '/__ID__$1', route('crm.projects.units.update', ['project' => $project, 'unit' => 0]))
+        ? preg_replace('/\/0(\?|$)/', '/__ID__$1', $pr('units.update', ['project' => $project, 'unit' => 0]))
         : '');
     $unitShowUrl = $unitShowUrl ?? ($hasUnits
-        ? preg_replace('/\/0(\?|$)/', '/__ID__$1', route('crm.projects.units.show', ['project' => $project, 'unit' => 0]))
+        ? preg_replace('/\/0(\?|$)/', '/__ID__$1', $pr('units.show', ['project' => $project, 'unit' => 0]))
         : '');
-    $unitsGenerateRoute = $unitsGenerateRoute ?? route('crm.projects.units.generate', $project);
+    $unitsGenerateRoute = $unitsGenerateRoute ?? $pr('units.generate', $project);
     $showDealButton = $showDealButton ?? true;
     $canEdit = $canEdit ?? auth()->user()?->can('update', $project);
-    $unitsRenumberRoute = $unitsRenumberRoute ?? route('crm.projects.units.renumber', $project);
+    $unitsRenumberRoute = $unitsRenumberRoute ?? $pr('units.renumber', $project);
     $unitsPayload = $hasUnits
         ? $floors->flatMap(fn ($floor) => $floor->units->map(function ($unit) use ($unitShowUrl) {
             $payload = CrmProjectUnitController::unitPayload($unit);

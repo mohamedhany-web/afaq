@@ -1,6 +1,6 @@
 @php
     $ignoreId = $ignoreId ?? ($client->id ?? null);
-    $checkUrl = route('crm.clients.check-phone');
+    $checkUrl = $checkPhoneRoute ?? route(($clientsRoutePrefix ?? 'crm.clients') . '.check-phone');
 @endphp
 <div id="phone-duplicate-alert" class="hidden mt-2 p-3 rounded-xl border-2 border-amber-300 bg-amber-50 text-sm font-tajawal" role="alert"></div>
 
