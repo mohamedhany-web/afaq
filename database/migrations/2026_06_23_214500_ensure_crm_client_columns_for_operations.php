@@ -25,20 +25,7 @@ return new class extends Migration
         });
 
         if (Schema::hasColumn('clients', 'phone_normalized')) {
-            DB::table('clients')
-                ->whereNull('phone_normalized')
-                ->whereNotNull('phone')
-                ->orderBy('id')
-                ->chunkById(200, function ($clients) {
-                    foreach ($clients as $client) {
-                        $normalized = \App\Models\Client::normalizePhone($client->phone);
-                        if ($normalized) {
-                            DB::table('clients')
-                                ->where('id', $client->id)
-                                ->update(['phone_normalized' => $normalized]);
-                        }
-                    }
-                });
+            $this->reconcilePhoneNormalized();
         }
 
         if (Schema::hasColumn('clients', 'phone_normalized')) {
@@ -49,6 +36,36 @@ return new class extends Migration
             } catch (\Throwable) {
                 // Index may already exist.
             }
+        }
+    }
+
+    protected function reconcilePhoneNormalized(): void
+    {
+        // Reset partial backfills so duplicate phones can be reconciled safely.
+        DB::table('clients')->whereNotNull('phone_normalized')->update(['phone_normalized' => null]);
+
+        $owners = [];
+
+        DB::table('clients')
+            ->whereNotNull('phone')
+            ->where('phone', '!=', '')
+            ->orderBy('id')
+            ->select(['id', 'phone'])
+            ->chunkById(200, function ($rows) use (&$owners) {
+                foreach ($rows as $row) {
+                    $normalized = \App\Models\Client::normalizePhone($row->phone);
+                    if (! $normalized || isset($owners[$normalized])) {
+                        continue;
+                    }
+
+                    $owners[$normalized] = (int) $row->id;
+                }
+            });
+
+        foreach ($owners as $normalized => $clientId) {
+            DB::table('clients')
+                ->where('id', $clientId)
+                ->update(['phone_normalized' => $normalized]);
         }
     }
 
