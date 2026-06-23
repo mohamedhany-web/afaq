@@ -15,6 +15,13 @@ class MessageController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware('permission:view-messages')->only([
+            'index', 'show', 'unreadCount', 'getRecentMessages', 'markAsRead',
+        ]);
+        $this->middleware('permission:create-messages|send-messages')->only(['create', 'store']);
+        $this->middleware('permission:reply-messages')->only(['reply']);
+        $this->middleware('permission:mark-messages-important')->only(['markAsImportant']);
+        $this->middleware('permission:delete-messages')->only(['destroy']);
     }
 
     /**

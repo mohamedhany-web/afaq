@@ -25,6 +25,7 @@ Route::middleware(['auth', 'verified', 'verified.code'])->prefix('operations')->
     Route::get('clients/export', [OperationsClientController::class, 'export'])->name('clients.export');
     Route::post('clients/bulk-transfer', [OperationsClientController::class, 'bulkTransfer'])->name('clients.bulk-transfer');
     Route::post('clients/bulk-update-meta', [OperationsClientController::class, 'bulkUpdateMeta'])->name('clients.bulk-update-meta');
+    Route::post('clients/bulk-delete', [OperationsClientController::class, 'bulkDestroy'])->name('clients.bulk-destroy');
     Route::post('clients/{client}/transfer', [OperationsClientController::class, 'transfer'])->name('clients.transfer');
     Route::get('clients/create', [OperationsClientController::class, 'create'])->name('clients.create');
     Route::get('clients/import/template', [OperationsClientController::class, 'importTemplate'])->name('clients.import.template');

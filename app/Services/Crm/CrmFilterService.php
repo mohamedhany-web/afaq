@@ -55,13 +55,55 @@ class CrmFilterService
             || $this->scope->user()->canAccessOperations();
     }
 
+    public function showCreatorFilter(): bool
+    {
+        return $this->creatorUsers()->isNotEmpty();
+    }
+
     /** @return string[] */
     public function clientFilterKeys(): array
     {
         return [
-            'search', 'sales_rep', 'status', 'lead_stage', 'deal_stage', 'has_deals',
+            'search', 'sales_rep', 'created_by', 'mine', 'status', 'lead_stage', 'deal_stage', 'has_deals',
             'unassigned', 'client_type', 'lead_source', 'created_from', 'created_to', 'advanced',
         ];
+    }
+
+    /** @return array<int|string, mixed> */
+    public function clientListRelations(): array
+    {
+        return [
+            'assignedEmployee',
+            'createdBy:id,name',
+            'sales',
+            'staffNotes' => fn ($q) => $q->latest()->limit(1),
+            'latestInteraction' => fn ($q) => $q
+                ->where('status', \App\Models\CrmFollowUp::STATUS_COMPLETED)
+                ->whereNotNull('notes')
+                ->where('notes', '!=', '')
+                ->latest('completed_at')
+                ->limit(1),
+            'followUps' => fn ($q) => $q->where('status', \App\Models\CrmFollowUp::STATUS_SCHEDULED)
+                ->orderBy('scheduled_at')
+                ->limit(1),
+        ];
+    }
+
+    /** @return Collection<int, User> */
+    public function creatorUsers(): Collection
+    {
+        if ($this->scope->hasFullAccess() || $this->scope->user()->canAccessOperations()) {
+            return User::query()->orderBy('name')->get(['id', 'name']);
+        }
+
+        if ($this->scope->isManagerScope()) {
+            $ids = $this->scope->managedTeamMemberUserIds();
+            $ids[] = $this->scope->user()->id;
+
+            return User::query()->whereIn('id', array_unique($ids))->orderBy('name')->get(['id', 'name']);
+        }
+
+        return User::whereKey($this->scope->user()->id)->get(['id', 'name']);
     }
 
     /** @return string[] */
@@ -114,7 +156,7 @@ class CrmFilterService
     public function hasActiveFilters(Request $request, array $keys): bool
     {
         foreach ($keys as $key) {
-            if (in_array($key, ['unassigned', 'show_closed', 'advanced', 'client_unassigned', 'overdue_only', 'has_units'], true)) {
+            if (in_array($key, ['unassigned', 'show_closed', 'advanced', 'client_unassigned', 'overdue_only', 'has_units', 'mine'], true)) {
                 if ($request->boolean($key)) {
                     return true;
                 }
@@ -148,6 +190,18 @@ class CrmFilterService
                 });
             })
             ->when($request->filled('sales_rep'), fn ($q) => $this->applyClientSalesRepFilter($q, (int) $request->sales_rep))
+            ->when($request->filled('created_by'), fn ($q) => $q->where('created_by', (int) $request->created_by))
+            ->when($request->boolean('mine'), function ($q) use ($scope) {
+                $userId = (int) $scope->user()->id;
+                $employeeId = $scope->user()->employee?->id;
+                $q->where(function ($sub) use ($userId, $employeeId, $scope) {
+                    $sub->where('created_by', $userId);
+                    if ($employeeId) {
+                        $sub->orWhere('assigned_to', $employeeId);
+                    }
+                    $sub->orWhereIn('id', $scope->salesQuery()->where('assigned_to', $userId)->distinct()->pluck('client_id'));
+                });
+            })
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->when($request->lead_stage, fn ($q) => $q->where('lead_stage', $request->lead_stage))
             ->when($request->client_type, fn ($q) => $q->where('client_type', Client::normalizeType($request->client_type)))

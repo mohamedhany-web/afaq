@@ -9,7 +9,7 @@ class DepartmentReportPolicy
 {
     public function viewAny(User $user): bool
     {
-        if ($user->hasRole('super_admin') || $user->hasRole('admin') || $user->can('view-reports')) {
+        if ($user->adminBypassUnlessDenied('view-reports') || $user->can('view-reports')) {
             return true;
         }
 
@@ -18,7 +18,7 @@ class DepartmentReportPolicy
 
     public function view(User $user, DepartmentReport $report): bool
     {
-        if ($user->hasRole('super_admin') || $user->hasRole('admin') || $user->can('view-reports')) {
+        if ($user->adminBypassUnlessDenied('view-reports') || $user->can('view-reports')) {
             return true;
         }
 
@@ -28,16 +28,16 @@ class DepartmentReportPolicy
 
     public function create(User $user): bool
     {
-        // Only department manager can create department reports (and admin can too)
-        if ($user->hasRole('super_admin') || $user->hasRole('admin')) {
+        if ($user->adminBypassUnlessDenied('generate-reports')) {
             return true;
         }
+
         return DepartmentAccess::isDepartmentManager($user);
     }
 
     public function update(User $user, DepartmentReport $report): bool
     {
-        if ($user->hasRole('super_admin') || $user->hasRole('admin')) {
+        if ($user->adminBypassUnlessDenied('generate-reports')) {
             return true;
         }
 

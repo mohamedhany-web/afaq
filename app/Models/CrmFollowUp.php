@@ -77,4 +77,13 @@ class CrmFollowUp extends Model
     {
         return $query->where('status', self::STATUS_SCHEDULED);
     }
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $followUp) {
+            if (! $followUp->created_by && $followUp->user_id) {
+                $followUp->created_by = $followUp->user_id;
+            }
+        });
+    }
 }

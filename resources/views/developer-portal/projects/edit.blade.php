@@ -1,12 +1,38 @@
 @extends('layouts.developer')
 @section('page-title', 'تعديل مشروع')
+
 @section('content')
-<h1 class="text-2xl font-bold mb-6">تعديل: {{ $project->name }}</h1>
-<form method="POST" action="{{ route('developer.projects.update', $project) }}">@csrf @method('PUT')
-@include('developer-portal.projects.partials.form', ['project' => $project])
-<div class="mt-4 flex gap-3">
-    <button type="submit" class="px-6 py-3 rounded-xl text-white font-bold" style="background:var(--brand)">حفظ</button>
-    <a href="{{ route('developer.projects.show', $project) }}" class="px-6 py-3 rounded-xl border text-sm font-bold">رجوع</a>
+@php $themeColor = \App\Helpers\SettingsHelper::getThemeColor(); @endphp
+
+@include('crm.partials.page-header', [
+    'title' => 'تعديل: ' . $project->name,
+    'subtitle' => 'تحديث بيانات المشروع والعرض',
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>',
+    'secondaryUrl' => route('developer.projects.show', $project),
+    'secondaryLabel' => 'عرض المشروع',
+])
+
+@if($errors->any())
+<div class="mb-6 bg-red-50 border border-red-200 rounded-2xl p-4">
+    <ul class="list-disc pr-5 text-sm text-red-700 font-tajawal space-y-1">
+        @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+    </ul>
 </div>
+@endif
+
+<form method="POST" action="{{ route('developer.projects.update', $project) }}" class="space-y-6">
+    @csrf @method('PUT')
+    @include('developer-portal.projects.partials.form', ['project' => $project, 'themeColor' => $themeColor])
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-2">
+        <a href="{{ route('developer.projects.show', $project) }}"
+           class="inline-flex items-center justify-center px-6 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 font-tajawal">
+            إلغاء
+        </a>
+        <button type="submit"
+                class="inline-flex items-center justify-center px-8 py-3 rounded-xl text-white font-semibold text-sm shadow-md font-tajawal"
+                style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">
+            حفظ التعديلات
+        </button>
+    </div>
 </form>
 @endsection

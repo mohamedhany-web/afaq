@@ -72,6 +72,11 @@ class Client extends Model
         return $this->hasMany(CrmFollowUp::class);
     }
 
+    public function latestInteraction(): HasMany
+    {
+        return $this->hasMany(CrmFollowUp::class);
+    }
+
     public function contracts(): HasMany
     {
         return $this->hasMany(Contract::class);
@@ -350,6 +355,56 @@ class Client extends Model
             'lead_source_label' => $this->leadSourceLabel(),
             'sales_rep' => $this->assignedSalesRepName(),
             'url' => route('crm.clients.show', $this),
+        ];
+    }
+
+    public function listLatestComment(): ?string
+    {
+        $latest = null;
+        $latestAt = null;
+
+        if ($this->relationLoaded('latestInteraction')) {
+            $interaction = $this->latestInteraction->first();
+            if ($interaction && filled($interaction->notes)) {
+                $latest = $interaction->notes;
+                $latestAt = $interaction->completed_at;
+            }
+        }
+
+        if ($this->relationLoaded('staffNotes')) {
+            $staffNote = $this->staffNotes->first();
+            if ($staffNote && filled($staffNote->body)) {
+                $at = $staffNote->created_at;
+                if ($latestAt === null || ($at && $at->gt($latestAt))) {
+                    $latest = $staffNote->body;
+                    $latestAt = $at;
+                }
+            }
+        }
+
+        if ($latest !== null) {
+            return $latest;
+        }
+
+        return filled($this->notes) ? $this->notes : null;
+    }
+
+    /** @return array{label: string, at: \Illuminate\Support\Carbon, overdue: bool}|null */
+    public function listNextAction(): ?array
+    {
+        if (! $this->relationLoaded('followUps')) {
+            return null;
+        }
+
+        $followUp = $this->followUps->first();
+        if (! $followUp?->scheduled_at) {
+            return null;
+        }
+
+        return [
+            'label' => \App\Models\CrmFollowUp::TYPE_LABELS[$followUp->interaction_type] ?? $followUp->interaction_type,
+            'at' => $followUp->scheduled_at,
+            'overdue' => $followUp->scheduled_at->isPast(),
         ];
     }
 

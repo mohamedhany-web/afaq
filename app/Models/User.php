@@ -141,6 +141,26 @@ class User extends Authenticatable
         return $this->hasPermissionTo($permissionKey, $guard);
     }
 
+    /** هل عُطّلت الصلاحية صراحةً لهذا المستخدم (رغم وجودها في الدور)؟ */
+    public function isPermissionExplicitlyDisabled(string $permissionKey): bool
+    {
+        $customPermission = $this->customPermissions()
+            ->where('permission_key', $permissionKey)
+            ->first();
+
+        return $customPermission !== null && ! $customPermission->is_enabled;
+    }
+
+    /** هل يملك المستخدم صلاحية إدارية عليا مع احترام التعطيل الصريح؟ */
+    public function adminBypassUnlessDenied(string $permissionKey): bool
+    {
+        if ($this->isPermissionExplicitlyDisabled($permissionKey)) {
+            return false;
+        }
+
+        return $this->hasRole(['super_admin', 'admin']);
+    }
+
     /**
      * Check if user has custom permission
      */
@@ -388,6 +408,14 @@ class User extends Authenticatable
 
     public function canAccessOperations(): bool
     {
+        if ($this->isPermissionExplicitlyDisabled('access-operations')) {
+            return false;
+        }
+
+        if ($this->can('access-operations')) {
+            return true;
+        }
+
         return $this->hasRole(array_merge(
             ['super_admin', 'admin'],
             OperationsEmployeeService::LEGACY_MANAGER_ROLES

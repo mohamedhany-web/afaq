@@ -18,7 +18,9 @@
 
 @include('operations.clients.partials.tabs')
 
-<div class="mb-4 flex flex-wrap gap-2 font-tajawal">
+@include('operations.partials.compact-toolbar', ['themeColor' => $themeColor])
+
+<div class="mb-4 flex flex-wrap gap-2 font-tajawal ui-compact-hidden">
     <a href="{{ $cr('create', ['tab' => 'import']) }}"
        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border-2 hover:bg-gray-50"
        style="border-color: {{ $themeColor }}40; color: {{ $themeColor }};">

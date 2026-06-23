@@ -20,16 +20,29 @@ return [
 
     // العملاء
     'view-clients', 'create-clients', 'edit-clients', 'delete-clients', 'transfer-clients', 'approve-client-changes',
+    'import-clients', 'export-clients', 'bulk-update-clients', 'bulk-delete-clients',
+    'view-client-deletion-log', 'manage-client-staff-notes',
+    'distribute-leads', 'auto-distribute-leads',
     'transfer-tasks',
 
     // CRM — وصول ومساحة العمل
     'access-crm', 'view-crm-clients', 'view-crm-pipeline', 'view-team-sales', 'manage-sales-teams',
+    'view-crm-intelligence', 'view-follow-ups', 'manage-follow-ups',
+    'view-daily-sales-reports', 'manage-daily-sales-reports',
+    'view-compensation', 'manage-compensation', 'approve-compensation-payroll',
+    'view-employee-compliance', 'manage-freelance-agents',
+
+    // العمليات
+    'access-operations', 'view-inventory', 'export-inventory',
+    'view-operations-reports', 'annotate-operations-reports',
+    'review-attendance-absence', 'review-attendance-checkout', 'manage-exit-permits',
 
     // الصفقات
     'view-sales', 'create-sales', 'edit-sales', 'delete-sales',
 
     // المشاريع
-    'view-all-projects', 'view-own-projects', 'create-projects', 'edit-projects', 'delete-projects', 'approve-project-changes',
+    'view-all-projects', 'view-own-projects', 'edit-own-projects', 'create-projects', 'edit-projects', 'delete-projects',
+    'approve-project-changes', 'manage-project-units',
 
     // المطورون
     'view-developers', 'manage-developers',
@@ -61,8 +74,13 @@ return [
     // التقارير ولوحة التحكم
     'view-reports', 'generate-reports', 'export-reports', 'view-dashboard', 'view-analytics',
 
-    // الإعدادات
-    'view-settings', 'edit-settings',
+    // الإعدادات والمراقبة
+    'view-settings', 'edit-settings', 'view-login-activity', 'view-system-monitoring',
+
+    // الرسائل الداخلية
+    'view-messages', 'create-messages', 'edit-messages', 'delete-messages',
+    'send-messages', 'reply-messages', 'mark-messages-important',
+    'view-all-messages', 'send-announcements', 'send-group-messages',
 
     // الأصول
     'view-assets', 'create-assets', 'edit-assets', 'delete-assets', 'manage-asset-maintenance',

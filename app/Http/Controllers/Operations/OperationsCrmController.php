@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\CrmFollowUp;
 use App\Models\Sale;
 use App\Services\Operations\OperationsKpiService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class OperationsCrmController extends Controller
@@ -22,18 +23,36 @@ class OperationsCrmController extends Controller
         });
     }
 
-    public function index()
+    public function index(Request $request)
     {
+        $salesRepUserId = $request->filled('sales_rep') ? (int) $request->sales_rep : null;
+        $employeeId = null;
+        if ($salesRepUserId) {
+            $employeeId = \App\Models\User::query()->find($salesRepUserId)?->employee?->id;
+        }
+
+        $clientQuery = Client::query();
+        $saleQuery = Sale::query();
+
+        if ($salesRepUserId) {
+            if ($employeeId) {
+                $clientQuery->where('assigned_to', $employeeId);
+            } else {
+                $clientQuery->whereRaw('1 = 0');
+            }
+            $saleQuery->where('assigned_to', $salesRepUserId);
+        }
+
         $kpiData = $this->kpis->collect();
 
-        $pipeline = Sale::query()
+        $pipeline = (clone $saleQuery)
             ->selectRaw('stage, COUNT(*) as cnt, COALESCE(SUM(estimated_value), 0) as val')
             ->whereNotIn('stage', ['closed_lost'])
             ->groupBy('stage')
             ->get()
             ->keyBy('stage');
 
-        $staleClients = Client::query()
+        $staleClients = (clone $clientQuery)
             ->whereIn('lead_stage', ['lead', 'prospect', 'proposal'])
             ->where('updated_at', '<', now()->subDays(5))
             ->with('assignedEmployee:id,first_name,last_name')
@@ -41,9 +60,15 @@ class OperationsCrmController extends Controller
             ->limit(15)
             ->get();
 
-        $overdueFollowUps = CrmFollowUp::query()
+        $overdueFollowUpsQuery = CrmFollowUp::query()
             ->where('status', CrmFollowUp::STATUS_SCHEDULED)
-            ->where('scheduled_at', '<', now())
+            ->where('scheduled_at', '<', now());
+
+        if ($salesRepUserId) {
+            $overdueFollowUpsQuery->where('user_id', $salesRepUserId);
+        }
+
+        $overdueFollowUps = $overdueFollowUpsQuery
             ->with(['client:id,name,phone', 'user:id,name'])
             ->orderBy('scheduled_at')
             ->limit(15)
@@ -55,10 +80,11 @@ class OperationsCrmController extends Controller
             'pipeline' => $pipeline,
             'staleClients' => $staleClients,
             'overdueFollowUps' => $overdueFollowUps,
+            'selectedSalesRep' => $salesRepUserId ? \App\Models\User::find($salesRepUserId) : null,
             'stats' => [
-                'total_clients' => Client::count(),
-                'active_deals' => Sale::whereNotIn('stage', ['closed_won', 'closed_lost'])->count(),
-                'won_month' => Sale::where('stage', 'closed_won')
+                'total_clients' => (clone $clientQuery)->count(),
+                'active_deals' => (clone $saleQuery)->whereNotIn('stage', ['closed_won', 'closed_lost'])->count(),
+                'won_month' => (clone $saleQuery)->where('stage', 'closed_won')
                     ->whereMonth('actual_close_date', now()->month)
                     ->count(),
             ],

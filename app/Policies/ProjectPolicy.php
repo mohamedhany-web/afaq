@@ -4,47 +4,45 @@ namespace App\Policies;
 
 use App\Models\Project;
 use App\Models\User;
+use App\Policies\Concerns\RespectsPermissionOverrides;
 
 class ProjectPolicy
 {
+    use RespectsPermissionOverrides;
+
     public function viewAny(User $user): bool
     {
-        // Admins can view everything
-        if ($user->hasRole('super_admin') || $user->hasRole('admin')) {
+        if ($this->adminUnlessDenied($user, 'view-all-projects')) {
             return true;
         }
 
-        // Existing permission model
         if ($user->can('view-all-projects')) {
             return true;
         }
 
-        // Department manager can view department projects
         if (DepartmentAccess::isDepartmentManager($user)) {
-            return true;
+            return ! $user->isPermissionExplicitlyDisabled('view-all-projects');
         }
 
-        // Team members / PMs handled by query filtering in controllers
         return $user->can('view-own-projects');
     }
 
     public function view(User $user, Project $project): bool
     {
-        if ($user->hasRole('super_admin') || $user->hasRole('admin') || $user->can('view-all-projects')) {
+        if ($this->adminUnlessDenied($user, 'view-all-projects') || $user->can('view-all-projects')) {
             return true;
         }
 
-        // Department manager: only within their department
         $managedDeptId = DepartmentAccess::managedDepartmentId($user);
         if ($managedDeptId) {
             return (int) $project->department_id === (int) $managedDeptId;
         }
 
-        // PM / team member
         if ($user->can('view-own-projects')) {
             if ((int) $project->project_manager_id === (int) $user->id) {
                 return true;
             }
+
             return $project->teamMembers()->where('user_id', $user->id)->exists();
         }
 
@@ -53,24 +51,16 @@ class ProjectPolicy
 
     public function create(User $user): bool
     {
-        if ($user->hasRole(['super_admin', 'admin'])) {
+        if ($this->adminUnlessDenied($user, 'create-projects')) {
             return true;
         }
 
-        if ($user->usesCrmWorkspace()) {
-            return true;
-        }
-
-        return $user->hasPermissionTo('create-projects');
+        return $user->can('create-projects');
     }
 
     public function update(User $user, Project $project): bool
     {
-        if ($user->hasRole(['super_admin', 'admin'])) {
-            return true;
-        }
-
-        if ($user->usesCrmWorkspace() || $user->usesMarketingWorkspace()) {
+        if ($this->adminUnlessDenied($user, 'edit-projects')) {
             return true;
         }
 
@@ -78,34 +68,20 @@ class ProjectPolicy
             return true;
         }
 
-        return $this->userHasPermission($user, 'edit-own-projects')
+        return $user->can('edit-own-projects')
             && (int) $project->project_manager_id === (int) $user->id;
-    }
-
-    protected function userHasPermission(User $user, string $permission): bool
-    {
-        if (! \Spatie\Permission\Models\Permission::where('name', $permission)->where('guard_name', 'web')->exists()) {
-            return false;
-        }
-
-        return $user->hasPermissionTo($permission);
     }
 
     public function delete(User $user, Project $project): bool
     {
-        if (!$project->isDeletable()) {
+        if (! $project->isDeletable()) {
             return false;
         }
 
-        if ($user->hasRole(['super_admin', 'admin'])) {
+        if ($this->adminUnlessDenied($user, 'delete-projects')) {
             return true;
         }
 
-        if ($user->usesCrmWorkspace() || $user->usesMarketingWorkspace()) {
-            return true;
-        }
-
-        return $user->hasPermissionTo('edit-projects');
+        return $user->can('delete-projects');
     }
 }
-

@@ -209,10 +209,10 @@ Route::middleware(['auth', 'verified', 'verified.code', 'crm.only', 'marketing.o
     Route::delete('departments/{department}', [DepartmentController::class, 'destroy'])->name('departments.destroy')->middleware('permission:delete-departments');
     
     // Login Activity Logs
-    Route::get('login-activity', [LoginActivityController::class, 'index'])->name('login-activity.index')->middleware('permission:view-users|manage-roles');
+    Route::get('login-activity', [LoginActivityController::class, 'index'])->name('login-activity.index')->middleware('permission:view-login-activity|view-users|manage-roles');
     
     // System Monitoring
-    Route::get('system-monitoring', [SystemMonitoringController::class, 'index'])->name('system-monitoring.index')->middleware('permission:view-users|manage-roles');
+    Route::get('system-monitoring', [SystemMonitoringController::class, 'index'])->name('system-monitoring.index')->middleware('permission:view-system-monitoring|view-users|manage-roles');
     
     // الأدوار والصلاحيات
     Route::prefix('roles')->name('roles.')->middleware('permission:manage-roles')->group(function () {

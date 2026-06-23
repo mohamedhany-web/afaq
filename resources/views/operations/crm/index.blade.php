@@ -14,13 +14,15 @@
     'secondaryLabel' => 'كل العملاء',
 ])
 
-<div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+@include('operations.partials.compact-toolbar', ['themeColor' => $themeColor])
+
+<div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6 ui-compact-hidden">
     @include('crm.partials.stat-card', ['label' => 'إجمالي العملاء', 'value' => $stats['total_clients'], 'accent' => 'theme', 'href' => auth()->user()->clientsHubUrl(), 'linkLabel' => 'عرض العملاء'])
     @include('crm.partials.stat-card', ['label' => 'صفقات نشطة', 'value' => $stats['active_deals'], 'accent' => 'blue', 'href' => route('crm.pipeline.index', ['view' => 'deals']), 'linkLabel' => 'عرض الصفقات'])
     @include('crm.partials.stat-card', ['label' => 'إغلاقات الشهر', 'value' => $stats['won_month'], 'accent' => 'green', 'href' => route('crm.pipeline.index', ['view' => 'deals', 'stage' => 'closed_won']), 'linkLabel' => 'عرض الإغلاقات'])
 </div>
 
-<div class="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-6">
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-6 ui-compact-hidden">
     @if($crmKpis) @include('operations.partials.kpi-group', ['group' => $crmKpis, 'link' => route('operations.crm.index') . '#page-data']) @endif
     @if($salesKpis) @include('operations.partials.kpi-group', ['group' => $salesKpis, 'link' => route('crm.pipeline.index')]) @endif
 </div>

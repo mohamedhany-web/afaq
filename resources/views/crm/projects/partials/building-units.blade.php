@@ -17,7 +17,7 @@
     $unitsGenerateRoute = $unitsGenerateRoute ?? $pr('units.generate', $project);
     $showDealButton = $showDealButton ?? true;
     $canEdit = $canEdit ?? auth()->user()?->can('update', $project);
-    $unitsRenumberRoute = $unitsRenumberRoute ?? $pr('units.renumber', $project);
+    $unitsRenumberRoute = $unitsRenumberRoute ?? (Illuminate\Support\Facades\Route::has($projectsRoutePrefix . '.units.renumber') ? $pr('units.renumber', $project) : null);
     $unitsPayload = $hasUnits
         ? $floors->flatMap(fn ($floor) => $floor->units->map(function ($unit) use ($unitShowUrl) {
             $payload = CrmProjectUnitController::unitPayload($unit);
@@ -51,7 +51,7 @@
             </p>
         </div>
         <div class="flex flex-wrap gap-2">
-            @if($canEdit && $hasUnits)
+            @if($canEdit && $hasUnits && $unitsRenumberRoute)
             <form method="POST" action="{{ $unitsRenumberRoute }}">
                 @csrf
                 <button type="submit"

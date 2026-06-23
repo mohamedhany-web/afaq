@@ -54,5 +54,13 @@ return [
         'view-tickets' => ['label' => 'تذاكر الدعم', 'route' => 'tickets.index'],
         'view-dashboard' => ['label' => 'لوحة التحكم', 'route' => 'dashboard'],
         'view-analytics' => ['label' => 'ذكاء المبيعات', 'route' => 'crm.intelligence.index'],
+        'view-crm-intelligence' => ['label' => 'ذكاء المبيعات', 'route' => 'crm.intelligence.index'],
+        'access-operations' => ['label' => 'مساحة العمليات', 'route' => 'operations.dashboard'],
+        'view-messages' => ['label' => 'الرسائل', 'route' => 'messages.index'],
+        'view-login-activity' => ['label' => 'سجل الدخول', 'route' => 'login-activity.index'],
+        'view-compensation' => ['label' => 'التعويضات', 'route' => 'crm.compensation.dashboard'],
+        'view-follow-ups' => ['label' => 'المتابعات', 'route' => 'crm.follow-ups.index'],
+        'view-daily-sales-reports' => ['label' => 'التقارير اليومية', 'route' => 'crm.daily-reports.index'],
+        'view-inventory' => ['label' => 'مخزون الوحدات', 'route' => 'operations.inventory.index'],
     ],
 ];

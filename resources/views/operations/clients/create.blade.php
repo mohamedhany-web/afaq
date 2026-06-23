@@ -86,6 +86,14 @@
     </div>
 </div>
 @else
+@if($errors->any())
+<div class="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700 font-tajawal">
+    <p class="font-bold mb-2">يرجى تصحيح الأخطاء التالية:</p>
+    <ul class="list-disc pr-5 space-y-1">
+        @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+    </ul>
+</div>
+@endif
 <form action="{{ $cr('store') }}" method="POST" class="w-full space-y-6">
     @csrf
     @include('crm.clients.partials.form', [

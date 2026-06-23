@@ -86,17 +86,11 @@ class RoleController extends Controller
         $selectedPermissions = $request->permissions ?? [];
 
         $displayRoleName = CrmRoleCatalogService::resolveUserDisplayRole($user);
-        $rolePermissions = [];
-        if ($displayRoleName) {
-            $role = Role::where('name', $displayRoleName)->first();
-            if ($role) {
-                $rolePermissions = $role->permissions->pluck('name')->toArray();
-            }
-        } elseif ($user->roles->first()) {
-            $rolePermissions = $user->roles->first()->permissions->pluck('name')->toArray();
-        }
+        $rolePermissions = $user->getPermissionsViaRoles()->pluck('name')->unique()->values()->all();
 
-        \App\Models\UserPermission::where('user_id', $user->id)->delete();
+        \App\Models\UserPermission::where('user_id', $user->id)
+            ->whereIn('permission_key', $allPermissions)
+            ->delete();
 
         foreach ($allPermissions as $permission) {
             $isSelected = in_array($permission, $selectedPermissions);
@@ -122,8 +116,13 @@ class RoleController extends Controller
                         'permission_key' => $permission,
                         'is_enabled' => false,
                     ]);
-                } elseif ($user->hasPermissionTo($permission)) {
-                    $user->revokePermissionTo($permission);
+                } else {
+                    \App\Models\UserPermission::where('user_id', $user->id)
+                        ->where('permission_key', $permission)
+                        ->delete();
+                    if ($user->hasPermissionTo($permission)) {
+                        $user->revokePermissionTo($permission);
+                    }
                 }
             }
         }
@@ -177,7 +176,7 @@ class RoleController extends Controller
     protected function buildUserPermissionState(User $user, $permissions, ?Role $userRole): array
     {
         $rolePermissions = $userRole ? $userRole->permissions->pluck('name')->toArray() : [];
-        $userDirectPermissions = $user->getAllPermissions()->pluck('name')->toArray();
+        $userDirectPermissions = $user->getDirectPermissions()->pluck('name')->toArray();
 
         $allCustomPermissions = \App\Models\UserPermission::where('user_id', $user->id)->get();
         $customPermissionsMap = [];
@@ -191,11 +190,7 @@ class RoleController extends Controller
         $userPermissions = [];
         foreach ($permissions as $permission) {
             $permName = $permission->name;
-            if (isset($customPermissionsMap[$permName])) {
-                if ($customPermissionsMap[$permName]) {
-                    $userPermissions[] = $permName;
-                }
-            } elseif (in_array($permName, $userDirectPermissions)) {
+            if ($user->can($permName)) {
                 $userPermissions[] = $permName;
             }
         }
@@ -207,6 +202,8 @@ class RoleController extends Controller
     {
         $registry->ensureRegisteredInDatabase();
         $permissionSyncReport = $registry->syncReport();
+
+        $user->load(['roles.permissions', 'customPermissions', 'permissions']);
 
         $roles = CrmRoleCatalogService::assignableRoles();
         $permissions = CrmRoleCatalogService::activePermissions();

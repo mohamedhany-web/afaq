@@ -63,12 +63,27 @@ class ClientPolicy
 
     public function viewDeletionLog(User $user): bool
     {
-        return $user->can('delete-clients') || $user->canAccessOperations() || $this->approval->executesDirectly($user);
+        return $user->can('view-client-deletion-log')
+            || $user->can('delete-clients')
+            || $user->canAccessOperations()
+            || $this->approval->executesDirectly($user);
     }
 
     public function create(User $user): bool
     {
-        return true;
+        if ($user->adminBypassUnlessDenied('create-clients')) {
+            return true;
+        }
+
+        if ($user->isPermissionExplicitlyDisabled('create-clients')) {
+            return false;
+        }
+
+        if ($user->canAccessOperations()) {
+            return true;
+        }
+
+        return $user->can('create-clients');
     }
 
     public function update(User $user, Client $client): bool
@@ -116,12 +131,18 @@ class ClientPolicy
 
     public function bulkUpdate(User $user): bool
     {
-        return $user->can('edit-clients') || $user->can('transfer-clients')
-            || $user->canAccessOperations() || $this->approval->executesDirectly($user);
+        return $user->can('bulk-update-clients')
+            || $user->can('edit-clients')
+            || $user->can('transfer-clients')
+            || $user->canAccessOperations()
+            || $this->approval->executesDirectly($user);
     }
 
     public function bulkDelete(User $user): bool
     {
-        return $user->can('delete-clients') || $user->canAccessOperations() || $this->approval->executesDirectly($user);
+        return $user->can('bulk-delete-clients')
+            || $user->can('delete-clients')
+            || $user->canAccessOperations()
+            || $this->approval->executesDirectly($user);
     }
 }

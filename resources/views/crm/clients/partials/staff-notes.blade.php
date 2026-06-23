@@ -1,9 +1,14 @@
 @php
     use App\Models\ClientStaffNote;
     $noteTypes = ClientStaffNote::TYPES;
-    $canManage = fn (ClientStaffNote $note) => auth()->user()->hasRole(['super_admin', 'admin'])
-        || auth()->user()->canAccessOperations()
-        || (int) $note->user_id === (int) auth()->id();
+    $canAddNote = auth()->user()?->canAccessOperations()
+        || auth()->user()?->can('manage-client-staff-notes')
+        || auth()->user()?->can('edit-clients')
+        || auth()->user()?->adminBypassUnlessDenied('edit-clients');
+    $canManage = fn (ClientStaffNote $note) => auth()->user()?->hasRole(['super_admin', 'admin'])
+        || auth()->user()?->canAccessOperations()
+        || auth()->user()?->can('manage-client-staff-notes')
+        || (auth()->id() && (int) $note->user_id === (int) auth()->id());
 @endphp
 <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
     <div class="px-5 sm:px-6 py-4 border-b border-gray-200 font-tajawal font-bold text-gray-900"
@@ -13,6 +18,7 @@
     </div>
 
     <div class="p-5 sm:p-6 space-y-4">
+        @if($canAddNote)
         <form action="{{ route('crm.clients.staff-notes.store', $client) }}" method="POST" class="space-y-3">
             @csrf
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -36,6 +42,7 @@
                 إضافة ملاحظة
             </button>
         </form>
+        @endif
 
         @if($client->staffNotes->isNotEmpty())
         <div class="border-t border-gray-100 pt-4 space-y-3 max-h-96 overflow-y-auto">

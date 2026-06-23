@@ -117,6 +117,7 @@
     @include('operations.partials.kpi-group', [
         'group' => $group,
         'link' => $kpiLinks[$group['key'] ?? ''] ?? null,
+        'salesRepQuery' => $salesRepQuery,
     ])
     @endforeach
 </div>

@@ -114,7 +114,7 @@ class CrmRoleCatalogService
             'hr' => 'الموارد البشرية',
             'finance' => 'المالية',
             'marketing' => 'التسويق',
-            'support' => 'الدعم',
+            'support' => 'الدعم والتواصل',
             'portal' => 'بوابة العميل',
             'legacy' => 'وحدات قديمة',
         ];

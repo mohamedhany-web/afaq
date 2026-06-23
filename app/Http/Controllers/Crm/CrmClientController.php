@@ -46,7 +46,7 @@ class CrmClientController extends Controller
         ];
 
         $clients = $filters->applyClientFilters(
-            $baseQuery->with(['assignedEmployee', 'createdBy:id,name', 'sales']),
+            $baseQuery->with($filters->clientListRelations()),
             $request,
         )
             ->latest()
@@ -107,6 +107,10 @@ class CrmClientController extends Controller
     public function export(Request $request): StreamedResponse
     {
         $this->authorize('viewAny', Client::class);
+        abort_unless(
+            Auth::user()->can('export-clients') || Auth::user()->can('view-clients'),
+            403
+        );
 
         $filters = $this->crmFilters($request);
         $query = $filters->applyClientFilters(
@@ -169,11 +173,20 @@ class CrmClientController extends Controller
 
     public function importTemplate(ClientImportService $import)
     {
+        abort_unless(
+            Auth::user()->can('import-clients') || Auth::user()->can('create-clients'),
+            403
+        );
+
         return $import->downloadTemplate();
     }
 
     public function import(Request $request, ClientImportService $import)
     {
+        abort_unless(
+            Auth::user()->can('import-clients') || Auth::user()->can('create-clients'),
+            403
+        );
         $request->validate([
             'file' => 'required|file|mimes:csv,txt,xlsx,xls|max:10240',
             'duplicate_mode' => 'nullable|in:skip,update',
@@ -346,6 +359,13 @@ class CrmClientController extends Controller
     public function storeStaffNote(Request $request, Client $client)
     {
         $this->authorizeClient($client);
+        abort_unless(
+            Auth::user()->canAccessOperations()
+                || Auth::user()->can('manage-client-staff-notes')
+                || Auth::user()->can('edit-clients')
+                || Auth::user()->adminBypassUnlessDenied('edit-clients'),
+            403
+        );
 
         $validated = $request->validate([
             'type' => 'required|in:' . implode(',', array_keys(\App\Models\ClientStaffNote::TYPES)),
@@ -398,6 +418,10 @@ class CrmClientController extends Controller
     protected function canManageStaffNote(\App\Models\User $user, \App\Models\ClientStaffNote $note): bool
     {
         if ($user->hasRole(['super_admin', 'admin']) || $user->canAccessOperations()) {
+            return true;
+        }
+
+        if ($user->can('manage-client-staff-notes')) {
             return true;
         }
 

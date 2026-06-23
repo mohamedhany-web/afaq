@@ -24,7 +24,9 @@
     'preserve' => array_filter(['status' => request('status')]),
 ])
 
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+@include('operations.partials.compact-toolbar', ['themeColor' => $themeColor])
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6 ui-compact-hidden">
     @include('crm.partials.stat-card', ['label' => 'إجمالي الوحدات', 'value' => $stats['total'], 'accent' => 'theme', 'href' => route('operations.inventory.index') . '#page-data', 'linkLabel' => 'عرض الوحدات'])
     @include('crm.partials.stat-card', ['label' => 'متاحة', 'value' => $stats['available'], 'accent' => 'green', 'href' => route('operations.inventory.index', ['status' => 'available']) . '#page-data', 'linkLabel' => 'عرض المتاح'])
     @include('crm.partials.stat-card', ['label' => 'محجوزة', 'value' => $stats['reserved'], 'accent' => 'amber', 'href' => route('operations.inventory.index', ['status' => 'reserved']) . '#page-data', 'linkLabel' => 'عرض المحجوز'])
@@ -32,7 +34,9 @@
 </div>
 
 @if($inventoryKpis)
+<div class="ui-compact-hidden">
 @include('operations.partials.kpi-group', ['group' => $inventoryKpis, 'link' => route('operations.inventory.index') . '#page-data'])
+</div>
 @endif
 
 @if($selectedProject ?? null)

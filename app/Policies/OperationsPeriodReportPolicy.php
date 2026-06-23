@@ -37,6 +37,10 @@ class OperationsPeriodReportPolicy
 
     public function annotate(User $user, OperationsPeriodReport $report): bool
     {
-        return $user->hasRole(['super_admin', 'admin']) && $report->isSubmitted();
+        if ($user->adminBypassUnlessDenied('annotate-operations-reports') || $user->can('annotate-operations-reports')) {
+            return $report->isSubmitted();
+        }
+
+        return false;
     }
 }

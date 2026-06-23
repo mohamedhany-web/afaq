@@ -65,7 +65,7 @@ class OperationsClientController extends Controller
         ];
 
         $clients = $filters->applyClientFilters(
-            $baseQuery->with(['assignedEmployee', 'createdBy:id,name', 'sales']),
+            $baseQuery->with($filters->clientListRelations()),
             $request,
         )
             ->latest()
@@ -109,6 +109,8 @@ class OperationsClientController extends Controller
                 'view' => 'data',
                 'bucket' => $request->get('bucket'),
                 'sales_rep' => $request->get('sales_rep'),
+                'created_by' => $request->get('created_by'),
+                'mine' => $request->get('mine'),
             ])),
             'unassignedCount' => $this->distribution->unassignedLeadsQuery()->count(),
             ...$this->clientFilterViewData($filters, $request, $stageLabels, $statusLabels),
@@ -269,6 +271,11 @@ class OperationsClientController extends Controller
         return app(\App\Http\Controllers\Crm\CrmClientController::class)->bulkUpdateMeta($request);
     }
 
+    public function bulkDestroy(Request $request)
+    {
+        return app(\App\Http\Controllers\Crm\CrmClientController::class)->bulkDestroy($request);
+    }
+
     public function transfer(Request $request, Client $client, ClientTransferService $transfers)
     {
         $this->authorize('view', $client);
@@ -297,6 +304,8 @@ class OperationsClientController extends Controller
 
     public function create()
     {
+        $this->authorize('create', Client::class);
+
         return view('operations.clients.create', [
             'client' => new \App\Models\Client(),
             'requiresMutationApproval' => $this->approval->requiresMutationApproval(Auth::user()),

@@ -10,13 +10,15 @@
     'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>',
 ])
 
-<div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+@include('operations.partials.compact-toolbar', ['themeColor' => $themeColor])
+
+<div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6 ui-compact-hidden">
     @include('crm.partials.stat-card', ['label' => 'موظفون نشطون', 'value' => $activeEmployees, 'accent' => 'theme', 'href' => route('operations.team.index') . '#page-data', 'linkLabel' => 'عرض الفريق'])
     @include('crm.partials.stat-card', ['label' => 'غياب بانتظار المراجعة', 'value' => $pendingAbsence, 'accent' => 'amber', 'href' => route('operations.attendance-reviews.index'), 'linkLabel' => 'عرض المراجعات'])
     @include('crm.partials.stat-card', ['label' => 'مديرو مبيعات', 'value' => $managers->count(), 'accent' => 'blue', 'href' => route('operations.team.index') . '#page-data', 'linkLabel' => 'عرض المديرين'])
 </div>
 
-<div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-6">
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-6 ui-compact-hidden">
     @if($teamKpis) @include('operations.partials.kpi-group', ['group' => $teamKpis, 'link' => route('operations.team.index') . '#page-data']) @endif
     @if($revenueKpis) @include('operations.partials.kpi-group', ['group' => $revenueKpis, 'link' => route('operations.crm.index')]) @endif
     @if($reportingKpis) @include('operations.partials.kpi-group', ['group' => $reportingKpis, 'link' => route('operations.reports.index')]) @endif

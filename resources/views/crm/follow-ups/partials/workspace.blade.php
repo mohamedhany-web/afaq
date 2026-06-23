@@ -37,8 +37,12 @@
 </div>
 @endif
 
+@if(($workspace ?? '') === 'operations')
+@include('operations.partials.compact-toolbar', ['themeColor' => $themeColor])
+@endif
+
 @if($enhanced)
-<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4 {{ ($workspace ?? '') === 'operations' ? 'ui-compact-hidden' : '' }}">
     @include('crm.partials.stat-card', ['label' => 'اليوم', 'value' => $stats['today'], 'compact' => true, 'accent' => 'theme', 'href' => $routes['index'] . '?' . http_build_query(array_merge(request()->except('page'), ['bucket' => 'today'])) . '#page-data', 'linkLabel' => 'عرض'])
     @include('crm.partials.stat-card', ['label' => 'متأخرة', 'value' => $stats['overdue'], 'compact' => true, 'accent' => 'red', 'href' => $routes['index'] . '?' . http_build_query(array_merge(request()->except('page'), ['bucket' => 'overdue'])) . '#page-data', 'linkLabel' => 'عرض'])
     @include('crm.partials.stat-card', ['label' => 'قادمة', 'value' => $stats['upcoming'], 'compact' => true, 'accent' => 'blue', 'href' => $routes['index'] . '?' . http_build_query(array_merge(request()->except('page'), ['bucket' => 'upcoming'])) . '#page-data', 'linkLabel' => 'عرض'])

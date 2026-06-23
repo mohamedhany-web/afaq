@@ -16,7 +16,9 @@
 @if(session('success'))<div class="mb-4 p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm font-tajawal">{{ session('success') }}</div>@endif
 @if(session('error'))<div class="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-tajawal">{{ session('error') }}</div>@endif
 
-<div class="mb-4 flex flex-wrap gap-2">
+@include('operations.partials.compact-toolbar', ['themeColor' => $themeColor])
+
+<div class="mb-4 flex flex-wrap gap-2 ui-compact-hidden">
     @foreach($periodLabels as $key => $label)
     <a href="{{ route('operations.reports.index', ['period' => $key]) }}"
        class="px-5 py-2.5 rounded-xl text-sm font-bold font-tajawal border-2 {{ $periodType === $key ? 'text-white border-transparent' : 'border-gray-200 text-gray-600 bg-white' }}"
@@ -26,7 +28,7 @@
     @endforeach
 </div>
 
-<div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+<div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6 ui-compact-hidden">
     @include('crm.partials.stat-card', ['label' => 'مرفوعة', 'value' => $stats['submitted'], 'accent' => 'green', 'href' => route('operations.reports.index', ['status' => 'submitted']) . '#page-data', 'linkLabel' => 'عرض المرفوعة'])
     @include('crm.partials.stat-card', ['label' => 'مسودات', 'value' => $stats['draft'], 'accent' => 'amber', 'href' => route('operations.reports.index', ['status' => 'draft']) . '#page-data', 'linkLabel' => 'عرض المسودات'])
     @include('crm.partials.stat-card', ['label' => 'القائمة', 'value' => $reports->total(), 'accent' => 'theme', 'href' => route('operations.reports.index') . '#page-data', 'linkLabel' => 'عرض القائمة'])

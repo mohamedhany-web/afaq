@@ -11,16 +11,16 @@
 <div class="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-tajawal">{{ session('error') }}</div>
 @endif
 
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 ui-compact-hidden">
     @include('crm.partials.stat-card', ['label' => 'إجمالي العملاء', 'value' => $stats['total'], 'accent' => 'theme', 'href' => $cr('index', ['view' => 'data']) . '#page-data', 'linkLabel' => 'عرض القائمة'])
     @include('crm.partials.stat-card', ['label' => 'عملاء محتملون', 'value' => $stats['prospect'], 'accent' => 'blue', 'href' => $cr('index', ['view' => 'data', 'status' => 'prospect']) . '#page-data', 'linkLabel' => 'عرض المحتملين'])
     @include('crm.partials.stat-card', ['label' => 'عملاء نشطون', 'value' => $stats['active'], 'accent' => 'green', 'href' => $cr('index', ['view' => 'data', 'status' => 'active']) . '#page-data', 'linkLabel' => 'عرض النشطين'])
     @include('crm.partials.stat-card', ['label' => 'لديهم صفقات', 'value' => $stats['with_deals'], 'accent' => 'amber', 'href' => $cr('index', ['view' => 'data', 'has_deals' => '1']) . '#page-data', 'linkLabel' => 'عرض الصفقات'])
 </div>
 
-<div class="flex flex-wrap gap-2 mb-4 font-tajawal">
+<div class="flex flex-wrap gap-2 mb-4 font-tajawal ui-compact-hidden">
     @foreach($bucketLabels as $key => $label)
-    <a href="{{ $cr('index', array_filter(['view' => 'data', 'bucket' => $key, 'search' => request('search'), 'sales_rep' => request('sales_rep')])) }}#page-data"
+    <a href="{{ $cr('index', array_filter(['view' => 'data', 'bucket' => $key, 'search' => request('search'), 'sales_rep' => request('sales_rep'), 'created_by' => request('created_by'), 'mine' => request('mine')])) }}#page-data"
        class="text-xs font-bold px-3 py-2 rounded-xl border transition-colors {{ $bucket === $key ? 'text-white border-transparent' : 'text-gray-600 bg-white hover:bg-gray-50' }}"
        @if($bucket === $key) style="background:{{ $themeColor }}" @endif>
         {{ $label }}
@@ -37,6 +37,8 @@
         'view' => 'data',
         'bucket' => $bucket ?? null,
         'sales_rep' => request('sales_rep'),
+        'created_by' => request('created_by'),
+        'mine' => request('mine'),
     ]),
 ])
 
@@ -82,6 +84,8 @@
                     <th class="text-right p-4 font-bold whitespace-nowrap">المصدر</th>
                     <th class="text-right p-4 font-bold whitespace-nowrap">الحالة</th>
                     <th class="text-right p-4 font-bold whitespace-nowrap">المرحلة</th>
+                    <th class="text-right p-4 font-bold whitespace-nowrap min-w-[180px]">Comment</th>
+                    <th class="text-right p-4 font-bold whitespace-nowrap min-w-[160px]">Next Action</th>
                     <th class="text-right p-4 font-bold whitespace-nowrap">الصفقات</th>
                     <th class="text-right p-4 font-bold whitespace-nowrap">السيلز</th>
                     <th class="text-right p-4 font-bold whitespace-nowrap">إجراءات</th>
@@ -110,6 +114,8 @@
                     <td class="p-4 whitespace-nowrap">@include('crm.clients.partials.source-badge', ['source' => $client->lead_source])</td>
                     <td class="p-4">@include('crm.clients.partials.status-badge', ['status' => $client->status])</td>
                     <td class="p-4">@include('crm.clients.partials.lead-stage-badge', ['stage' => $client->lead_stage])</td>
+                    <td class="p-4 align-top">@include('crm.clients.partials.list-comment', ['client' => $client])</td>
+                    <td class="p-4 align-top">@include('crm.clients.partials.list-next-action', ['client' => $client])</td>
                     <td class="p-4">
                         <span class="inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold" style="background: {{ $themeColor }}10; color: {{ $themeColor }};">
                             {{ $client->sales->count() }} صفقة
@@ -123,7 +129,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="10" class="p-12 text-center text-gray-500">
+                    <td colspan="11" class="p-12 text-center text-gray-500">
                         لا يوجد عملاء مطابقون
                         <div class="mt-4">
                             <a href="{{ $cr('create') }}" class="inline-flex px-5 py-2.5 rounded-xl text-white text-sm font-semibold"

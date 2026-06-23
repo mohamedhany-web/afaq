@@ -89,7 +89,7 @@
 
         <div id="bulk-panel-delete" class="hidden">
             @can('bulkDelete', \App\Models\Client::class)
-            <form method="POST" action="{{ route('crm.clients.bulk-destroy') }}" class="flex flex-col gap-2 max-w-lg" id="bulk-delete-form"
+            <form method="POST" action="{{ route($clientsRoutePrefix . '.bulk-destroy') }}" class="flex flex-col gap-2 max-w-lg" id="bulk-delete-form"
                   onsubmit="return confirm('هل أنت متأكد من حذف العملاء المحددين؟ لا يمكن التراجع.')">
                 @csrf
                 <div id="bulk-delete-ids"></div>

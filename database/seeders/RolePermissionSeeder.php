@@ -185,17 +185,26 @@ class RolePermissionSeeder extends Seeder
 
         // 8. مدير عمليات (Operations)
         $operationManagerPerms = [
-            'view-all-projects', 'create-projects', 'edit-projects', 'approve-project-changes',
+            'access-operations',
+            'view-all-projects', 'create-projects', 'edit-projects', 'approve-project-changes', 'manage-project-units',
             'view-all-tasks', 'create-tasks', 'edit-tasks', 'transfer-tasks',
             'view-developers', 'manage-developers',
-            'view-clients', 'edit-clients', 'transfer-clients',
+            'view-clients', 'create-clients', 'edit-clients', 'delete-clients', 'transfer-clients',
+            'import-clients', 'export-clients', 'bulk-update-clients', 'bulk-delete-clients',
+            'view-client-deletion-log', 'manage-client-staff-notes',
+            'distribute-leads', 'auto-distribute-leads',
+            'view-follow-ups', 'manage-follow-ups',
+            'view-inventory', 'export-inventory',
+            'view-operations-reports', 'annotate-operations-reports',
+            'review-attendance-absence', 'review-attendance-checkout', 'manage-exit-permits',
             'view-employees',
             'view-attendance', 'create-attendance',
             'view-leaves', 'create-leaves', 'approve-leaves',
             'view-reports', 'generate-reports', 'export-reports',
-            'view-dashboard', 'view-analytics',
+            'view-dashboard', 'view-analytics', 'view-crm-intelligence',
             'view-departments',
             'view-training', 'view-meetings',
+            'view-messages', 'send-messages', 'reply-messages',
         ];
 
         Role::firstOrCreate(['name' => 'operation_manager', 'guard_name' => 'web'])

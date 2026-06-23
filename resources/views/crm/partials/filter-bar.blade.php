@@ -32,13 +32,35 @@
 
                 @if(($showSalesRepFilter ?? false) && in_array('sales_rep', $filterKeys, true))
                 <div class="w-full sm:w-52">
-                    <label class="{{ $labelClass }}">السيلز / مندوب المبيعات</label>
+                    <label class="{{ $labelClass }}">اسم السيلز (Sales Name)</label>
                     <select name="sales_rep" class="{{ $inputClass }}">
                         <option value="">كل السيلز</option>
                         @foreach($salesReps ?? [] as $rep)
                         <option value="{{ $rep->id }}" @selected((string) $salesRepValue === (string) $rep->id)>{{ $rep->name }}</option>
                         @endforeach
                     </select>
+                </div>
+                @endif
+
+                @if(($showCreatorFilter ?? false) && in_array('created_by', $filterKeys, true))
+                <div class="w-full sm:w-52">
+                    <label class="{{ $labelClass }}">اسم المستخدم (User Name)</label>
+                    <select name="created_by" class="{{ $inputClass }}">
+                        <option value="">كل المستخدمين</option>
+                        @foreach($creatorUsers ?? [] as $user)
+                        <option value="{{ $user->id }}" @selected((string) request('created_by') === (string) $user->id)>{{ $user->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
+
+                @if(in_array('mine', $filterKeys, true))
+                <div class="flex items-end">
+                    <label class="flex items-center gap-2 cursor-pointer py-2.5 px-3 rounded-xl border-2 border-gray-200 bg-gray-50 font-tajawal text-sm text-gray-700 whitespace-nowrap">
+                        <input type="checkbox" name="mine" value="1" @checked(request()->boolean('mine'))
+                               class="rounded border-gray-300" style="accent-color: {{ $themeColor }};">
+                        بياناتي فقط
+                    </label>
                 </div>
                 @endif
 

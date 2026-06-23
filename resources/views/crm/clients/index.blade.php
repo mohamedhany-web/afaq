@@ -51,14 +51,22 @@
     </a>
 </div>
 
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+<div class="mb-4 flex flex-wrap items-center gap-3 font-tajawal">
+    @include('partials.ui-compact-toggle', ['themeColor' => $themeColor, 'labelOn' => 'عرض مبسّط', 'labelOff' => 'عرض التفاصيل'])
+</div>
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 ui-compact-hidden">
     @include('crm.partials.stat-card', ['label' => 'إجمالي العملاء', 'value' => $stats['total'], 'accent' => 'theme', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />', 'href' => route('crm.clients.index') . '#page-data', 'linkLabel' => 'عرض القائمة'])
     @include('crm.partials.stat-card', ['label' => 'عملاء محتملون', 'value' => $stats['prospect'], 'accent' => 'blue', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />', 'href' => route('crm.clients.index', ['status' => 'prospect']) . '#page-data', 'linkLabel' => 'عرض المحتملين'])
     @include('crm.partials.stat-card', ['label' => 'عملاء نشطون', 'value' => $stats['active'], 'accent' => 'green', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />', 'href' => route('crm.clients.index', ['status' => 'active']) . '#page-data', 'linkLabel' => 'عرض النشطين'])
     @include('crm.partials.stat-card', ['label' => 'لديهم صفقات', 'value' => $stats['with_deals'], 'accent' => 'amber', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" />', 'href' => route('crm.pipeline.index', ['has_deals' => '1']) . '#page-data', 'linkLabel' => 'عرض الصفقات'])
 </div>
 
-@include('crm.partials.filter-bar')
+@include('crm.partials.filter-bar', [
+    'action' => route('crm.clients.index'),
+    'clientsRoutePrefix' => 'crm.clients',
+    'clientsExportRoute' => route('crm.clients.export', request()->query()),
+])
 
 @if(!empty($selectedSalesRep))
 <div class="mb-4 p-4 rounded-xl border-2 font-tajawal flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
@@ -100,6 +108,8 @@
                     <th class="text-right p-4 font-tajawal font-bold whitespace-nowrap">المصدر</th>
                     <th class="text-right p-4 font-tajawal font-bold whitespace-nowrap">الحالة</th>
                     <th class="text-right p-4 font-tajawal font-bold whitespace-nowrap">المرحلة</th>
+                    <th class="text-right p-4 font-tajawal font-bold whitespace-nowrap min-w-[180px]">Comment</th>
+                    <th class="text-right p-4 font-tajawal font-bold whitespace-nowrap min-w-[160px]">Next Action</th>
                     <th class="text-right p-4 font-tajawal font-bold whitespace-nowrap">الصفقات</th>
                     <th class="text-right p-4 font-tajawal font-bold whitespace-nowrap">السيلز</th>
                     <th class="text-right p-4 font-tajawal font-bold whitespace-nowrap">أضافه</th>
@@ -131,6 +141,8 @@
                     <td class="p-4 font-tajawal whitespace-nowrap">@include('crm.clients.partials.source-badge', ['source' => $client->lead_source])</td>
                     <td class="p-4">@include('crm.clients.partials.status-badge', ['status' => $client->status])</td>
                     <td class="p-4">@include('crm.clients.partials.lead-stage-badge', ['stage' => $client->lead_stage])</td>
+                    <td class="p-4 align-top">@include('crm.clients.partials.list-comment', ['client' => $client])</td>
+                    <td class="p-4 align-top">@include('crm.clients.partials.list-next-action', ['client' => $client])</td>
                     <td class="p-4">
                         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold font-tajawal"
                               style="background: {{ $themeColor }}10; color: {{ $themeColor }};">
@@ -169,7 +181,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="10" class="p-12 text-center">
+                    <td colspan="12" class="p-12 text-center">
                         <div class="text-gray-400 font-tajawal mb-4">لا يوجد عملاء مطابقون للبحث</div>
                         <a href="{{ route('crm.clients.create') }}" class="inline-flex items-center px-5 py-2.5 rounded-xl text-white text-sm font-semibold font-tajawal"
                            style="background: linear-gradient(135deg, {{ $themeColor }} 0%, {{ $themeColor }}dd 100%);">

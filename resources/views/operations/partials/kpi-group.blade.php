@@ -1,6 +1,8 @@
 @php
     $themeColor = $themeColor ?? \App\Helpers\SettingsHelper::getThemeColor();
     $group = $group ?? null;
+    $salesRepQuery = array_filter($salesRepQuery ?? []);
+    $withRep = fn (array $params = []) => array_merge($params, $salesRepQuery);
     $timingSlugs = config('operations_kpis.timing_slugs', [
         'lead_response_time',
         'lead_distribution_time',
@@ -9,20 +11,20 @@
         'report_delivery_time',
     ]);
     $itemLinks = [
-        'lead_response_time' => route('operations.clients.index', ['view' => 'distribution']) . '#page-data',
-        'lead_distribution_time' => route('operations.clients.index', ['view' => 'distribution']) . '#page-data',
-        'lead_leakage_rate' => route('operations.clients.index', ['view' => 'distribution', 'filter' => 'stale']) . '#page-data',
-        'contact_rate' => route('operations.crm.index') . '#page-data',
-        'crm_compliance_rate' => route('operations.crm.index') . '#page-data',
-        'data_accuracy_rate' => route('operations.crm.index') . '#page-data',
-        'duplicate_records_rate' => route('operations.crm.index') . '#page-data',
-        'pipeline_update_rate' => route('crm.pipeline.index'),
-        'lead_to_meeting_conversion' => route('crm.pipeline.index'),
-        'meeting_to_reservation_conversion' => route('crm.pipeline.index'),
-        'reservation_to_contract_conversion' => route('crm.pipeline.index'),
-        'sales_cycle_duration' => route('operations.crm.index') . '#page-data',
-        'revenue_growth_support' => route('operations.crm.index') . '#page-data',
-        'lost_opportunity_recovery' => route('operations.crm.index') . '#page-data',
+        'lead_response_time' => route('operations.clients.index', $withRep(['view' => 'distribution'])) . '#page-data',
+        'lead_distribution_time' => route('operations.clients.index', $withRep(['view' => 'distribution'])) . '#page-data',
+        'lead_leakage_rate' => route('operations.clients.index', $withRep(['view' => 'distribution', 'filter' => 'stale'])) . '#page-data',
+        'contact_rate' => route('operations.crm.index', $salesRepQuery) . '#page-data',
+        'crm_compliance_rate' => route('operations.crm.index', $salesRepQuery) . '#page-data',
+        'data_accuracy_rate' => route('operations.crm.index', $salesRepQuery) . '#page-data',
+        'duplicate_records_rate' => route('operations.crm.index', $salesRepQuery) . '#page-data',
+        'pipeline_update_rate' => route('crm.pipeline.index', $salesRepQuery),
+        'lead_to_meeting_conversion' => route('crm.pipeline.index', $salesRepQuery),
+        'meeting_to_reservation_conversion' => route('crm.pipeline.index', $salesRepQuery),
+        'reservation_to_contract_conversion' => route('crm.pipeline.index', $salesRepQuery),
+        'sales_cycle_duration' => route('operations.crm.index', $salesRepQuery) . '#page-data',
+        'revenue_growth_support' => route('operations.crm.index', $salesRepQuery) . '#page-data',
+        'lost_opportunity_recovery' => route('operations.crm.index', $salesRepQuery) . '#page-data',
         'inventory_accuracy' => route('operations.inventory.index') . '#page-data',
         'unit_availability_accuracy' => route('operations.inventory.index', ['status' => 'available']) . '#page-data',
         'double_booking_incidents' => route('operations.inventory.index') . '#page-data',

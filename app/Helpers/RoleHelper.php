@@ -97,10 +97,12 @@ class RoleHelper
             // Project Management
             'view-all-projects' => 'عرض جميع المشاريع',
             'view-own-projects' => 'عرض المشاريع الخاصة',
+            'edit-own-projects' => 'تعديل مشاريعي فقط',
             'create-projects' => 'إنشاء مشاريع',
             'edit-projects' => 'تعديل مشاريع',
             'delete-projects' => 'حذف مشاريع',
             'approve-project-changes' => 'الموافقة على طلبات المشاريع',
+            'manage-project-units' => 'إدارة وحدات المشروع',
             
             // Task Management
             'view-all-tasks' => 'عرض جميع المهام',
@@ -116,6 +118,14 @@ class RoleHelper
             'delete-clients' => 'حذف عملاء',
             'transfer-clients' => 'تحويل/توزيع العملاء',
             'approve-client-changes' => 'موافقة تعديل/حذف العملاء',
+            'import-clients' => 'استيراد العملاء',
+            'export-clients' => 'تصدير العملاء',
+            'bulk-update-clients' => 'تحديث جماعي للعملاء',
+            'bulk-delete-clients' => 'حذف جماعي للعملاء',
+            'view-client-deletion-log' => 'سجل حذف العملاء',
+            'manage-client-staff-notes' => 'ملاحظات الموظفين على العميل',
+            'distribute-leads' => 'توزيع العملاء المحتملين',
+            'auto-distribute-leads' => 'التوزيع التلقائي للعملاء',
             'transfer-tasks' => 'تحويل/سحب المهام بين السيلز',
 
             'view-developers' => 'عرض المطورين العقاريين',
@@ -132,6 +142,25 @@ class RoleHelper
             'view-crm-pipeline' => 'عرض مسار CRM',
             'view-team-sales' => 'عرض مبيعات الفريق',
             'manage-sales-teams' => 'إدارة فرق المبيعات',
+            'view-crm-intelligence' => 'ذكاء المبيعات',
+            'view-follow-ups' => 'عرض المتابعات',
+            'manage-follow-ups' => 'إدارة المتابعات',
+            'view-daily-sales-reports' => 'عرض التقارير اليومية',
+            'manage-daily-sales-reports' => 'إدارة التقارير اليومية',
+            'view-compensation' => 'عرض التعويضات',
+            'manage-compensation' => 'إدارة التعويضات',
+            'approve-compensation-payroll' => 'اعتماد كشوف التعويض',
+            'view-employee-compliance' => 'امتثال الموظفين',
+            'manage-freelance-agents' => 'وكلاء العمولة المستقلين',
+
+            'access-operations' => 'الوصول لمساحة العمليات',
+            'view-inventory' => 'عرض مخزون الوحدات',
+            'export-inventory' => 'تصدير المخزون',
+            'view-operations-reports' => 'تقارير العمليات الدورية',
+            'annotate-operations-reports' => 'تعليق على تقارير العمليات',
+            'review-attendance-absence' => 'مراجعة غياب الحضور',
+            'review-attendance-checkout' => 'مراجعة انصراف الحضور',
+            'manage-exit-permits' => 'تصاريح الخروج',
 
             'view-design' => 'عرض التصميم',
             'create-design' => 'إنشاء تصميم',
@@ -169,6 +198,7 @@ class RoleHelper
             'view-salaries' => 'عرض الرواتب',
             'create-salaries' => 'إنشاء رواتب',
             'edit-salaries' => 'تعديل رواتب',
+            'delete-salaries' => 'حذف رواتب',
             'approve-salaries' => 'اعتماد الرواتب',
             
             // Client portal
@@ -227,6 +257,20 @@ class RoleHelper
             'view-settings' => 'عرض الإعدادات',
             'edit-settings' => 'تعديل الإعدادات',
             'manage-roles' => 'إدارة الأدوار والصلاحيات',
+            'view-login-activity' => 'سجل تسجيل الدخول',
+            'view-system-monitoring' => 'مراقبة النظام',
+
+            // Messages
+            'view-messages' => 'عرض الرسائل',
+            'create-messages' => 'إنشاء رسائل',
+            'edit-messages' => 'تعديل الرسائل',
+            'delete-messages' => 'حذف الرسائل',
+            'send-messages' => 'إرسال رسائل',
+            'reply-messages' => 'الرد على الرسائل',
+            'mark-messages-important' => 'تعليم الرسائل كمهمة',
+            'view-all-messages' => 'عرض جميع رسائل النظام',
+            'send-announcements' => 'إرسال إعلانات عامة',
+            'send-group-messages' => 'إرسال رسائل جماعية',
             
             // Training & Development
             'view-training' => 'عرض التدريب',

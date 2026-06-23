@@ -16,13 +16,17 @@
 @if(session('success'))<div class="mb-4 p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm">{{ session('success') }}</div>@endif
 @if(session('error'))<div class="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm">{{ session('error') }}</div>@endif
 
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+@include('operations.partials.compact-toolbar', ['themeColor' => $themeColor])
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6 ui-compact-hidden">
     @include('crm.partials.stat-card', ['label' => 'بانتظار التوزيع', 'value' => $stats['unassigned'], 'accent' => 'amber', 'href' => route('operations.leads.index', ['filter' => 'unassigned']) . '#page-data', 'linkLabel' => 'عرض المعلّقة'])
     @include('crm.partials.stat-card', ['label' => 'غير متابع +3 أيام', 'value' => $stats['stale'], 'accent' => 'red', 'href' => route('operations.leads.index', ['filter' => 'stale']) . '#page-data', 'linkLabel' => 'عرض المتأخرة'])
 </div>
 
 @if($leadKpis)
+<div class="ui-compact-hidden">
 @include('operations.partials.kpi-group', ['group' => $leadKpis, 'link' => route('operations.leads.index') . '#page-data'])
+</div>
 @endif
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6 font-tajawal" id="page-data">

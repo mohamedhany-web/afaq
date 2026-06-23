@@ -14,7 +14,7 @@
         btn.setAttribute('aria-pressed', on ? 'true' : 'false');
         const label = btn.querySelector('.ui-compact-label');
         if (label) {
-            label.textContent = on ? (btn.dataset.labelOn || 'عرض مبسّط') : (btn.dataset.labelOff || 'عرض التفاصيل');
+            label.textContent = on ? (btn.dataset.labelOff || 'عرض التفاصيل') : (btn.dataset.labelOn || 'عرض مبسّط');
         }
         btn.querySelector('.ui-compact-icon-on')?.classList.toggle('hidden', !on);
         btn.querySelector('.ui-compact-icon-off')?.classList.toggle('hidden', on);
