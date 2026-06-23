@@ -11,6 +11,9 @@
         <div>
             <p class="text-sm font-bold text-gray-900 mb-1">إجراءات جماعية</p>
             <p class="text-xs text-gray-500"><span id="bulk-selected-count">0</span> عميل/رقم محدّد</p>
+            @if($canTransfer)
+            <a href="{{ route($clientsRoutePrefix . '.transfer-board') }}" class="text-[11px] font-bold hover:underline" style="color:{{ $themeColor }}">لوحة السحب والتحويل ←</a>
+            @endif
             <div id="bulk-selected-preview" class="mt-2 flex flex-wrap gap-1 max-h-16 overflow-y-auto text-[11px] text-gray-600"></div>
         </div>
 

@@ -5,17 +5,17 @@
 @php
     $themeColor = \App\Helpers\SettingsHelper::getThemeColor();
     $isLtr = app()->getLocale() === 'en';
-    $kpiLinks = [
-        'lead_management' => route('operations.clients.index', array_merge($clientFilterQuery ?? ['view' => 'data'], ['bucket' => 'all'])),
-        'crm_management' => route('operations.clients.index', $clientFilterQuery ?? ['view' => 'data']),
-        'sales_operations' => route('operations.crm.index', array_filter(['sales_rep' => $selectedSalesRep->id ?? null])),
-        'revenue_impact' => route('operations.crm.index', array_filter(['sales_rep' => $selectedSalesRep->id ?? null])),
-        'inventory_operations' => route('operations.inventory.index'),
-        'team_performance' => route('operations.team.index'),
-        'reporting_management' => route('operations.reports.index'),
-    ];
     $clientFilterQuery = $clientFilterQuery ?? ['view' => 'data'];
     $salesRepQuery = array_filter(['sales_rep' => $selectedSalesRep->id ?? null]);
+    $kpiLinks = [
+        'lead_management' => route('operations.clients.index', array_merge($clientFilterQuery, ['bucket' => 'all'])) . '#page-data',
+        'crm_management' => route('operations.clients.index', $clientFilterQuery) . '#page-data',
+        'sales_operations' => route('operations.crm.index', $salesRepQuery) . '#page-data',
+        'revenue_impact' => route('operations.crm.index', $salesRepQuery) . '#page-data',
+        'inventory_operations' => route('operations.inventory.index') . '#page-data',
+        'team_performance' => route('operations.team.index') . '#page-data',
+        'reporting_management' => route('operations.reports.index') . '#page-data',
+    ];
     $detailArrow = $isLtr ? '→' : '←';
 @endphp
 
@@ -49,10 +49,15 @@
         <p class="text-xs text-gray-600 mt-1">{{ __('operations.dashboard.filtered_hint') }}</p>
     </div>
     <div class="flex flex-wrap gap-2">
-        <a href="{{ route('operations.clients.index', ['view' => 'data', 'sales_rep' => $selectedSalesRep->id]) }}"
+        <a href="{{ route('operations.clients.index', ['view' => 'data', 'sales_rep' => $selectedSalesRep->id, 'bucket' => 'all']) }}#page-data"
            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white"
            style="background: {{ $themeColor }};">
             {{ __('operations.dashboard.view_rep_clients') }}
+        </a>
+        <a href="{{ route('operations.crm.index', ['sales_rep' => $selectedSalesRep->id]) }}#page-data"
+           class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border-2 hover:bg-gray-50"
+           style="border-color: {{ $themeColor }}40; color: {{ $themeColor }};">
+            {{ __('operations.dashboard.view_rep_crm') }}
         </a>
         <a href="{{ route('operations.reps.show', $selectedSalesRep) }}"
            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border-2 hover:bg-gray-50"
@@ -65,6 +70,14 @@
         </a>
     </div>
 </div>
+@endif
+
+@if(!empty($crmPulse))
+@include('operations.partials.crm-pulse', [
+    'crmPulse' => $crmPulse,
+    'salesRepQuery' => $salesRepQuery,
+    'clientFilterQuery' => $clientFilterQuery,
+])
 @endif
 
 <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mb-6" id="page-data">

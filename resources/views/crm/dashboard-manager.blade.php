@@ -208,7 +208,10 @@
                 <tbody class="divide-y divide-gray-100">
                     @foreach($individualMetrics['reps'] as $rep)
                     <tr class="hover:bg-gray-50">
-                        <td class="px-3 py-2 font-semibold text-gray-900">{{ $rep['name'] }}</td>
+                        <td class="px-3 py-2 font-semibold text-gray-900">
+                            <a href="{{ auth()->user()->clientsHubUrl(['sales_rep' => $rep['id'], 'bucket' => 'all']) }}#page-data"
+                               class="hover:underline" style="color:{{ $themeColor }}">{{ $rep['name'] }}</a>
+                        </td>
                         <td class="text-center px-2 py-2 tabular-nums">{{ $rep['calls'] }}</td>
                         <td class="text-center px-2 py-2 tabular-nums">{{ $rep['meetings'] }}</td>
                         <td class="text-center px-2 py-2 tabular-nums">{{ $rep['property_visits'] }}</td>

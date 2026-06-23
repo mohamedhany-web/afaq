@@ -3,6 +3,7 @@
 use App\Http\Controllers\Operations\OperationsAttendanceReviewController;
 use App\Http\Controllers\Operations\OperationsCheckoutReviewController;
 use App\Http\Controllers\Operations\OperationsClientController;
+use App\Http\Controllers\Operations\OperationsClientTransferBoardController;
 use App\Http\Controllers\Operations\OperationsCrmController;
 use App\Http\Controllers\Operations\OperationsDashboardController;
 use App\Http\Controllers\Operations\OperationsFollowUpController;
@@ -24,6 +25,7 @@ Route::middleware(['auth', 'verified', 'verified.code'])->prefix('operations')->
     Route::get('clients/check-phone', [OperationsClientController::class, 'checkPhone'])->name('clients.check-phone');
     Route::get('clients/export', [OperationsClientController::class, 'export'])->name('clients.export');
     Route::post('clients/bulk-transfer', [OperationsClientController::class, 'bulkTransfer'])->name('clients.bulk-transfer');
+    Route::get('clients/transfer-board', [OperationsClientTransferBoardController::class, 'index'])->name('clients.transfer-board');
     Route::post('clients/bulk-update-meta', [OperationsClientController::class, 'bulkUpdateMeta'])->name('clients.bulk-update-meta');
     Route::post('clients/bulk-delete', [OperationsClientController::class, 'bulkDestroy'])->name('clients.bulk-destroy');
     Route::post('clients/{client}/transfer', [OperationsClientController::class, 'transfer'])->name('clients.transfer');

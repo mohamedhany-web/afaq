@@ -193,6 +193,9 @@ class ProjectManagementService
         $data['sold_units'] = $sold;
         $data['total_units'] = $total;
         $data['project_manager_id'] = $data['project_manager_id'] ?? $user->id;
+        if (! $project) {
+            $data['created_by'] = $user->id;
+        }
         $data['status'] = 'in_progress';
         $data['priority'] = 'medium';
         $data['progress_percentage'] = $total > 0 ? (int) round(($sold / $total) * 100) : 0;

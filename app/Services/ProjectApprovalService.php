@@ -180,7 +180,11 @@ class ProjectApprovalService
     protected function applyCreate(ProjectChangeRequest $change, User $reviewer): Project
     {
         $payload = $change->payload ?? [];
-        $project = Project::create($payload['project'] ?? []);
+        $projectData = $payload['project'] ?? [];
+        if (empty($projectData['created_by']) && $change->requested_by) {
+            $projectData['created_by'] = $change->requested_by;
+        }
+        $project = Project::create($projectData);
 
         if (!empty($payload['team_members'])) {
             $project->teamMembers()->attach($payload['team_members']);

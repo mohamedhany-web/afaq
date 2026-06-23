@@ -19,6 +19,12 @@
         توزيع العملاء
     </a>
     @endcanNav
+    @canNav('transfer-clients', 'bulk-update-clients')
+    <a href="{{ route('crm.clients.transfer-board') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('crm.clients.transfer-board') ? 'active' : '' }}">
+        <svg class="ml-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+        تحويل وسحب السيلز
+    </a>
+    @endcanNav
     @if(app(\App\Services\ClientApprovalService::class)->requiresMutationApproval(auth()->user()))
     @canNav('edit-clients', 'delete-clients')
     <a href="{{ route('crm.clients.approvals.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('crm.clients.approvals.*') ? 'active' : '' }}">

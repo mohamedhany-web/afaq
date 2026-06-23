@@ -263,6 +263,16 @@ class OperationsClientController extends Controller
         }
         $message .= " — متخطى: {$result['skipped']}.";
 
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => $message,
+                'transferred' => $result['transferred'],
+                'skipped' => $result['skipped'],
+                'tasks_transferred' => $result['tasks_transferred'],
+            ]);
+        }
+
         return back()->with('success', $message);
     }
 
@@ -297,6 +307,20 @@ class OperationsClientController extends Controller
         $message = 'تم تحويل العميل إلى السيلز المحدد.';
         if ($result['tasks_transferred'] > 0) {
             $message .= " تم تحويل {$result['tasks_transferred']} مهمة مرتبطة.";
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => $message,
+                'client' => [
+                    'id' => $result['client']->id,
+                    'name' => $result['client']->name,
+                    'phone' => $result['client']->phone,
+                    'assigned_to' => $result['client']->assigned_to,
+                ],
+                'tasks_transferred' => $result['tasks_transferred'],
+            ]);
         }
 
         return back()->with('success', $message);
@@ -352,6 +376,7 @@ class OperationsClientController extends Controller
         abort_unless($this->clients->canCreate($user), 403);
 
         $data = $this->clients->prepareData($this->clients->validate($request), $user, true);
+        Client::assertUniquePhone($data['phone'] ?? null);
         $client = Client::create($data);
 
         app(ClientTimelineService::class)->recordLeadCreated($client, $user);

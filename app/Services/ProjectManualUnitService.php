@@ -84,6 +84,7 @@ class ProjectManualUnitService
             if ($unit) {
                 $unit->update($payload);
             } else {
+                $payload['created_by'] = auth()->id();
                 $unit = $project->units()->create($payload);
             }
 

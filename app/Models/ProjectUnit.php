@@ -22,6 +22,7 @@ class ProjectUnit extends Model
         'floor_number', 'floor_label', 'apartment_number',
         'area_m2',
         'price_cash', 'price_installment', 'unit_price_total', 'status',
+        'created_by',
         'mesh_x', 'mesh_y', 'mesh_z', 'mesh_w', 'mesh_h', 'mesh_d', 'meta',
     ];
 
@@ -42,6 +43,11 @@ class ProjectUnit extends Model
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
+    }
+
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function floor(): BelongsTo

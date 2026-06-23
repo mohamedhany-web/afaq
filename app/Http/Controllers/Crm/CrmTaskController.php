@@ -185,6 +185,18 @@ class CrmTaskController extends Controller
 
         $tasks->transfer(Auth::user(), $task, (int) $validated['assigned_to']);
 
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => 'تم تحويل المهمة وتسجيل العملية في سجل التتبع.',
+                'task' => [
+                    'id' => $task->id,
+                    'title' => $task->title,
+                    'assigned_to' => (int) $validated['assigned_to'],
+                ],
+            ]);
+        }
+
         return back()->with('success', 'تم تحويل المهمة وتسجيل العملية في سجل التتبع.');
     }
 

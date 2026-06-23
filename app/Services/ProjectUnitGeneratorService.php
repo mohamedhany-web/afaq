@@ -39,6 +39,7 @@ class ProjectUnitGeneratorService
                     $unit = ProjectUnit::create([
                         'project_id' => $project->id,
                         'building_floor_id' => $floor->id,
+                        'created_by' => auth()->id(),
                         'code' => $def['code'],
                         'use_type' => $def['use_type'],
                         'area_m2' => $area,

@@ -2,6 +2,13 @@
     $clientsRoutePrefix = $clientsRoutePrefix ?? 'operations.clients';
     $cr = fn (string $action, mixed $params = []) => route($clientsRoutePrefix . '.' . $action, $params);
     $themeColor = $themeColor ?? \App\Helpers\SettingsHelper::getThemeColor();
+    $listQuery = array_filter([
+        'view' => 'data',
+        'bucket' => $bucket ?? null,
+        'sales_rep' => request('sales_rep'),
+        'created_by' => request('created_by'),
+        'mine' => request('mine'),
+    ]);
 @endphp
 
 @if(session('success'))
@@ -12,10 +19,10 @@
 @endif
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 ui-compact-hidden">
-    @include('crm.partials.stat-card', ['label' => 'إجمالي العملاء', 'value' => $stats['total'], 'accent' => 'theme', 'href' => $cr('index', ['view' => 'data']) . '#page-data', 'linkLabel' => 'عرض القائمة'])
-    @include('crm.partials.stat-card', ['label' => 'عملاء محتملون', 'value' => $stats['prospect'], 'accent' => 'blue', 'href' => $cr('index', ['view' => 'data', 'status' => 'prospect']) . '#page-data', 'linkLabel' => 'عرض المحتملين'])
-    @include('crm.partials.stat-card', ['label' => 'عملاء نشطون', 'value' => $stats['active'], 'accent' => 'green', 'href' => $cr('index', ['view' => 'data', 'status' => 'active']) . '#page-data', 'linkLabel' => 'عرض النشطين'])
-    @include('crm.partials.stat-card', ['label' => 'لديهم صفقات', 'value' => $stats['with_deals'], 'accent' => 'amber', 'href' => $cr('index', ['view' => 'data', 'has_deals' => '1']) . '#page-data', 'linkLabel' => 'عرض الصفقات'])
+    @include('crm.partials.stat-card', ['label' => 'إجمالي العملاء', 'value' => $stats['total'], 'accent' => 'theme', 'href' => $cr('index', $listQuery) . '#page-data', 'linkLabel' => 'عرض القائمة'])
+    @include('crm.partials.stat-card', ['label' => 'عملاء محتملون', 'value' => $stats['prospect'], 'accent' => 'blue', 'href' => $cr('index', array_merge($listQuery, ['status' => 'prospect'])) . '#page-data', 'linkLabel' => 'عرض المحتملين'])
+    @include('crm.partials.stat-card', ['label' => 'عملاء نشطون', 'value' => $stats['active'], 'accent' => 'green', 'href' => $cr('index', array_merge($listQuery, ['status' => 'active'])) . '#page-data', 'linkLabel' => 'عرض النشطين'])
+    @include('crm.partials.stat-card', ['label' => 'لديهم صفقات', 'value' => $stats['with_deals'], 'accent' => 'amber', 'href' => $cr('index', array_merge($listQuery, ['has_deals' => '1'])) . '#page-data', 'linkLabel' => 'عرض الصفقات'])
 </div>
 
 <div class="flex flex-wrap gap-2 mb-4 font-tajawal ui-compact-hidden">

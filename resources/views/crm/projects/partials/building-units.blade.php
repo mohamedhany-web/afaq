@@ -254,6 +254,26 @@
                             <div class="font-bold" id="detail-installment">—</div>
                         </div>
                     </div>
+                    <div class="rounded-lg border border-gray-100 bg-gray-50/80 p-3 space-y-2">
+                        <p class="text-[10px] font-bold text-gray-500">بيانات الإدخال</p>
+                        <div class="grid grid-cols-1 gap-1.5 text-xs">
+                            <div class="flex justify-between gap-2">
+                                <span class="text-gray-400">تاريخ الإدخال</span>
+                                <span class="font-semibold text-gray-800" id="detail-entry-date">—</span>
+                            </div>
+                            <div class="flex justify-between gap-2">
+                                <span class="text-gray-400">وقت الإدخال</span>
+                                <span class="font-semibold text-gray-800" dir="ltr" id="detail-entry-time">—</span>
+                            </div>
+                            <div class="flex justify-between gap-2 items-center">
+                                <span class="text-gray-400">اسم المدخل</span>
+                                <span class="inline-flex items-center gap-1">
+                                    <strong class="font-semibold text-gray-800" id="detail-entry-creator">—</strong>
+                                    <span id="detail-entry-admin-badge" class="hidden px-1.5 py-px rounded text-[9px] font-bold bg-amber-100 text-amber-800">إدارة</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                     @if($canEdit)
                     <div>
                         <label class="block text-xs font-bold text-gray-500 mb-1">تغيير الحالة</label>
@@ -385,6 +405,27 @@
                         </div>
                     </div>
 
+                    <div class="rounded-xl border border-gray-100 bg-gray-50/80 p-4">
+                        <p class="text-xs font-bold text-gray-500 mb-3">بيانات الإدخال</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                            <div>
+                                <span class="block text-[11px] font-bold text-gray-400 mb-0.5">تاريخ الإدخال</span>
+                                <span class="font-semibold text-gray-900" id="modal-entry-date">—</span>
+                            </div>
+                            <div>
+                                <span class="block text-[11px] font-bold text-gray-400 mb-0.5">وقت الإدخال</span>
+                                <span class="font-semibold text-gray-900" dir="ltr" id="modal-entry-time">—</span>
+                            </div>
+                            <div>
+                                <span class="block text-[11px] font-bold text-gray-400 mb-0.5">اسم المدخل</span>
+                                <span class="inline-flex items-center gap-1.5 flex-wrap">
+                                    <strong class="font-semibold text-gray-800" id="modal-entry-creator">—</strong>
+                                    <span id="modal-entry-admin-badge" class="hidden px-1.5 py-px rounded text-[10px] font-bold bg-amber-100 text-amber-800">إدارة</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="rounded-xl border border-gray-200 p-4">
                         <h4 class="text-sm font-bold text-gray-800 mb-3">الأسعار</h4>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
@@ -478,6 +519,21 @@
     };
     const moneyFmt = (n) => new Intl.NumberFormat('ar-EG', { maximumFractionDigits: 0 }).format(n) + ' ج.م';
 
+    function renderEntryMeta(entry, prefix) {
+        const e = entry || {};
+        const dateEl = document.getElementById(prefix + '-entry-date');
+        const timeEl = document.getElementById(prefix + '-entry-time');
+        const creatorEl = document.getElementById(prefix + '-entry-creator');
+        const adminBadge = document.getElementById(prefix + '-entry-admin-badge');
+        if (dateEl) dateEl.textContent = e.date || '—';
+        if (timeEl) timeEl.textContent = e.time || '—';
+        if (creatorEl) {
+            creatorEl.textContent = e.creator || '—';
+            creatorEl.className = 'font-semibold ' + (e.is_admin ? 'text-amber-700' : 'text-gray-800');
+        }
+        if (adminBadge) adminBadge.classList.toggle('hidden', !e.is_admin);
+    }
+
     let selectedId = null;
     let activeFloor = 'all';
     let activeStatus = null;
@@ -552,6 +608,8 @@
             dealUrl.searchParams.set('estimated_value', String(unit.price_cash || 0));
             dealLink.href = dealUrl.toString();
         }
+
+        renderEntryMeta(unit.entry, 'detail');
     }
 
     function renderPaymentPlans(unit) {
@@ -699,6 +757,7 @@
 
         renderPaymentPlans(unit);
         renderMeta(unit);
+        renderEntryMeta(unit.entry, 'modal');
 
         const modalSel = document.getElementById('modal-status-select');
         if (modalSel) modalSel.value = unit.status;

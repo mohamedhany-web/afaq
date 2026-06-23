@@ -83,6 +83,7 @@ class OperationsCrmController extends Controller
             'selectedSalesRep' => $salesRepUserId ? \App\Models\User::find($salesRepUserId) : null,
             'stats' => [
                 'total_clients' => (clone $clientQuery)->count(),
+                'new_clients' => (clone $clientQuery)->where('lead_stage', \App\Services\CrmScopeService::LEAD_STAGE_NEW)->count(),
                 'active_deals' => (clone $saleQuery)->whereNotIn('stage', ['closed_won', 'closed_lost'])->count(),
                 'won_month' => (clone $saleQuery)->where('stage', 'closed_won')
                     ->whereMonth('actual_close_date', now()->month)

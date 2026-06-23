@@ -73,7 +73,7 @@ class OperationsDashboardController extends Controller
             $stats['team_reports_submitted'] = OperationsPeriodReport::where('status', OperationsPeriodReport::STATUS_SUBMITTED)->count();
         }
 
-        $crmPulse = $crmPulseMetrics->snapshot();
+        $crmPulse = $crmPulseMetrics->snapshot(null, $selectedSalesRep?->id);
         $workspaceSections = $workspace->dashboardSections(null, $selectedSalesRep);
         $absenceReviewsDate = $absenceReviews->latestDateForStatus('pending');
         $absenceReviewsLink = route('operations.attendance-reviews.index', array_filter([

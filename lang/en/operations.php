@@ -7,6 +7,7 @@ return [
         'filtered_by_rep' => 'Showing sales rep data',
         'filtered_hint' => 'Counts and KPIs below are scoped to this rep only',
         'view_rep_clients' => 'Rep client list',
+        'view_rep_crm' => 'Rep CRM / calls data',
         'clear_filter' => 'Clear filter',
     ],
     'all_clients_first' => 'Open the operations dashboard to see all data',

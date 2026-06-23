@@ -54,6 +54,15 @@
             'hint' => $monthLabel,
         ],
         [
+            'key' => 'new_clients',
+            'label' => 'New / جدد',
+            'value' => $crmPulse['new_clients'] ?? 0,
+            'accent' => 'blue',
+            'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>',
+            'href' => route('operations.clients.index', array_merge($clientFilterQuery, ['bucket' => 'new'])) . '#page-data',
+            'linkLabel' => 'عرض الجدد',
+        ],
+        [
             'key' => 'potential_clients',
             'label' => 'عملاء محتملون',
             'value' => $crmPulse['potential_clients'],
@@ -147,7 +156,7 @@
                     <a href="{{ route('crm.pipeline.show', $row) }}" class="font-semibold hover:underline" style="color:{{ $themeColor }}">{{ $row->client?->name ?? $row->product_service }}</a>
                     <p class="text-xs text-gray-500">{{ $row->salesRep?->name ?? '—' }} · {{ number_format($row->estimated_value) }}</p>
                 </li>
-                @elseif($card['key'] === 'potential_clients')
+                @elseif($card['key'] === 'new_clients' || $card['key'] === 'potential_clients')
                 <li class="px-4 py-3 text-sm">
                     <a href="{{ $row->profileUrl() }}" class="font-semibold hover:underline" style="color:{{ $themeColor }}">{{ $row->name }}</a>
                     <p class="text-xs text-gray-500">

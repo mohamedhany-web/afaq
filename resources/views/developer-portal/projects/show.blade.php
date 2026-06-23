@@ -18,6 +18,10 @@
     'actionIcon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>',
 ])
 
+<div class="mb-6">
+    @include('partials.entry-meta', ['record' => $project, 'title' => 'بيانات إدخال المشروع'])
+</div>
+
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
     @include('crm.partials.stat-card', ['label' => 'الوحدات', 'value' => $project->total_units ?? 0, 'accent' => 'theme', 'href' => '#building-units-root', 'linkLabel' => 'عرض الوحدات'])
     @include('crm.partials.stat-card', ['label' => 'متاح', 'value' => $project->available_units ?? 0, 'accent' => 'green', 'href' => '?status=available#building-units-root', 'linkLabel' => 'عرض المتاح'])

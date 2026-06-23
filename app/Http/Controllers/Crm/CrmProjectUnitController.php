@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Crm;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\ProjectUnit;
+use App\Support\EntryAudit;
 use App\Services\ProjectManagementService;
 use App\Services\ProjectUnitGeneratorService;
 use Illuminate\Http\Request;
@@ -61,7 +62,7 @@ class CrmProjectUnitController extends Controller
         abort_unless((int) $unit->project_id === (int) $project->id, 404);
         abort_unless($this->projects->canView(Auth::user(), $project), 403);
 
-        $unit->load(['floor', 'paymentPlans']);
+        $unit->load(['floor', 'paymentPlans', 'createdBy']);
 
         return response()->json([
             'unit' => $this->unitPayload($unit),
@@ -116,6 +117,7 @@ class CrmProjectUnitController extends Controller
                 'notes' => $plan->notes,
             ])->values()->all(),
             'meta' => $unit->meta ?? [],
+            'entry' => EntryAudit::payload($unit),
             'show_url' => route('crm.projects.units.show', ['project' => $unit->project_id, 'unit' => $unit->id]),
         ];
     }

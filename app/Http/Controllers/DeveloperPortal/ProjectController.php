@@ -57,7 +57,7 @@ class ProjectController extends Controller
         $account = Auth::guard('developer')->user();
         abort_unless($this->portal->canAccessProject($account, $project), 404);
 
-        $project->load(['buildingFloors.units.paymentPlans', 'mapPins']);
+        $project->load(['buildingFloors.units.paymentPlans', 'buildingFloors.units.createdBy', 'mapPins', 'createdBy']);
         $buildingSummary = $this->units->buildingSummary($project);
         $themeColor = \App\Helpers\SettingsHelper::getThemeColor();
 

@@ -89,10 +89,8 @@ class ClientTransferService
         ?string $source = null,
     ): array {
         $source ??= $this->resolveSource($actor);
-        $employee = Employee::findOrFail($employeeId);
         $transferred = 0;
         $skipped = 0;
-        $transferredClients = collect();
         $totalTasks = 0;
 
         foreach ($clients as $client) {
@@ -103,23 +101,11 @@ class ClientTransferService
 
             try {
                 $result = $this->transfer($client, $employeeId, $actor, $request, $transferTasks, $source);
-                $transferredClients->push($result['client']);
                 $totalTasks += $result['tasks_transferred'];
                 $transferred++;
             } catch (\Throwable) {
                 $skipped++;
             }
-        }
-
-        if ($transferredClients->count() > 1) {
-            $this->activity->logBulkTransfer(
-                $transferredClients,
-                $actor,
-                $employee,
-                $source,
-                $request,
-                $totalTasks,
-            );
         }
 
         return [

@@ -117,6 +117,7 @@ class Project extends Model
         'client_id',
         'department_id',
         'project_manager_id',
+        'created_by',
         'start_date',
         'end_date',
         'budget',
@@ -193,6 +194,11 @@ class Project extends Model
     public function projectManager(): BelongsTo
     {
         return $this->belongsTo(User::class, 'project_manager_id');
+    }
+
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
     
     /**

@@ -188,10 +188,12 @@ class CrmProjectController extends Controller
 
         $project->load([
             'projectManager',
+            'createdBy',
             'department',
             'mapPins',
             'realEstateDeveloper.activeContract',
             'buildingFloors.units.paymentPlans',
+            'buildingFloors.units.createdBy',
         ]);
 
         $unitGenerator = app(ProjectUnitGeneratorService::class);

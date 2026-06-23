@@ -6,6 +6,7 @@ use App\Http\Controllers\Crm\CrmDailySalesReportController;
 use App\Http\Controllers\Crm\CrmDashboardController;
 use App\Http\Controllers\Crm\CrmClientApprovalController;
 use App\Http\Controllers\Crm\CrmClientController;
+use App\Http\Controllers\Crm\CrmClientTransferBoardController;
 use App\Http\Controllers\Crm\CrmFollowUpController;
 use App\Http\Controllers\Crm\CrmLeadDistributionController;
 use App\Http\Controllers\Crm\CrmIntelligenceController;
@@ -37,6 +38,7 @@ Route::middleware(['auth', 'verified', 'verified.code'])->prefix('crm')->name('c
     Route::get('clients/deletions/log/{batch}', [CrmClientController::class, 'deletionLogShow'])->name('clients.deletions.show');
     Route::post('clients/bulk-delete', [CrmClientController::class, 'bulkDestroy'])->name('clients.bulk-destroy');
     Route::post('clients/bulk-transfer', [CrmClientController::class, 'bulkTransfer'])->name('clients.bulk-transfer');
+    Route::get('clients/transfer-board', [CrmClientTransferBoardController::class, 'index'])->name('clients.transfer-board');
     Route::post('clients/bulk-update-meta', [CrmClientController::class, 'bulkUpdateMeta'])->name('clients.bulk-update-meta');
     Route::post('clients/{client}/transfer', [CrmClientController::class, 'transfer'])->name('clients.transfer');
     Route::get('clients/check-phone', [CrmClientController::class, 'checkPhone'])->name('clients.check-phone');
